@@ -6,6 +6,9 @@
 #include "ModularCharacter.h"
 #include "AssassinsCharacter.generated.h"
 
+class UAssassinsPawnExtensionComponent;
+class UAssassinsHealthComponent;
+
 UCLASS(Blueprintable)
 class AAssassinsCharacter : public AModularCharacter
 {
@@ -23,6 +26,13 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 private:
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAssassinsPawnExtensionComponent> PawnExtComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr< UAssassinsHealthComponent> HealthComponent;
+	
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* TopDownCameraComponent;
