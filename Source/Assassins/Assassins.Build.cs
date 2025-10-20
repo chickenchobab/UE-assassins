@@ -25,7 +25,9 @@ public class Assassins : ModuleRules
                 "Niagara", 
                 "EnhancedInput",
                 "ModularGameplay",
-                "ModularGameplayActors"
+                "ModularGameplayActors",
+                "GameplayTags",
+                "GameplayTasks"
             }
         );
 
