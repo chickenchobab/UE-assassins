@@ -1,7 +1,11 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "AssassinsCharacter.h"
+
+#include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Character/AssassinsPawnExtensionComponent.h"
+#include "Character/AssassinsHealthComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -13,6 +17,15 @@
 
 AAssassinsCharacter::AAssassinsCharacter()
 {
+	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+
+	PawnExtComponent = CreateDefaultSubobject<UAssassinsPawnExtensionComponent>(TEXT("PawnExtensionComponent"));
+	PawnExtComponent->OnAbilitySystemInitialized_RegisterAndCall(FSimpleMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::OnAbilitySystemInitialized));
+	PawnExtComponent->OnAbilitySystemUninitialized_Register(FSimpleMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::OnAbilitySystemUninitialized));
+
+	HealthComponent = CreateDefaultSubobject<UAssassinsHealthComponent>(TEXT("HealthComponent"));
+
 	// Set size for player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -45,7 +58,25 @@ AAssassinsCharacter::AAssassinsCharacter()
 	PrimaryActorTick.bStartWithTickEnabled = true;
 }
 
-void AAssassinsCharacter::Tick(float DeltaSeconds)
+UAssassinsAbilitySystemComponent* AAssassinsCharacter::GetAssassinsAbilitySystemComponent() const
 {
-    Super::Tick(DeltaSeconds);
+	return Cast<UAssassinsAbilitySystemComponent>(GetAbilitySystemComponent());
+}
+
+UAbilitySystemComponent* AAssassinsCharacter::GetAbilitySystemComponent() const
+{
+	if (PawnExtComponent == nullptr)
+	{
+		return nullptr;
+	}
+
+	return PawnExtComponent->GetAssassinsAbilitySystemComponent();
+}
+
+void AAssassinsCharacter::OnAbilitySystemInitialized()
+{
+}
+
+void AAssassinsCharacter::OnAbilitySystemUninitialized()
+{
 }

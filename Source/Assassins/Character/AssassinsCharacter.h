@@ -2,28 +2,36 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "ModularCharacter.h"
 #include "AssassinsCharacter.generated.h"
 
 class UAssassinsPawnExtensionComponent;
 class UAssassinsHealthComponent;
+class UAssassinsAbilitySystemComponent;
 
 UCLASS(Blueprintable)
-class AAssassinsCharacter : public AModularCharacter
+class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	AAssassinsCharacter();
 
-	// Called every frame.
-	virtual void Tick(float DeltaSeconds) override;
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Character")
+	UAssassinsAbilitySystemComponent* GetAssassinsAbilitySystemComponent() const;
+	//~IAbilitySystemInterface interface
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	//~End of IAbilitySystemInterface interface
 
 	/** Returns TopDownCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+
+protected:
+	virtual void OnAbilitySystemInitialized();
+	virtual void OnAbilitySystemUninitialized();
 
 private:
 	
