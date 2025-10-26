@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "AssassinsPawnData.generated.h"
 
@@ -11,7 +10,7 @@ class UAssassinsAbilitySet;
 /**
  * 
  */
-UCLASS()
+UCLASS(BlueprintType)
 class ASSASSINS_API UAssassinsPawnData : public UPrimaryDataAsset
 {
 	GENERATED_BODY()

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameUIManagerSubsystem.h"
 #include "AssassinsUIManagerSubsystem.generated.h"
 

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameFeatureAction.h"
 #include "GameFeatureAction_AddAbilities.generated.h"
 

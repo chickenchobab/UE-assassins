@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h" 
 #include "Components/PawnComponent.h"
 #include "Components/GameFrameworkInitStateInterface.h"
 

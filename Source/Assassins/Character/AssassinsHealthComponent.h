@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/GameFrameworkComponent.h"
 #include "AssassinsHealthComponent.generated.h"
 
