@@ -9,6 +9,7 @@
 class UAssassinsPawnData;
 class UAssassinsAbilitySystemComponent;
 class AAssassinsPlayerController;
+class UAssassinsExperienceDefinition;
 
 /**
  * 
@@ -19,8 +20,7 @@ class ASSASSINS_API AAssassinsPlayerState : public AModularPlayerState, public I
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY()
-	TObjectPtr<const UAssassinsPawnData> PawnData;
+	AAssassinsPlayerState(const FObjectInitializer& ObjectInitializer);
 	
 	UFUNCTION(BlueprintCallable, Category = "Assassins|PlayerState")
 	AAssassinsPlayerController* GetAssassinsPlayerController() const;
@@ -31,9 +31,24 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	//~End IAbilitySystemInterface interface
 
+	template <class T>
+	const T* GetPawnData() const { return Cast<T>(PawnData); }
+
+	void SetPawnData(const UAssassinsPawnData* InPawnData);
+
+	//~AActor interface
+	virtual void PostInitializeComponents() override;
+
+private:
+	void OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience);
+
+protected:
+	UPROPERTY()
+	TObjectPtr<const UAssassinsPawnData> PawnData;
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Assassins|PlayerState")
 	TObjectPtr<UAssassinsAbilitySystemComponent> AbilitySystemComponent;
 
-	//TODO : HealthSet and CombatSet
+	//Me : HealthSet and CombatSet
 };

@@ -4,6 +4,4 @@
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, Assassins, "Assassins" );
-
-DEFINE_LOG_CATEGORY(LogAssassins)
  

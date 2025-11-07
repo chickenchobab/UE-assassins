@@ -38,6 +38,8 @@ public:
 	template <class T>
 	const T* GetPawnData() const { return Cast<T>(PawnData); }
 
+	void SetPawnData(const UAssassinsPawnData* InPawnData);
+	 
 	UFUNCTION(BlueprintPure, Category = "Assassins|Pawn")
 	UAssassinsAbilitySystemComponent* GetAssassinsAbilitySystemComponent() const { return AbilitySystemComponent; }
 

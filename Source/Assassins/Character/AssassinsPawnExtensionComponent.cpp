@@ -7,6 +7,8 @@
 #include "AssassinsGameplayTags.h"
 #include "Components/GameFrameworkComponentDelegates.h"
 #include "Components/GameFrameworkComponentManager.h"
+#include "AssassinsLogCategories.h"
+#include "Character/AssassinsPawnData.h"
 
 const FName UAssassinsPawnExtensionComponent::NAME_ActorFeatureName("PawnExtension");
 
@@ -97,6 +99,23 @@ void UAssassinsPawnExtensionComponent::CheckDefaultInitialization()
 
 	// This will try to progress from spawned (which is only set in BeginPlay) through the data initialization stages until it gets to gameplay ready
 	ContinueInitStateChain(StateChain);
+}
+
+void UAssassinsPawnExtensionComponent::SetPawnData(const UAssassinsPawnData* InPawnData)
+{
+	check(InPawnData);
+
+	APawn* Pawn = GetPawnChecked<APawn>();
+
+	if (PawnData)
+	{
+		UE_LOG(LogAssassins, Error, TEXT("Trying to set PawnData [%s] on pawn [%s] that already has valid PawnData [%s]."), *GetNameSafe(InPawnData), *GetNameSafe(Pawn), *GetNameSafe(PawnData));
+		return;
+	}
+
+	PawnData = InPawnData;
+
+	CheckDefaultInitialization();
 }
 
 void UAssassinsPawnExtensionComponent::InitializeAbilitySystem(UAssassinsAbilitySystemComponent* InASC, AActor* InOwnerActor)

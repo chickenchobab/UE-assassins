@@ -27,12 +27,16 @@ public class Assassins : ModuleRules
                 "ModularGameplay",
                 "ModularGameplayActors",
                 "GameplayTags",
-                "GameplayTasks"
+                "GameplayTasks",
+                "GameplayAbilities",
+                "GameFeatures",
+                "CommonLoadingScreen"
             }
         );
 
         PrivateDependencyModuleNames.AddRange(
             new string[] {
+                "UMG",
                 "CommonUI",
                 "CommonInput",
                 "CommonGame",

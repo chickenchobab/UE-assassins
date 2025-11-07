@@ -2,9 +2,20 @@
 
 
 #include "Player/AssassinsPlayerState.h"
-
 #include "Player/AssassinsPlayerController.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "AbilitySystem/AssassinsAbilitySet.h"
+#include "GameModes/AssassinsGameMode.h"
+#include "GameModes/AssassinsGameState.h"
+#include "GameModes/AssassinsExperienceComponent.h"
+#include "Character/AssassinsPawnData.h"
+#include "AssassinsLogCategories.h"
+
+AAssassinsPlayerState::AAssassinsPlayerState(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+{
+    AbilitySystemComponent = ObjectInitializer.CreateDefaultSubobject<UAssassinsAbilitySystemComponent>(this, TEXT("AbilitySystemComponent"));
+}
 
 AAssassinsPlayerController* AAssassinsPlayerState::GetAssassinsPlayerController() const
 {
@@ -14,4 +25,58 @@ AAssassinsPlayerController* AAssassinsPlayerState::GetAssassinsPlayerController(
 UAbilitySystemComponent* AAssassinsPlayerState::GetAbilitySystemComponent() const
 { 
     return GetAssassinsAbilitySystemComponent();
+}
+
+void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData)
+{
+    check(InPawnData);
+
+    if (GetLocalRole() != ROLE_Authority)
+    {
+        return;
+    }
+
+    if (PawnData)
+    {
+        UE_LOG(LogAssassins, Error, TEXT("Trying to set PawnData [%s] on player state [%s] that already has valid PawnData [%s]"), *GetNameSafe(InPawnData), *GetNameSafe(this), *GetNameSafe(PawnData));
+        return;
+    }
+
+    //Me: TODO Use specifier for replication
+    //MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PawnData, this);
+
+    PawnData = InPawnData;
+}
+
+void AAssassinsPlayerState::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+
+    check(AbilitySystemComponent);
+    AbilitySystemComponent->InitAbilityActorInfo(this, GetPawn());
+
+    UWorld* World = GetWorld();
+    if (World && World->IsGameWorld() && World->GetNetMode() != NM_Client)
+    {
+        AGameStateBase* GameState = World->GetGameState();
+        check(GameState);
+        UAssassinsExperienceComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceComponent>();
+        check(ExperienceComponent);
+        ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+    }
+}
+
+void AAssassinsPlayerState::OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience)
+{
+    if (AAssassinsGameMode* AssassinsGameMode = GetWorld()->GetAuthGameMode<AAssassinsGameMode>())
+    {
+        if (const UAssassinsPawnData* NewPawnData = AssassinsGameMode->GetPawnDataForController(GetOwningController()))
+        {
+            SetPawnData(NewPawnData);
+        }
+        else
+        {
+            UE_LOG(LogAssassins, Error, TEXT("AAssassinsPlayerState::OnExperienceLoaded(): Unable to find PawnData to initialize player state [%s]!"), *GetNameSafe(this));
+        }
+    }
 }

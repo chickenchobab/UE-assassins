@@ -5,6 +5,8 @@
 #include "ModularGameState.h"
 #include "AssassinsGameState.generated.h"
 
+class UAssassinsExperienceComponent;
+
 /**
  * 
  */
@@ -12,5 +14,13 @@ UCLASS()
 class ASSASSINS_API AAssassinsGameState : public AModularGameStateBase
 {
 	GENERATED_BODY()
+
+public:
+	AAssassinsGameState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+
+private:
+	UPROPERTY(VisibleAnywhere, Category = "Assassins|GameState")
+	TObjectPtr<UAssassinsExperienceComponent> ExperienceComponent;
 	
 };
