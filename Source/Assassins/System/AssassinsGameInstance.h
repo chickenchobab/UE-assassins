@@ -13,4 +13,6 @@ class ASSASSINS_API UAssassinsGameInstance : public UCommonGameInstance
 {
 	GENERATED_BODY()
 	
+protected:
+	virtual void Init() override;
 };
