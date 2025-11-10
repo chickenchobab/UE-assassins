@@ -77,11 +77,6 @@ void AAssassinsPlayerState::PostInitializeComponents()
     }
 }
 
-void AAssassinsPlayerState::BeginPlay()
-{
-    Super::BeginPlay();
-}
-
 void AAssassinsPlayerState::OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience)
 {
     if (AAssassinsGameMode* AssassinsGameMode = GetWorld()->GetAuthGameMode<AAssassinsGameMode>())
