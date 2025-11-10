@@ -72,10 +72,7 @@ bool UAssassinsPawnExtensionComponent::CanChangeInitState(UGameFrameworkComponen
 
 void UAssassinsPawnExtensionComponent::HandleChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState)
 {
-	if (DesiredState == AssassinsGameplayTags::InitState_DataInitialized)
-	{
-		// This is currently all handled by other components listening to this state change
-	}
+	// This is currently all handled by other components listening to this state change
 }
 
 void UAssassinsPawnExtensionComponent::OnActorInitStateChanged(const FActorInitStateChangedParams& Params)
@@ -137,6 +134,8 @@ void UAssassinsPawnExtensionComponent::InitializeAbilitySystem(UAssassinsAbility
 	APawn* Pawn = GetPawnChecked<APawn>();
 	AActor* ExistingAvatar = InASC->GetAvatarActor();
 
+	UE_LOG(LogAssassins, Verbose, TEXT("Setting up ASC [%s] on pawn [%s] owner [%s], existing [%s] "), *GetNameSafe(InASC), *GetNameSafe(Pawn), *GetNameSafe(InOwnerActor), *GetNameSafe(ExistingAvatar));
+
 	if ((ExistingAvatar != nullptr) && (ExistingAvatar != Pawn))
 	{
 		ensure(!ExistingAvatar->HasAuthority());
@@ -148,9 +147,10 @@ void UAssassinsPawnExtensionComponent::InitializeAbilitySystem(UAssassinsAbility
 	}
 
 	AbilitySystemComponent = InASC;
+	// Me: Duplicate ASC initialization?
 	AbilitySystemComponent->InitAbilityActorInfo(InOwnerActor, Pawn);
 
-	// TODO: SetTagRelationshipMapping
+	// Me: TODO SetTagRelationshipMapping
 
 	OnAbilitySystemInitialized.Broadcast();
 }
@@ -165,7 +165,7 @@ void UAssassinsPawnExtensionComponent::UninitializeAbilitySystem()
 	if (AbilitySystemComponent->GetAvatarActor() == GetOwner())
 	{
 		AbilitySystemComponent->CancelAbilities();
-		// AbilitySystemComponent->ClearAbilityInput();
+		AbilitySystemComponent->ClearAbilityInput();
 		AbilitySystemComponent->RemoveAllGameplayCues();
 
 		if (AbilitySystemComponent->GetOwnerActor() != nullptr)
@@ -182,6 +182,31 @@ void UAssassinsPawnExtensionComponent::UninitializeAbilitySystem()
 	}
 
 	AbilitySystemComponent = nullptr;
+}
+
+void UAssassinsPawnExtensionComponent::HandleControllerChanged()
+{
+	if (AbilitySystemComponent && (AbilitySystemComponent->GetAvatarActor() == GetPawnChecked<APawn>()))
+	{
+		// Me : when are they different?
+		ensure(AbilitySystemComponent->AbilityActorInfo->OwnerActor == AbilitySystemComponent->GetOwnerActor());
+		if (AbilitySystemComponent->GetOwnerActor() == nullptr)
+		{
+			UninitializeAbilitySystem();
+		}
+		else
+		{
+			AbilitySystemComponent->RefreshAbilityActorInfo();
+		}
+
+		CheckDefaultInitialization();
+	}
+}
+
+void UAssassinsPawnExtensionComponent::SetupPlayerInputComponent()
+{
+	// Me: This is crucial to initialization of the hero component
+	CheckDefaultInitialization();
 }
 
 void UAssassinsPawnExtensionComponent::OnAbilitySystemInitialized_RegisterAndCall(FSimpleMulticastDelegate::FDelegate Delegate)

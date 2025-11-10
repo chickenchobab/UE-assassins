@@ -9,6 +9,7 @@
 #include "GameModes/AssassinsGameState.h"
 #include "GameModes/AssassinsExperienceComponent.h"
 #include "Character/AssassinsPawnData.h"
+#include "Character/AssassinsPawnExtensionComponent.h"
 #include "AssassinsLogCategories.h"
 
 AAssassinsPlayerState::AAssassinsPlayerState(const FObjectInitializer& ObjectInitializer)
@@ -46,6 +47,15 @@ void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData)
     //MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PawnData, this);
 
     PawnData = InPawnData;
+
+    for (UAssassinsAbilitySet* AbilitySet : PawnData->AbilitySets)
+    {
+        if (AbilitySet)
+        {
+            // Me: Shouldn't handles be needed to remove abilities?
+            AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
+        }
+    }
 }
 
 void AAssassinsPlayerState::PostInitializeComponents()
@@ -53,6 +63,7 @@ void AAssassinsPlayerState::PostInitializeComponents()
     Super::PostInitializeComponents();
 
     check(AbilitySystemComponent);
+ 
     AbilitySystemComponent->InitAbilityActorInfo(this, GetPawn());
 
     UWorld* World = GetWorld();
@@ -66,10 +77,16 @@ void AAssassinsPlayerState::PostInitializeComponents()
     }
 }
 
+void AAssassinsPlayerState::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
 void AAssassinsPlayerState::OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience)
 {
     if (AAssassinsGameMode* AssassinsGameMode = GetWorld()->GetAuthGameMode<AAssassinsGameMode>())
     {
+        // Me: Because this PlayerState doesn't have one, the function gets the PawnData from the loaded experience.
         if (const UAssassinsPawnData* NewPawnData = AssassinsGameMode->GetPawnDataForController(GetOwningController()))
         {
             SetPawnData(NewPawnData);

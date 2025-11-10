@@ -3,7 +3,7 @@
 
 #include "Input/AssassinsInputConfig.h"
 
-const UInputAction* UAssassinsInputConfig::FindNativeInputActionForTag(const FGameplayTag& InputTag)
+const UInputAction* UAssassinsInputConfig::FindNativeInputActionForTag(const FGameplayTag& InputTag) const
 {
 	for (const FAssassinsInputAction& Action : NativeInputActions)
 	{
@@ -15,7 +15,7 @@ const UInputAction* UAssassinsInputConfig::FindNativeInputActionForTag(const FGa
 	return nullptr;
 }
 
-const UInputAction* UAssassinsInputConfig::FindAbilityInputActionForTag(const FGameplayTag& InputTag)
+const UInputAction* UAssassinsInputConfig::FindAbilityInputActionForTag(const FGameplayTag& InputTag) const
 {
 	for (const FAssassinsInputAction& Action : AbilityInputActions)
 	{

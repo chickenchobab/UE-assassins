@@ -71,6 +71,20 @@ UAbilitySystemComponent* AAssassinsCharacter::GetAbilitySystemComponent() const
 	return PawnExtComponent->GetAssassinsAbilitySystemComponent();
 }
 
+void AAssassinsCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	PawnExtComponent->HandleControllerChanged();
+}
+
+void AAssassinsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PawnExtComponent->SetupPlayerInputComponent();
+}
+
 void AAssassinsCharacter::OnAbilitySystemInitialized()
 {
 }

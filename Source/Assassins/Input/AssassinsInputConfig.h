@@ -10,8 +10,7 @@
 class UInputAction;
 class UInputMappingContext;
 
-
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FInputMappingContextAndPriority
 {
 	GENERATED_BODY()
@@ -23,7 +22,6 @@ struct FInputMappingContextAndPriority
 	UPROPERTY(EditAnywhere, Category = "Input")
 	int32 Priority = 0;
 };
-
 
 USTRUCT(BlueprintType)
 struct FAssassinsInputAction
@@ -40,18 +38,18 @@ struct FAssassinsInputAction
 /**
  * 
  */
-UCLASS()
+UCLASS(BlueprintType, Const)
 class ASSASSINS_API UAssassinsInputConfig : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
+	
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Pawn")
+	const UInputAction* FindNativeInputActionForTag(const FGameplayTag& InputTag) const;
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Pawn")
-	const UInputAction* FindNativeInputActionForTag(const FGameplayTag& InputTag);
-
-	UFUNCTION(BlueprintCallable, Category = "Assassins|Pawn")
-	const UInputAction* FindAbilityInputActionForTag(const FGameplayTag& InputTag);
+	const UInputAction* FindAbilityInputActionForTag(const FGameplayTag& InputTag) const;
 	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))

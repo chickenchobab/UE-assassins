@@ -2,45 +2,28 @@
 
 
 #include "Character/AssassinsHeroComponent.h"
-
-#include "Player/AssassinsPlayerState.h"
-#include "Player/AssassinsPlayerController.h"
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "Character/AssassinsPawnData.h"
+#include "Player/AssassinsPlayerState.h"
+#include "Player/AssassinsPlayerController.h"
+#include "Player/AssassinsLocalPlayer.h"
 #include "AssassinsGameplayTags.h"
 #include "Components/GameFrameworkComponentManager.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
+#include "Input/AssassinsInputComponent.h"
+#include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "NiagaraFunctionLibrary.h"
+
 
 const FName UAssassinsHeroComponent::NAME_ActorFeatureName("Hero");
 
-void UAssassinsHeroComponent::OnRegister()
+UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
-	Super::OnRegister();;
-
-	// It should be added to a blueprint whose base class is a Pawn.
-	if (GetPawn<APawn>()) 
-	{
-		// Register with the init state system early, this will only work if this is a game world
-		RegisterInitStateFeature();
-	}
-}
-
-void UAssassinsHeroComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// Listen for when the pawn extension component changes init state
-	BindOnActorInitStateChanged(UAssassinsPawnExtensionComponent::NAME_ActorFeatureName, FGameplayTag(), false);
-
-	// Notifies that we are done spawning, then try the rest of initialization
-	ensure(TryToChangeInitState(AssassinsGameplayTags::InitState_Spawned));
-	CheckDefaultInitialization();
-}
-
-void UAssassinsHeroComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	UnregisterInitStateFeature();
-
-	Super::EndPlay(EndPlayReason);
+	CachedDestination = FVector::ZeroVector;
+	FollowTime = 0.f;
 }
 
 bool UAssassinsHeroComponent::CanChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState) const
@@ -63,6 +46,22 @@ bool UAssassinsHeroComponent::CanChangeInitState(UGameFrameworkComponentManager*
 		if (!GetPlayerState<AAssassinsPlayerState>())
 		{
 			return false;
+		}
+
+		// If we're authority or autonomous, we need to wait for a controller with registered ownership of the player state.
+		if (Pawn->GetLocalRole() != ROLE_SimulatedProxy)
+		{
+			AController* Controller = GetController<AController>();
+
+			const bool bHasControllerPairedWithPS = \
+				(Controller != nullptr) && \
+				(Controller->PlayerState != nullptr) && \
+				(Controller->PlayerState->GetOwner() == Controller);
+
+			if (!bHasControllerPairedWithPS)
+			{
+				return false;
+			}
 		}
 
 		const bool bIsLocallyControlled = Pawn->IsLocallyControlled();
@@ -118,6 +117,19 @@ void UAssassinsHeroComponent::HandleChangeInitState(UGameFrameworkComponentManag
 			// The ability system component and attribute sets live on the player state.
 			PawnExtComp->InitializeAbilitySystem(AssassinsPS->GetAssassinsAbilitySystemComponent(), AssassinsPS);
 		}
+
+		if (AAssassinsPlayerController* AssassinsPC = GetController<AAssassinsPlayerController>())
+		{
+			CachedPlayerController = AssassinsPC;
+
+			CachedPlayerController->bShowMouseCursor = true;
+			CachedPlayerController->DefaultMouseCursor = EMouseCursor::Default;
+
+			if (Pawn->InputComponent)
+			{
+				InitializePlayerInput(Pawn->InputComponent);
+			}
+		}
 	}
 }
 
@@ -139,4 +151,172 @@ void UAssassinsHeroComponent::CheckDefaultInitialization()
 
 	// This will try to progress from spawned (which is only set in BeginPlay) through the data initialization stages until it gets to gameplay ready
 	ContinueInitStateChain(StateChain);
+}
+
+
+void UAssassinsHeroComponent::OnRegister()
+{
+	Super::OnRegister();;
+
+	// It should be added to a blueprint whose base class is a Pawn.
+	if (GetPawn<APawn>()) 
+	{
+		// Register with the init state system early, this will only work if this is a game world
+		RegisterInitStateFeature();
+	}
+}
+
+void UAssassinsHeroComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Listen for when the pawn extension component changes init state
+	BindOnActorInitStateChanged(UAssassinsPawnExtensionComponent::NAME_ActorFeatureName, FGameplayTag(), false);
+
+	// Notifies that we are done spawning, then try the rest of initialization
+	ensure(TryToChangeInitState(AssassinsGameplayTags::InitState_Spawned));
+	CheckDefaultInitialization();
+}
+
+void UAssassinsHeroComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UnregisterInitStateFeature();
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void UAssassinsHeroComponent::InitializePlayerInput(UInputComponent* PlayerInputComponent)
+{
+	check(PlayerInputComponent);
+
+	const APawn* Pawn = GetPawn<APawn>();
+	if (!Pawn)
+	{
+		return;
+	}
+
+	const APlayerController* PC = GetController<APlayerController>();
+	check(PC);
+
+	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(PC->GetLocalPlayer());
+	check(LP);
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
+	check(Subsystem);
+
+	Subsystem->ClearAllMappings();
+
+	if (UAssassinsPawnExtensionComponent* PawnExtComp = UAssassinsPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
+	{
+		if (const UAssassinsPawnData* PawnData = PawnExtComp->GetPawnData<UAssassinsPawnData>())
+		{
+			if (UAssassinsInputConfig* InputConfig = PawnData->InputConfig)
+			{
+				// Add default Input Mapping Contexts
+				for (const FInputMappingContextAndPriority Mapping : DefaultInputMappings)
+				{
+					if (UInputMappingContext* IMC = Mapping.InputMapping.LoadSynchronous())
+					{
+						Subsystem->AddMappingContext(IMC, Mapping.Priority);
+					}
+				}
+
+				// Set up action bindings
+				if (UAssassinsInputComponent* AssassinsIC = Cast<UAssassinsInputComponent>(PlayerInputComponent))
+				{
+					// Setup mouse input events
+					AssassinsIC->BindNativeAction(InputConfig, AssassinsGameplayTags::InputTag_SetDestination_Click, ETriggerEvent::Started, this, &ThisClass::OnInputStarted);
+					AssassinsIC->BindNativeAction(InputConfig, AssassinsGameplayTags::InputTag_SetDestination_Click, ETriggerEvent::Triggered, this, &ThisClass::OnSetDestinationTriggered);
+					AssassinsIC->BindNativeAction(InputConfig, AssassinsGameplayTags::InputTag_SetDestination_Click, ETriggerEvent::Completed, this, &ThisClass::OnSetDestinationReleased);
+					AssassinsIC->BindNativeAction(InputConfig, AssassinsGameplayTags::InputTag_SetDestination_Click, ETriggerEvent::Canceled, this, &ThisClass::OnSetDestinationReleased);
+
+					TArray<uint32> BindHandles;
+					AssassinsIC->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, /*out*/ BindHandles);
+				}
+				else
+				{
+					UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+				}
+			}
+		}
+	}
+}
+
+void UAssassinsHeroComponent::OnInputStarted()
+{
+	if (CachedPlayerController)
+	{
+		CachedPlayerController->StopMovement();
+	}
+}
+
+// Triggered every frame when the input is held down
+void UAssassinsHeroComponent::OnSetDestinationTriggered()
+{
+	// We flag that the input is being pressed
+	FollowTime += GetWorld()->GetDeltaSeconds();
+
+	// We look for the location in the world where the player has pressed the input
+	FHitResult Hit;
+	bool bHitSuccessful = false;
+
+	if (CachedPlayerController)
+	{
+		bHitSuccessful = CachedPlayerController->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
+	}
+
+	// If we hit a surface, cache the location
+	if (bHitSuccessful)
+	{
+		CachedDestination = Hit.Location;
+	}
+
+	// Move towards mouse pointer or touch
+	APawn* ControlledPawn = GetPawn<APawn>();
+	if (ControlledPawn != nullptr)
+	{
+		FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
+	}
+}
+
+void UAssassinsHeroComponent::OnSetDestinationReleased()
+{
+	// If it was a short press
+	if (FollowTime <= ShortPressThreshold)
+	{
+		// We move there and spawn some particles
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(CachedPlayerController, CachedDestination);
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CachedDestination, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
+	}
+
+	FollowTime = 0.f;
+}
+
+void UAssassinsHeroComponent::Input_AbilityInputTagPressed(FGameplayTag InputTag)
+{
+	if (const APawn* PlayerPawn = GetPawn<APawn>())
+	{
+		if (const UAssassinsPawnExtensionComponent* PawnExtComp = UAssassinsPawnExtensionComponent::FindPawnExtensionComponent(PlayerPawn))
+		{
+			if (UAssassinsAbilitySystemComponent* AssassinsASC = PawnExtComp->GetAssassinsAbilitySystemComponent())
+			{
+				AssassinsASC->AbilityInputTagPressed(InputTag);
+			}
+		}
+	}
+}
+
+void UAssassinsHeroComponent::Input_AbilityInputTagReleased(FGameplayTag InputTag)
+{
+	if (const APawn* PlayerPawn = GetPawn<APawn>())
+	{
+		if (const UAssassinsPawnExtensionComponent* PawnExtComp = UAssassinsPawnExtensionComponent::FindPawnExtensionComponent(PlayerPawn))
+		{
+			if (UAssassinsAbilitySystemComponent* AssassinsASC = PawnExtComp->GetAssassinsAbilitySystemComponent())
+			{
+				AssassinsASC->AbilityInputTagReleased(InputTag);
+			}
+		}
+	}
 }

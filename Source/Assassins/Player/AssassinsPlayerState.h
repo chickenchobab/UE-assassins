@@ -38,6 +38,7 @@ public:
 
 	//~AActor interface
 	virtual void PostInitializeComponents() override;
+	//~End of AActor interface
 
 private:
 	void OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience);
