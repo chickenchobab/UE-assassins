@@ -16,7 +16,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 
 UCLASS()
-class AAssassinsPlayerController : public APlayerController
+class AAssassinsPlayerController : public ACommonPlayerController
 {
 	GENERATED_BODY()
 
