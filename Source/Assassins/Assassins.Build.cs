@@ -36,6 +36,8 @@ public class Assassins : ModuleRules
 
         PrivateDependencyModuleNames.AddRange(
             new string[] {
+                "Slate",
+                "SlateCore",
                 "UMG",
                 "CommonUI",
                 "CommonInput",

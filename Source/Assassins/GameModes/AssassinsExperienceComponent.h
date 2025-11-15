@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Components/GameStateComponent.h"
+#include "LoadingProcessInterface.h"
 
 #include "AssassinsExperienceComponent.generated.h"
 
@@ -26,7 +27,7 @@ enum class EAssassinsExperienceLoadState
  * 
  */
 UCLASS()
-class ASSASSINS_API UAssassinsExperienceComponent : public UGameStateComponent
+class ASSASSINS_API UAssassinsExperienceComponent : public UGameStateComponent, public ILoadingProcessInterface
 {
 	GENERATED_BODY()
 	
@@ -34,6 +35,10 @@ public:
 	//~UActorComponent interface
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	//~End of UActorComponent interface
+
+	//~ILoadingProcessInterface interface
+	virtual bool ShouldShowLoadingScreen(FString& OutReason) const override;
+	//~End of ILoadingProcessInterface interface
 
 	// Tries to set the current experience, either a UI or gameplay one
 	void SetCurrentExperience(FPrimaryAssetId ExperienceId);

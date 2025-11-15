@@ -77,6 +77,17 @@ void UAssassinsExperienceComponent::EndPlay(const EEndPlayReason::Type EndPlayRe
 	}
 }
 
+bool UAssassinsExperienceComponent::ShouldShowLoadingScreen(FString& OutReason) const
+{
+	if (LoadState != EAssassinsExperienceLoadState::Loaded)
+	{
+		OutReason = TEXT("Experience still loading");
+		return true;
+	}
+
+	return false;
+}
+
 void UAssassinsExperienceComponent::SetCurrentExperience(FPrimaryAssetId ExperienceId)
 {
 	UAssetManager& AssetManager = UAssetManager::Get();
