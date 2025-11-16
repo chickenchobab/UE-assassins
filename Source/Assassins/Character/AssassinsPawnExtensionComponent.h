@@ -76,6 +76,6 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Assassins|Pawn")
 	TObjectPtr<const UAssassinsPawnData> PawnData;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TObjectPtr<UAssassinsAbilitySystemComponent> AbilitySystemComponent;
 };

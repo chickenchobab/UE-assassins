@@ -25,16 +25,11 @@ public:
 
 	UAssassinsAbilitySystemComponent* GetAssassinsAbilitySystemComponent() const;
 
-public:
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputAction* SetDestinationClickAction;
-
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
-	UInputAction* SetDestinationTouchAction;
-
 protected:	
+
+	//~AController interface
+	virtual void OnUnPossess() override;
+	//~End of AController interface
 
 	//~APlayerController interface
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;

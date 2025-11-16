@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -20,6 +21,23 @@ UAssassinsAbilitySystemComponent* AAssassinsPlayerController::GetAssassinsAbilit
 {
 	const AAssassinsPlayerState* AssassinsPS = GetPlayerState<AAssassinsPlayerState>();
 	return AssassinsPS ? AssassinsPS->GetAssassinsAbilitySystemComponent() : nullptr;
+}
+
+void AAssassinsPlayerController::OnUnPossess()
+{
+	// Make sure the pawn that is being unpossessed doesn't remain our ASC's avatar actor
+	if (APawn* PawnBeingUnpossessed = GetPawn())
+	{
+		if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(PlayerState))
+		{
+			if (ASC->GetAvatarActor() == PawnBeingUnpossessed)
+			{
+				ASC->SetAvatarActor(nullptr);
+			}
+		}
+	}
+
+	Super::OnUnPossess();
 }
 
 void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)

@@ -298,7 +298,7 @@ void AAssassinsGameMode::HandleMatchAssignmentIfNotExpectingOne()
 		//TODO: TryDedicatedServerLogin
 
 		//@TODO: Pull this from a config setting or something
-		ExperienceId = FPrimaryAssetId(FPrimaryAssetType("AssassinsExperienceDefinition"), FName("BP_AssassinsDefaultExperience"));
+		ExperienceId = FPrimaryAssetId(FPrimaryAssetType("AssassinsExperienceDefinition"), FName("B_AssassinsDefaultExperience"));
 		ExperienceIdSource = TEXT("Default");
 	}
 

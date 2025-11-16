@@ -11,15 +11,23 @@ UCommonSession_HostSessionRequest* UAssassinsExperienceEntry::CreateHostingReque
 
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
     UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
-    UCommonSession_HostSessionRequest* Result = NewObject<UCommonSession_HostSessionRequest>();
+    UCommonSession_HostSessionRequest* Result = nullptr;
 
-    Result->OnlineMode = ECommonSessionOnlineMode::Online;
-    Result->bUseLobbies = true;
-    Result->bUseLobbiesVoiceChat = false;
-    // We always enable presence on this session because it is the primary session used for matchmaking. 
-    // For online systems that care about presence, only the primary session should have presence enabled
-    Result->bUsePresence = !IsRunningDedicatedServer();
+    if (UCommonSessionSubsystem* Subsystem = GameInstance ? GameInstance->GetSubsystem<UCommonSessionSubsystem>() : nullptr)
+    {
+        Result = Subsystem->CreateOnlineHostSessionRequest();
+    }
 
+    if (Result == nullptr)
+    {
+        Result = NewObject<UCommonSession_HostSessionRequest>();
+        Result->OnlineMode = ECommonSessionOnlineMode::Online;
+        Result->bUseLobbies = true;
+        Result->bUseLobbiesVoiceChat = false;
+        // We always enable presence on this session because it is the primary session used for matchmaking. 
+        // For online systems that care about presence, only the primary session should have presence enabled
+        Result->bUsePresence = !IsRunningDedicatedServer();
+    }
     Result->MapID = MapID;
     Result->ModeNameForAdvertisement = ExperienceEntryName;
     Result->ExtraArgs = ExtraArgs;
