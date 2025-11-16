@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Templates/SubclassOf.h"
-#include "GameFramework/PlayerController.h"
+#include "CommonPlayerController.h"
 #include "GameplayTagContainer.h"
 
 #include "AssassinsPlayerController.generated.h"
