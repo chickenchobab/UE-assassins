@@ -11,6 +11,10 @@
 #include "Character/AssassinsPawnData.h"
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "AssassinsLogCategories.h"
+#include "Components/GameFrameworkComponentManager.h"
+
+
+const FName AAssassinsPlayerState::NAME_AssassinsAbilityReady("AssassinsAbilityReady");
 
 AAssassinsPlayerState::AAssassinsPlayerState(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -56,6 +60,8 @@ void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData)
             AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
         }
     }
+
+    UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(this, NAME_AssassinsAbilityReady);
 }
 
 void AAssassinsPlayerState::PostInitializeComponents()

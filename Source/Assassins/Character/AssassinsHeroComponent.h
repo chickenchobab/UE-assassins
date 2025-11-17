@@ -27,6 +27,9 @@ public:
 	/** The name of this overall feature, this one depends on the other named component features */
 	static const FName NAME_ActorFeatureName;
 
+	/** The name of the extension event sent via UGameFrameworkComponentManager when ability inputs are ready to bind */
+	static const FName NAME_BindInputsNow;
+
 	//~ Begin IGameFrameworkInitStateInterface interface
 	virtual FName GetFeatureName() const override { return NAME_ActorFeatureName; }
 	virtual bool CanChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState) const override;

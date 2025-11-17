@@ -31,6 +31,8 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	//~End IAbilitySystemInterface interface
 
+	static const FName NAME_AssassinsAbilityReady;
+
 	template <class T>
 	const T* GetPawnData() const { return Cast<T>(PawnData); }
 

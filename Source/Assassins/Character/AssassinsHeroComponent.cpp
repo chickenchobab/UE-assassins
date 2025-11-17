@@ -18,6 +18,7 @@
 
 
 const FName UAssassinsHeroComponent::NAME_ActorFeatureName("Hero");
+const FName UAssassinsHeroComponent::NAME_BindInputsNow("BindInputsNow");
 
 UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -240,6 +241,9 @@ void UAssassinsHeroComponent::InitializePlayerInput(UInputComponent* PlayerInput
 			}
 		}
 	}
+
+	UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APlayerController*>(PC), NAME_BindInputsNow);
+	UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APawn*>(Pawn), NAME_BindInputsNow);
 }
 
 void UAssassinsHeroComponent::OnInputStarted()
