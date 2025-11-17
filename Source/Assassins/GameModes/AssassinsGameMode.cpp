@@ -16,6 +16,8 @@
 #include "Engine/AssetManager.h"
 #include "AssassinsLogCategories.h"
 #include "System/AssassinsAssetManager.h"
+#include "UI/AssassinsHUD.h"
+
 
 AAssassinsGameMode::AAssassinsGameMode()
 {
@@ -23,6 +25,7 @@ AAssassinsGameMode::AAssassinsGameMode()
 	PlayerControllerClass = AAssassinsPlayerController::StaticClass();
 	PlayerStateClass = AAssassinsPlayerState::StaticClass();
 	DefaultPawnClass = AAssassinsCharacter::StaticClass();
+	HUDClass = AAssassinsHUD::StaticClass();
 }
 
 const UAssassinsPawnData* AAssassinsGameMode::GetPawnDataForController(const AController* InController) const
