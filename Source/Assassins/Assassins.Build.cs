@@ -43,6 +43,7 @@ public class Assassins : ModuleRules
                 "CommonInput",
                 "CommonGame",
                 "CommonUser",
+                "UIExtension",
             }
         );
     }
