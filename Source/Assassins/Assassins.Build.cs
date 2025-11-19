@@ -44,6 +44,7 @@ public class Assassins : ModuleRules
                 "CommonGame",
                 "CommonUser",
                 "UIExtension",
+                "GameSubtitles"
             }
         );
     }
