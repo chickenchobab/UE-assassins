@@ -5,7 +5,7 @@
 #include "Components/GameStateComponent.h"
 #include "LoadingProcessInterface.h"
 
-#include "AssassinsExperienceComponent.generated.h"
+#include "AssassinsExperienceStateComponent.generated.h"
 
 namespace UE::GameFeatures { struct FResult; }
 class UAssassinsExperienceDefinition;
@@ -27,7 +27,7 @@ enum class EAssassinsExperienceLoadState
  * 
  */
 UCLASS()
-class ASSASSINS_API UAssassinsExperienceComponent : public UGameStateComponent, public ILoadingProcessInterface
+class ASSASSINS_API UAssassinsExperienceStateComponent : public UGameStateComponent, public ILoadingProcessInterface
 {
 	GENERATED_BODY()
 	

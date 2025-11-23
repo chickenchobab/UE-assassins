@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AssassinsExperienceComponent.h"
+#include "GameModes/AssassinsExperienceStateComponent.h"
 #include "GameModes/AssassinsExperienceDefinition.h"
 #include "GameModes/AssassinsExperienceActionSet.h"
 #include "GameModes/AssassinsExperienceManager.h"
@@ -11,7 +11,7 @@
 #include "GameFeaturesSubsystem.h"
 #include "GameFeatureAction.h"
 
-void UAssassinsExperienceComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void UAssassinsExperienceStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
@@ -77,7 +77,7 @@ void UAssassinsExperienceComponent::EndPlay(const EEndPlayReason::Type EndPlayRe
 	}
 }
 
-bool UAssassinsExperienceComponent::ShouldShowLoadingScreen(FString& OutReason) const
+bool UAssassinsExperienceStateComponent::ShouldShowLoadingScreen(FString& OutReason) const
 {
 	if (LoadState != EAssassinsExperienceLoadState::Loaded)
 	{
@@ -88,7 +88,7 @@ bool UAssassinsExperienceComponent::ShouldShowLoadingScreen(FString& OutReason) 
 	return false;
 }
 
-void UAssassinsExperienceComponent::SetCurrentExperience(FPrimaryAssetId ExperienceId)
+void UAssassinsExperienceStateComponent::SetCurrentExperience(FPrimaryAssetId ExperienceId)
 {
 	UAssetManager& AssetManager = UAssetManager::Get();
 	FSoftObjectPath AssetPath = AssetManager.GetPrimaryAssetPath(ExperienceId);
@@ -102,7 +102,7 @@ void UAssassinsExperienceComponent::SetCurrentExperience(FPrimaryAssetId Experie
 	StartExperienceLoad();
 }
 
-void UAssassinsExperienceComponent::CallOrRegister_OnExperienceLoaded_HighPriority(FOnAssassinsExperienceLoaded::FDelegate&& Delegate)
+void UAssassinsExperienceStateComponent::CallOrRegister_OnExperienceLoaded_HighPriority(FOnAssassinsExperienceLoaded::FDelegate&& Delegate)
 {
 	if (IsExperienceLoaded())
 	{
@@ -114,7 +114,7 @@ void UAssassinsExperienceComponent::CallOrRegister_OnExperienceLoaded_HighPriori
 	}
 }
 
-void UAssassinsExperienceComponent::CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate&& Delegate)
+void UAssassinsExperienceStateComponent::CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate&& Delegate)
 {
 	if (IsExperienceLoaded())
 	{
@@ -126,7 +126,7 @@ void UAssassinsExperienceComponent::CallOrRegister_OnExperienceLoaded(FOnAssassi
 	}
 }
 
-void UAssassinsExperienceComponent::CallOrRegister_OnExperienceLoaded_LowPriority(FOnAssassinsExperienceLoaded::FDelegate&& Delegate)
+void UAssassinsExperienceStateComponent::CallOrRegister_OnExperienceLoaded_LowPriority(FOnAssassinsExperienceLoaded::FDelegate&& Delegate)
 {
 	if (IsExperienceLoaded())
 	{
@@ -138,19 +138,19 @@ void UAssassinsExperienceComponent::CallOrRegister_OnExperienceLoaded_LowPriorit
 	}
 }
 
-const UAssassinsExperienceDefinition* UAssassinsExperienceComponent::GetCurrentExperienceChecked() const
+const UAssassinsExperienceDefinition* UAssassinsExperienceStateComponent::GetCurrentExperienceChecked() const
 {
 	check(LoadState == EAssassinsExperienceLoadState::Loaded);
 	check(CurrentExperience != nullptr);
 	return CurrentExperience;
 }
 
-bool UAssassinsExperienceComponent::IsExperienceLoaded() const
+bool UAssassinsExperienceStateComponent::IsExperienceLoaded() const
 {
 	return (LoadState == EAssassinsExperienceLoadState::Loaded) && (CurrentExperience != nullptr);
 }
 
-void UAssassinsExperienceComponent::StartExperienceLoad()
+void UAssassinsExperienceStateComponent::StartExperienceLoad()
 {
 	check(CurrentExperience != nullptr);
 	check(LoadState == EAssassinsExperienceLoadState::Unloaded);
@@ -231,7 +231,7 @@ void UAssassinsExperienceComponent::StartExperienceLoad()
 	}
 }
 
-void UAssassinsExperienceComponent::OnExperienceLoadComplete()
+void UAssassinsExperienceStateComponent::OnExperienceLoadComplete()
 {
 	check(LoadState == EAssassinsExperienceLoadState::Loading);
 	check(CurrentExperience != nullptr);
@@ -283,7 +283,7 @@ void UAssassinsExperienceComponent::OnExperienceLoadComplete()
 	}
 }
 
-void UAssassinsExperienceComponent::OnGameFeaturePluginLoadComplete(const UE::GameFeatures::FResult& Result)
+void UAssassinsExperienceStateComponent::OnGameFeaturePluginLoadComplete(const UE::GameFeatures::FResult& Result)
 {
 	// Decrement the number of plugins that are loading 
 	--NumGameFeaturePluginsLoading;
@@ -294,7 +294,7 @@ void UAssassinsExperienceComponent::OnGameFeaturePluginLoadComplete(const UE::Ga
 	}
 }
 
-void UAssassinsExperienceComponent::OnExperienceFullLoadCompleted()
+void UAssassinsExperienceStateComponent::OnExperienceFullLoadCompleted()
 {
 	check(LoadState != EAssassinsExperienceLoadState::Loaded);
 
@@ -347,7 +347,7 @@ void UAssassinsExperienceComponent::OnExperienceFullLoadCompleted()
 	OnExperienceLoaded_LowPriority.Clear();
 }
 
-void UAssassinsExperienceComponent::OnActionDeactivationCompleted()
+void UAssassinsExperienceStateComponent::OnActionDeactivationCompleted()
 {
 	check(IsInGameThread());
 	++NumObservedPausers;
@@ -358,7 +358,7 @@ void UAssassinsExperienceComponent::OnActionDeactivationCompleted()
 	}
 }
 
-void UAssassinsExperienceComponent::OnAllActionsDeactivated()
+void UAssassinsExperienceStateComponent::OnAllActionsDeactivated()
 {
 	//@TODO: We actually only deactivated and didn't fully unload...
 	LoadState = EAssassinsExperienceLoadState::Unloaded;

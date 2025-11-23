@@ -5,7 +5,7 @@
 #include "Player/AssassinsPlayerSpawnerComponent.h"
 #include "Player/AssassinsPlayerState.h"
 #include "GameModes/AssassinsExperienceDefinition.h"
-#include "GameModes/AssassinsExperienceComponent.h"
+#include "GameModes/AssassinsExperienceStateComponent.h"
 #include "GameModes/AssassinsWorldSettings.h"
 #include "GameModes/AssassinsGameState.h"
 #include "Character/AssassinsCharacter.h"
@@ -44,7 +44,7 @@ const UAssassinsPawnData* AAssassinsGameMode::GetPawnDataForController(const ACo
 
 	// If not, fall back to the default for the current experience
 	check(GameState);
-	UAssassinsExperienceComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceComponent>();
+	UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
 	check(ExperienceComponent);
 
 	if (ExperienceComponent->IsExperienceLoaded())
@@ -76,7 +76,7 @@ void AAssassinsGameMode::InitGameState()
 	Super::InitGameState();
 
 	// Listen for the experience load to complete
-	UAssassinsExperienceComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceComponent>();
+	UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
 	check(ExperienceComponent);
 	ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
 }
@@ -249,7 +249,7 @@ bool AAssassinsGameMode::ControllerCanRestart(AController* Controller)
 bool AAssassinsGameMode::IsExperienceLoaded() const
 {
 	check(GameState);
-	UAssassinsExperienceComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceComponent>();
+	UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
 	check(ExperienceComponent);
 
 	return ExperienceComponent->IsExperienceLoaded();
@@ -314,7 +314,7 @@ void AAssassinsGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, co
 	{
 		UE_LOG(LogAssassinsExperience, Log, TEXT("Identified experience %s (Source: %s)"), *ExperienceId.ToString(), *ExperienceIdSource);
 
-		UAssassinsExperienceComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceComponent>();
+		UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
 		check(ExperienceComponent);
 		ExperienceComponent->SetCurrentExperience(ExperienceId);
 	}

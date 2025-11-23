@@ -2,7 +2,8 @@
 
 
 #include "GameModes/AssassinsGameState.h"
-#include "AssassinsExperienceComponent.h"
+#include "AssassinsExperienceStateComponent.h"
+#include "Player/AssassinsPlayerState.h"
 
 AAssassinsGameState::AAssassinsGameState(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -10,5 +11,6 @@ AAssassinsGameState::AAssassinsGameState(const FObjectInitializer& ObjectInitial
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	ExperienceComponent = CreateDefaultSubobject<UAssassinsExperienceComponent>(TEXT("ExperienceComponent"));
+	ExperienceComponent = CreateDefaultSubobject<UAssassinsExperienceStateComponent>(TEXT("ExperienceComponent"));
+}
 }

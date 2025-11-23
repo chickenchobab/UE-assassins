@@ -5,7 +5,7 @@
 #include "ModularGameState.h"
 #include "AssassinsGameState.generated.h"
 
-class UAssassinsExperienceComponent;
+class UAssassinsExperienceStateComponent;
 
 /**
  * 
@@ -21,6 +21,6 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Assassins|GameState")
-	TObjectPtr<UAssassinsExperienceComponent> ExperienceComponent;
+	TObjectPtr<UAssassinsExperienceStateComponent> ExperienceComponent;
 	
 };

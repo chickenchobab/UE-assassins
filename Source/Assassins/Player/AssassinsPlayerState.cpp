@@ -7,7 +7,7 @@
 #include "AbilitySystem/AssassinsAbilitySet.h"
 #include "GameModes/AssassinsGameMode.h"
 #include "GameModes/AssassinsGameState.h"
-#include "GameModes/AssassinsExperienceComponent.h"
+#include "GameModes/AssassinsExperienceStateComponent.h"
 #include "Character/AssassinsPawnData.h"
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "AssassinsLogCategories.h"
@@ -77,7 +77,7 @@ void AAssassinsPlayerState::PostInitializeComponents()
     {
         AGameStateBase* GameState = World->GetGameState();
         check(GameState);
-        UAssassinsExperienceComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceComponent>();
+        UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
         check(ExperienceComponent);
         ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
     }
