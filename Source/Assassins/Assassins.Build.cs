@@ -30,7 +30,8 @@ public class Assassins : ModuleRules
                 "GameplayTasks",
                 "GameplayAbilities",
                 "GameFeatures",
-                "CommonLoadingScreen"
+                "CommonLoadingScreen",
+                "ControlFlows"
             }
         );
 
