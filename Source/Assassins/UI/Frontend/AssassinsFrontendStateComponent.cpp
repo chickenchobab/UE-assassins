@@ -10,7 +10,10 @@
 #include "PrimaryGameLayout.h"
 #include "NativeGameplayTags.h"
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_UI_LAYER_MENU, "UI.Layer.Menu");
+namespace FrontendTags
+{
+    UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_UI_LAYER_MENU, "UI.Layer.Menu");
+}
 
 void UAssassinsFrontendStateComponent::BeginPlay()
 {
@@ -134,7 +137,7 @@ void UAssassinsFrontendStateComponent::FlowStrp_TryShowMainScreen(FControlFlowNo
     if (UPrimaryGameLayout* RootLayout = UPrimaryGameLayout::GetPrimaryGameLayoutForPrimaryPlayer(this))
     {
         constexpr bool bSuspendInputUntilComplete = true;
-        RootLayout->PushWidgetToLayerStackAsync<UCommonActivatableWidget>(TAG_UI_LAYER_MENU, bSuspendInputUntilComplete, MainScreenClass,
+        RootLayout->PushWidgetToLayerStackAsync<UCommonActivatableWidget>(FrontendTags::TAG_UI_LAYER_MENU, bSuspendInputUntilComplete, MainScreenClass,
             [this, SubFlow](EAsyncWidgetLayerState State, UCommonActivatableWidget* Screen) {
             switch (State)
             {
