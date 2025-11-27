@@ -43,7 +43,7 @@ private:
 	TObjectPtr<UAssassinsPawnExtensionComponent> PawnExtComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Character", Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr< UAssassinsHealthComponent> HealthComponent;
+	TObjectPtr<UAssassinsHealthComponent> HealthComponent;
 	
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))

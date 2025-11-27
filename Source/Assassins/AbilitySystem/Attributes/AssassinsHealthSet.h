@@ -26,6 +26,12 @@ public:
 	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, Healing);
 	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, Damage);
 
+	// Delegate when health changes due to damage/healing, some information may be missing on the client
+	mutable FAssassinsAttributeEvent OnHealthChanged;
+
+	// Delegate to broadcast when the health attribute reaches zero
+	mutable FAssassinsAttributeEvent OnOutOfHealth;
+
 protected:
 	
 	//~UAttributeSet interface
@@ -41,7 +47,7 @@ protected:
 private:
 
 	// The current health attribute. The health will be capped by the max health attribute.
-	// Me: It should be handled by damage or healing, not by itself
+	// Me: It should be handled by damage or healing, not by itself (HideFromModifiers)
 	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Health", Meta = (HideFromModifiers, AllowPrivateAccess = true))
 	FGameplayAttributeData Health;
 
@@ -51,6 +57,9 @@ private:
 
 	// Used to track when the health reaches 0.
 	bool bOutOfHealth;
+
+	// Store the health before any changes
+	float HealthBeforeAttributeChange;
 
 	// -------------------------------------------------------------------
 	//	Meta Attribute (please keep attributes that aren't 'stateful' below 

@@ -7,15 +7,25 @@
 // Me: TODO: Subdivide the damage
 
 UAssassinsHealthSet::UAssassinsHealthSet()
-	: MaxHealth(100.0f)
-	, Health(100.0f)
+	: Health(100.0f)
+	, MaxHealth(100.0f)
 {
 	bOutOfHealth = false;
+	HealthBeforeAttributeChange = 0.0f;
 }
 
 bool UAssassinsHealthSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data)
 {
-	return Super::PreGameplayEffectExecute(Data);
+
+	if (!Super::PreGameplayEffectExecute(Data))
+	{
+		return false;
+	}
+
+	// Save the current health
+	HealthBeforeAttributeChange = GetHealth();
+
+	return true;
 }
 
 void UAssassinsHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -49,9 +59,14 @@ void UAssassinsHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCall
 		SetHealth(FMath::Clamp(GetHealth(), MinimumHealth, GetMaxHealth()));
 	}
 
-	if ((GetHealth() < 0.0f) && !bOutOfHealth)
+	if (GetHealth() != HealthBeforeAttributeChange)
 	{
-		// Me: Handle death
+		OnHealthChanged.Broadcast(Instigator, Causer, &Data.EffectSpec, Data.EvaluatedData.Magnitude, HealthBeforeAttributeChange, GetHealth());
+	}
+
+	if ((GetHealth() <= 0.0f) && !bOutOfHealth)
+	{
+		OnOutOfHealth.Broadcast(Instigator, Causer, &Data.EffectSpec, Data.EvaluatedData.Magnitude, HealthBeforeAttributeChange, GetHealth());
 	}
 
 	// Check health again in case an event above changed it.
