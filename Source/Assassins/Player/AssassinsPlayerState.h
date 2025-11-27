@@ -10,6 +10,7 @@ class UAssassinsPawnData;
 class UAssassinsAbilitySystemComponent;
 class AAssassinsPlayerController;
 class UAssassinsExperienceDefinition;
+class UAssassinsHealthSet;
 
 /**
  * 
@@ -53,5 +54,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Assassins|PlayerState")
 	TObjectPtr<UAssassinsAbilitySystemComponent> AbilitySystemComponent;
 
-	//Me : HealthSet and CombatSet
+	UPROPERTY()
+	TObjectPtr<const UAssassinsHealthSet> HealthSet;
 };

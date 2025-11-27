@@ -5,6 +5,7 @@
 #include "Player/AssassinsPlayerController.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "AbilitySystem/AssassinsAbilitySet.h"
+#include "AbilitySystem/Attributes/AssassinsHealthSet.h"
 #include "GameModes/AssassinsGameMode.h"
 #include "GameModes/AssassinsGameState.h"
 #include "GameModes/AssassinsExperienceStateComponent.h"
@@ -20,6 +21,8 @@ AAssassinsPlayerState::AAssassinsPlayerState(const FObjectInitializer& ObjectIni
     : Super(ObjectInitializer)
 {
     AbilitySystemComponent = ObjectInitializer.CreateDefaultSubobject<UAssassinsAbilitySystemComponent>(this, TEXT("AbilitySystemComponent"));
+
+    HealthSet = CreateDefaultSubobject<UAssassinsHealthSet>(TEXT("HealthSet"));
 }
 
 AAssassinsPlayerController* AAssassinsPlayerState::GetAssassinsPlayerController() const
