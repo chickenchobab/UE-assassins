@@ -11,6 +11,7 @@ class UAssassinsAbilitySystemComponent;
 class AAssassinsPlayerController;
 class UAssassinsExperienceDefinition;
 class UAssassinsHealthSet;
+class UAssassinsCombatSet;
 
 /**
  * 
@@ -56,4 +57,7 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<const UAssassinsHealthSet> HealthSet;
+
+	UPROPERTY()
+	TObjectPtr<const UAssassinsCombatSet> CombatSet;
 };

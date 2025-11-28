@@ -6,6 +6,7 @@
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "AbilitySystem/AssassinsAbilitySet.h"
 #include "AbilitySystem/Attributes/AssassinsHealthSet.h"
+#include "AbilitySystem/Attributes/AssassinsCombatSet.h"
 #include "GameModes/AssassinsGameMode.h"
 #include "GameModes/AssassinsGameState.h"
 #include "GameModes/AssassinsExperienceStateComponent.h"
@@ -22,7 +23,9 @@ AAssassinsPlayerState::AAssassinsPlayerState(const FObjectInitializer& ObjectIni
 {
     AbilitySystemComponent = ObjectInitializer.CreateDefaultSubobject<UAssassinsAbilitySystemComponent>(this, TEXT("AbilitySystemComponent"));
 
+    // These attribute sets will be detected by AbilitySystemComponent::InitializeComponent. Keeping a reference so that the sets don't get garbage collected before that.
     HealthSet = CreateDefaultSubobject<UAssassinsHealthSet>(TEXT("HealthSet"));
+    CombatSet = CreateDefaultSubobject<UAssassinsCombatSet>(TEXT("CombatSet"));
 }
 
 AAssassinsPlayerController* AAssassinsPlayerState::GetAssassinsPlayerController() const
