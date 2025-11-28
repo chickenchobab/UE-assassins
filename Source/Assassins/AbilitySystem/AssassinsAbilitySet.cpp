@@ -38,7 +38,27 @@ void UAssassinsAbilitySet::GiveToAbilitySystem(UAssassinsAbilitySystemComponent*
 		return;
 	}
 
-	// Gran the gameplay abilities.
+	// Grant the attribute sets.
+	for (int32 SetIndex = 0; SetIndex < GrantedAttributeSets.Num(); ++SetIndex)
+	{
+		const FAssassinsAbilitySet_AttributeSet& SetToGrant = GrantedAttributeSets[SetIndex];
+
+		if (!IsValid(SetToGrant.AttributeSet))
+		{
+			UE_LOG(LogAssassinsAbilitySystem, Error, TEXT("GrantedAttributeSets[%d] on ability set [%s] is not valid"), SetIndex, *GetNameSafe(this));
+			continue;
+		}
+
+		UAttributeSet* NewSet = NewObject<UAttributeSet>(InASC->GetOwner(), SetToGrant.AttributeSet);
+		InASC->AddAttributeSetSubobject(NewSet);
+
+		if (OutGrantedHandles)
+		{
+			OutGrantedHandles->AddAttributeSet(NewSet);
+		}
+	}
+
+	// Grant the gameplay abilities.
 	for (int32 AbilityIndex = 0; AbilityIndex < GrantedGameplayAbilities.Num(); ++AbilityIndex)
 	{
 		const FAssassinsAbilitySet_GameplayAbility& AbilityToGrant = GrantedGameplayAbilities[AbilityIndex];
@@ -63,6 +83,24 @@ void UAssassinsAbilitySet::GiveToAbilitySystem(UAssassinsAbilitySystemComponent*
 		}
 	}
 
-	// Me: TODO gameplay effects and attribute sets
+	// Grant the gameplay effects
+	for (int32 EffectIndex = 0; EffectIndex < GrantedGameplayEffects.Num(); ++EffectIndex)
+	{
+		const FAssassinsAbilitySet_GameplayEffect& EffectToGrant = GrantedGameplayEffects[EffectIndex];
+
+		if (!IsValid(EffectToGrant.GameplayEffect))
+		{
+			UE_LOG(LogAssassinsAbilitySystem, Error, TEXT("GrantedGameplayEffects[%d] on ability set [%s] is not valid."), EffectIndex, *GetNameSafe(this));
+			continue;
+		}
+
+		const UGameplayEffect* GameplayEffect = EffectToGrant.GameplayEffect->GetDefaultObject<UGameplayEffect>();
+		const FActiveGameplayEffectHandle GameplayEffectHandle = InASC->ApplyGameplayEffectToSelf(GameplayEffect, EffectToGrant.EffectLevel, InASC->MakeEffectContext());
+
+		if (OutGrantedHandles)
+		{
+			OutGrantedHandles->AddGameplayEffectHandle(GameplayEffectHandle);
+		}
+	}
 }
 
