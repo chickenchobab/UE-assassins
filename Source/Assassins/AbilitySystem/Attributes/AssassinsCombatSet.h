@@ -18,16 +18,41 @@ class UAssassinsCombatSet : public UAssassinsAttributeSet
 public:
 	UAssassinsCombatSet();
 
-	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, BaseDamage);
-	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, BaseHeal);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, AttackDamage);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, AbilityPower);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, Armor);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicResistance);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, ArmorPenetrationPercent);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, ArmorPenetrationFlat);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicPenetrationPercent);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicPenetrationFlat);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, AttackSpeed);
 
 private:
 
-	// The base amount of damage to apply in the damage execution.
 	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
-	FGameplayAttributeData BaseDamage;
+	FGameplayAttributeData AttackDamage;
 
-	// The base amount of healing to apply in the heal execution.
 	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
-	FGameplayAttributeData BaseHeal;
+	FGameplayAttributeData AbilityPower;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData Armor;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData MagicResistance;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData ArmorPenetrationPercent;
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData ArmorPenetrationFlat;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData MagicPenetrationPercent;
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData MagicPenetrationFlat;
+
+	// Me: The number of attack available per second
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData AttackSpeed;
 };

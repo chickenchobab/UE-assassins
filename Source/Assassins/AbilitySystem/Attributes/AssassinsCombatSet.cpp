@@ -4,7 +4,14 @@
 #include "AbilitySystem/Attributes/AssassinsCombatSet.h"
 
 UAssassinsCombatSet::UAssassinsCombatSet()
-	: BaseDamage(0.0f)
-	, BaseHeal(0.0f)
+	: AttackDamage(0.0f)
+	, AbilityPower(0.0f)
+	, Armor(0.0f)
+	, MagicResistance(0.0f)
+	, ArmorPenetrationPercent(0.0f)
+	, ArmorPenetrationFlat(0.0f)
+	, MagicPenetrationPercent(0.0f)
+	, MagicPenetrationFlat(0.0f)
+	, AttackSpeed(1.0f)
 {
 }
