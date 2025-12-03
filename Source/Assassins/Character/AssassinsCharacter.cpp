@@ -3,6 +3,7 @@
 #include "AssassinsCharacter.h"
 
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "AbilitySystem/Attributes/AssassinsCombatSet.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "Character/AssassinsHealthComponent.h"
@@ -91,9 +92,22 @@ void AAssassinsCharacter::OnAbilitySystemInitialized()
 	check(AssassinsASC);
 
 	HealthComponent->InitializeWithAbilitySystem(AssassinsASC);
+
+	const UAssassinsCombatSet* CombatSet = AssassinsASC->GetSet<UAssassinsCombatSet>();
+	if (CombatSet)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = CombatSet->GetMoveSpeed();
+		// Me: GetSet returns const pointer but member delegates are set mutable
+		CombatSet->OnMoveSpeedChanged.AddUObject(this, &AAssassinsCharacter::HandleMoveSpeedChanged);
+	}
 }
 
 void AAssassinsCharacter::OnAbilitySystemUninitialized()
 {
 	HealthComponent->UninitializeFromAbilitySystem();
+}
+
+void AAssassinsCharacter::HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
+{
+	GetCharacterMovement()->MaxWalkSpeed = NewValue;
 }

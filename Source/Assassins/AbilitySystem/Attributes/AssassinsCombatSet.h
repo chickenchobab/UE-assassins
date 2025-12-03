@@ -27,6 +27,16 @@ public:
 	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicPenetrationPercent);
 	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicPenetrationFlat);
 	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, AttackSpeed);
+	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MoveSpeed);
+
+	mutable FAssassinsAttributeEvent OnMoveSpeedChanged;
+
+protected:
+
+	//~UAttributeSet interface
+	virtual bool PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data) override;
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+	//~End of UAttributeSet interface
 
 private:
 
@@ -55,4 +65,9 @@ private:
 	// Me: The number of attack available per second
 	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData AttackSpeed;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData MoveSpeed;
+
+	float MoveSpeedBeforeAttributeChanged;
 };

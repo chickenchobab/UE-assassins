@@ -9,6 +9,7 @@
 class UAssassinsPawnExtensionComponent;
 class UAssassinsHealthComponent;
 class UAssassinsAbilitySystemComponent;
+struct FGameplayEffectSpec;
 
 UCLASS(Blueprintable)
 class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface
@@ -40,6 +41,8 @@ protected:
 
 	virtual void OnAbilitySystemInitialized();
 	virtual void OnAbilitySystemUninitialized();
+
+	virtual void HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
 
 private:
 	
