@@ -29,6 +29,10 @@ public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
+	FORCEINLINE AAssassinsCharacter* GetAbilityTarget() const { return (AbilityTarget.IsValid() ? AbilityTarget.Get() : nullptr); }
+	FORCEINLINE void SetAbilityTarget(AAssassinsCharacter* Target) { AbilityTarget = Target; }
+	FORCEINLINE void ClearAbilityTarget() { AbilityTarget = nullptr; }
+
 protected:
 	virtual void PossessedBy(AController* NewController) override;
 
@@ -52,5 +56,9 @@ private:
 	/** Camera boom positioning the camera above the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
+
+	//Me: Target of abilities set when the mouse cursor is on it.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = "true"))
+	TWeakObjectPtr<AAssassinsCharacter> AbilityTarget;
 };
 

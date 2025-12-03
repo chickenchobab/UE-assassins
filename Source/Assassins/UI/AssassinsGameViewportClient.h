@@ -5,6 +5,11 @@
 #include "CommonGameViewportClient.h"
 #include "AssassinsGameViewportClient.generated.h"
 
+class AAssassinsCharacter;
+
+DECLARE_DELEGATE_OneParam(FAssassinsOnCursorTargetSet, AAssassinsCharacter*);
+DECLARE_DELEGATE(FAssassinsOnCursorTargetCleared);
+
 /**
  * 
  */
@@ -13,6 +18,11 @@ class ASSASSINS_API UAssassinsGameViewportClient : public UCommonGameViewportCli
 {
 	GENERATED_BODY()
 	
+public:
+
+	FAssassinsOnCursorTargetSet OnCursorTargetSet;
+	FAssassinsOnCursorTargetCleared OnCursorTargetCleared;
+
 protected:
 	
 	//~FViewportClient interface

@@ -4,6 +4,7 @@
 #include "Character/AssassinsHeroComponent.h"
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "Character/AssassinsPawnData.h"
+#include "Character/AssassinsCharacter.h"
 #include "Player/AssassinsPlayerState.h"
 #include "Player/AssassinsPlayerController.h"
 #include "Player/AssassinsLocalPlayer.h"
@@ -13,8 +14,10 @@
 #include "InputMappingContext.h"
 #include "Input/AssassinsInputComponent.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "AbilitySystem/Abilities/AssassinsGameplayAbility_UnitTargeted.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "NiagaraFunctionLibrary.h"
+#include "UI/AssassinsGameViewportClient.h"
 
 
 const FName UAssassinsHeroComponent::NAME_ActorFeatureName("Hero");
@@ -226,6 +229,7 @@ void UAssassinsHeroComponent::InitializePlayerInput(UInputComponent* PlayerInput
 				if (UAssassinsInputComponent* AssassinsIC = Cast<UAssassinsInputComponent>(PlayerInputComponent))
 				{
 					// Setup mouse input events
+					// Me: The tags are not used anymore
 					AssassinsIC->BindNativeAction(InputConfig, AssassinsGameplayTags::InputTag_SetDestination_Click, ETriggerEvent::Started, this, &ThisClass::OnInputStarted);
 					AssassinsIC->BindNativeAction(InputConfig, AssassinsGameplayTags::InputTag_SetDestination_Click, ETriggerEvent::Triggered, this, &ThisClass::OnSetDestinationTriggered);
 					AssassinsIC->BindNativeAction(InputConfig, AssassinsGameplayTags::InputTag_SetDestination_Click, ETriggerEvent::Completed, this, &ThisClass::OnSetDestinationReleased);
@@ -241,6 +245,15 @@ void UAssassinsHeroComponent::InitializePlayerInput(UInputComponent* PlayerInput
 			}
 		}
 	}
+
+	UGameInstance* GameInstance = GetGameInstance<UGameInstance>();
+	check(GameInstance);
+
+	UAssassinsGameViewportClient* GameViewport = Cast<UAssassinsGameViewportClient>(GameInstance->GetGameViewportClient());
+	check(GameViewport);
+
+	GameViewport->OnCursorTargetSet.BindUObject(this, &ThisClass::HandleCursorTargetSet);
+	GameViewport->OnCursorTargetCleared.BindUObject(this, &ThisClass::HandleCursorTargetCleared);
 
 	UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APlayerController*>(PC), NAME_BindInputsNow);
 	UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APawn*>(Pawn), NAME_BindInputsNow);
@@ -275,7 +288,7 @@ void UAssassinsHeroComponent::OnSetDestinationTriggered()
 		CachedDestination = Hit.Location;
 	}
 
-	// Move towards mouse pointer or touch
+	// Move towards mouse pointer
 	APawn* ControlledPawn = GetPawn<APawn>();
 	if (ControlledPawn != nullptr)
 	{
@@ -321,6 +334,56 @@ void UAssassinsHeroComponent::Input_AbilityInputTagReleased(FGameplayTag InputTa
 			{
 				AssassinsASC->AbilityInputTagReleased(InputTag);
 			}
+		}
+	}
+}
+
+void UAssassinsHeroComponent::HandleCursorTargetSet(AAssassinsCharacter* CursorTarget)
+{
+	const APlayerController* PC = GetController<APlayerController>();
+	check(PC);
+
+	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(PC->GetLocalPlayer());
+	check(LP);
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
+	check(Subsystem);
+
+	if (AttackInputMapping)
+	{
+		Subsystem->AddMappingContext(AttackInputMapping, 1);
+	}
+
+	if (APawn* PlayerPawn = GetPawn<APawn>())
+	{
+		if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(PlayerPawn))
+		{
+			PlayerCharacter->SetAbilityTarget(CursorTarget);
+		}
+	}
+}
+
+void UAssassinsHeroComponent::HandleCursorTargetCleared()
+{
+	const APlayerController* PC = GetController<APlayerController>();
+	check(PC);
+
+	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(PC->GetLocalPlayer());
+	check(LP);
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
+	check(Subsystem);
+
+	if (AttackInputMapping)
+	{
+		Subsystem->RemoveMappingContext(AttackInputMapping);
+	}
+
+	if (APawn* PlayerPawn = GetPawn<APawn>())
+	{
+		if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(PlayerPawn))
+		{
+			PlayerCharacter->ClearAbilityTarget();
 		}
 	}
 }

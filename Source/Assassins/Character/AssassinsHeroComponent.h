@@ -10,6 +10,7 @@
 
 class UNiagaraSystem;
 class AAssassinsPlayerController;
+class AAssassinsCharacter;
 
 /**
  * Component that sets up input and camera handling for player controlled pawns (or bots that simulate players).
@@ -64,11 +65,18 @@ protected:
 	void Input_AbilityInputTagPressed(FGameplayTag InputTag);
 	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
+	//Me: Handle cursor position changes w.r.t ability target
+	void HandleCursorTargetSet(AAssassinsCharacter* CursorTarget);
+	void HandleCursorTargetCleared();
+
 protected:
 
 	/** MappingContexts */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	TArray<FInputMappingContextAndPriority> DefaultInputMappings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	TObjectPtr<UInputMappingContext> AttackInputMapping;
 
 private:
 	UPROPERTY()
