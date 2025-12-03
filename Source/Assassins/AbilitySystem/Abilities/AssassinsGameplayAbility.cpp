@@ -24,6 +24,12 @@ AAssassinsPlayerController* UAssassinsGameplayAbility::GetAssassinsPlayerControl
     return (CurrentActorInfo ? Cast<AAssassinsPlayerController>(CurrentActorInfo->PlayerController.Get()) : nullptr);
 }
 
+AController* UAssassinsGameplayAbility::GetControllerFromActorInfo() const
+{
+    //Me: When an owner chain occurs?
+    return (CurrentActorInfo ? CurrentActorInfo->PlayerController.Get() : nullptr);
+}
+
 AAssassinsCharacter* UAssassinsGameplayAbility::GetAssassinsCharacterFromActorInfo() const
 {
     return Cast<AAssassinsCharacter>(GetAvatarActorFromActorInfo());

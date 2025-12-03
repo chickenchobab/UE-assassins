@@ -5,9 +5,15 @@
 
 namespace AssassinsGameplayTags
 {
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Attack, "Ability.Attack");
+
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Type_UnitTargeted, "Ability.Type.UnitTargeted");
+
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_SetDestination_Click, "InputTag.SetDestination.Click");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Attack, "InputTag.Attack");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Suicide, "InputTag.Suicide");
+
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Attack, "GameplayCue.Attack");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InitState_Spawned, "InitState.Spawned", "1: Actor/component has initially spawned and can be extended");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InitState_DataAvailable, "InitState.DataAvailable", "2: All required data has been loaded/replicated and is ready for initialization");

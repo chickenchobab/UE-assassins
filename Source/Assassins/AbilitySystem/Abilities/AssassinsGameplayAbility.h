@@ -30,7 +30,7 @@ enum class EAssassinsAbilityActivationPolicy : uint8
 /**
  * 
  */
-UCLASS()
+UCLASS(Abstract, HideCategories = Input, Meta = (ShourtTooltip = "The base gameplay ability class used by this project."))
 class ASSASSINS_API UAssassinsGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
@@ -43,6 +43,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	AAssassinsPlayerController* GetAssassinsPlayerControllerFromActorInfo() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	AController* GetControllerFromActorInfo() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	AAssassinsCharacter* GetAssassinsCharacterFromActorInfo() const;
