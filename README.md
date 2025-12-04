@@ -8,3 +8,7 @@
 
 에픽 게임즈 Lyra Starter Project의 아키텍쳐 활용 - Modular Gameplay Feature
 
+
+
+YouTube : https://www.youtube.com/playlist?list=PLBwCzlTmy8RygNcc1zhBBMEN2EsLXnyUQ
+
