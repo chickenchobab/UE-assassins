@@ -79,10 +79,16 @@ protected:
 	TObjectPtr<UInputMappingContext> AttackInputMapping;
 
 private:
+    void CancelClickInterruptedAbilities();
+
+private:
 	UPROPERTY()
 	TObjectPtr<AAssassinsPlayerController> CachedPlayerController;
 
 	FVector CachedDestination;
 
 	float FollowTime; // For how long it has been pressed
+
+    UPROPERTY(EditDefaultsOnly)
+    FGameplayTagContainer ClickInterruptedAbilityTags;
 };

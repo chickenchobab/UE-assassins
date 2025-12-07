@@ -22,6 +22,10 @@ AAssassinsPlayerController::AAssassinsPlayerController()
 	{
 		PathFollowingComponent->OnRequestFinished.AddUObject(this, &ThisClass::OnMoveCompleted);
 	}
+
+    bShouldKeepMoving = false;
+    CachedMoveTarget = nullptr;
+    CachedAcceptRadius = 0.0f;
 }
 
 UAssassinsAbilitySystemComponent* AAssassinsPlayerController::GetAssassinsAbilitySystemComponent() const
@@ -47,6 +51,16 @@ void AAssassinsPlayerController::OnUnPossess()
 	Super::OnUnPossess();
 }
 
+void AAssassinsPlayerController::PlayerTick(float DeltaTime)
+{
+    Super::PlayerTick(DeltaTime);
+
+    if (bShouldKeepMoving && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Idle)
+    {
+        MoveToActor(CachedMoveTarget.IsValid() ? CachedMoveTarget.Get() : nullptr, CachedAcceptRadius);
+    }
+}
+
 void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
 {
 	if (UAssassinsAbilitySystemComponent* AssassinsASC = GetAssassinsAbilitySystemComponent())
@@ -59,15 +73,22 @@ void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const b
 
 void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
-	ReceiveMoveCompleted.Broadcast(RequestID, Result.Code);
+    if (!bShouldKeepMoving)
+    {
+	    ReceiveMoveCompleted.Broadcast(RequestID, Result.Code);
+        ReceiveMoveCompleted.Clear();
+
+        CachedMoveTarget = nullptr;
+        CachedAcceptRadius = 0.0f;
+    }
 }
 
 EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor* Goal, float AcceptRadius)
 {
-	if (PathFollowingComponent && PathFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
-	{
-		PathFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
-	}
+    AbortMove();
+
+    CachedMoveTarget = Goal;
+    CachedAcceptRadius = AcceptRadius;
 
 	FAIMoveRequest MoveReq(Goal);
 	MoveReq.SetAcceptanceRadius(AcceptRadius);
@@ -78,6 +99,14 @@ EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor
 	MoveReq.SetCanStrafe(false); // Me: No side walk
 
 	return MoveTo(MoveReq);
+}
+
+void AAssassinsPlayerController::AbortMove()
+{
+    if (PathFollowingComponent && PathFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
+    {
+        PathFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
+    }
 }
 
 FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath)

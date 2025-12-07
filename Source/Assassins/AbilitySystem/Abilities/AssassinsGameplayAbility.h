@@ -51,7 +51,7 @@ public:
 	AAssassinsCharacter* GetAssassinsCharacterFromActorInfo() const;
 
 	EAssassinsAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
-	
+
 protected:
 	
 	// Defines how this ability is meant to activate.

@@ -28,6 +28,8 @@ UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& Objec
 {
 	CachedDestination = FVector::ZeroVector;
 	FollowTime = 0.f;
+
+    ClickInterruptedAbilityTags.AddTag(AssassinsGameplayTags::Ability_Interruptible_Click);
 }
 
 bool UAssassinsHeroComponent::CanChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState) const
@@ -288,6 +290,8 @@ void UAssassinsHeroComponent::OnSetDestinationTriggered()
 		CachedDestination = Hit.Location;
 	}
 
+    CancelClickInterruptedAbilities();
+
 	// Move towards mouse pointer
 	APawn* ControlledPawn = GetPawn<APawn>();
 	if (ControlledPawn != nullptr)
@@ -386,4 +390,23 @@ void UAssassinsHeroComponent::HandleCursorTargetCleared()
 			PlayerCharacter->ClearAbilityTarget();
 		}
 	}
+}
+
+void UAssassinsHeroComponent::CancelClickInterruptedAbilities()
+{
+    if (const APawn* PlayerPawn = GetPawn<APawn>())
+    {
+        if (const UAssassinsPawnExtensionComponent* PawnExtComp = UAssassinsPawnExtensionComponent::FindPawnExtensionComponent(PlayerPawn))
+        {
+            if (UAssassinsAbilitySystemComponent* AssassinsASC = PawnExtComp->GetAssassinsAbilitySystemComponent())
+            {
+                AssassinsASC->CancelAbilities(&ClickInterruptedAbilityTags);
+            }
+        }
+    }
+
+    if (CachedPlayerController)
+    {
+        CachedPlayerController->AbortMove();
+    }
 }

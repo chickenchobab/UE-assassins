@@ -39,6 +39,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category="AI|Navigation")
 	EPathFollowingRequestResult::Type MoveToActor(AActor* Goal, float AcceptRadius);
 
+    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    void AbortMove();
+
+    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    void SetShouldKeepMoving(bool Condition) { bShouldKeepMoving = Condition; }
+
+    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    bool GetShouldKeepMoving() const { return bShouldKeepMoving; }
+
 	/** Blueprint notification that we've completed the current movement request */
 	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "MoveCompleted"))
 	FMoveCompletedSignature ReceiveMoveCompleted;
@@ -50,6 +59,7 @@ protected:
 	//~End of AController interface
 
 	//~APlayerController interface
+    virtual void PlayerTick(float DeltaTime) override;
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
 	//~End of APlayerController interface
 
@@ -81,6 +91,15 @@ private:
 	/** Component used for moving along a path. */
 	UPROPERTY(VisibleDefaultsOnly, Category = "AI|Navigation")
 	TObjectPtr<UPathFollowingComponent> PathFollowingComponent;
+
+    // Me: Whether to keep MoveToActor
+    bool bShouldKeepMoving;
+
+    // Me: Arguments to call MoveToActor again
+    UPROPERTY()
+    TWeakObjectPtr<AActor> CachedMoveTarget;
+
+    float CachedAcceptRadius;
 };
 
 

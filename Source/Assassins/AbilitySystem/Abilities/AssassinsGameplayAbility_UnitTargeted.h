@@ -13,6 +13,10 @@ class ASSASSINS_API UAssassinsGameplayAbility_UnitTargeted : public UAssassinsGa
 {
 	GENERATED_BODY()
 
+public:
+
+	UAssassinsGameplayAbility_UnitTargeted(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
 protected:
 
 	//~UGameplayAbility interface
@@ -21,4 +25,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Assassins|Ability")
 	float AbilityRange;
+
+	// Me: After the avatar moves towards the target, attack ability is activated by this event tag.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability", meta = (Categories = "Event.UnitTargetedAbility.WithinRange"))
+	FGameplayTag AbilityToActivateTag;
 };

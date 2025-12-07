@@ -9,6 +9,8 @@ namespace AssassinsGameplayTags
 
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Type_UnitTargeted, "Ability.Type.UnitTargeted");
 
+    UE_DEFINE_GAMEPLAY_TAG(Ability_Interruptible_Click, "Ability.Interruptible.Click");
+
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_SetDestination_Click, "InputTag.SetDestination.Click");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Attack, "InputTag.Attack");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Suicide, "InputTag.Suicide");
