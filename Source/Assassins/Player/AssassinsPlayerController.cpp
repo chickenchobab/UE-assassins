@@ -73,14 +73,7 @@ void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const b
 
 void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
-    if (!bShouldKeepMoving)
-    {
-	    ReceiveMoveCompleted.Broadcast(RequestID, Result.Code);
-        ReceiveMoveCompleted.Clear();
-
-        CachedMoveTarget = nullptr;
-        CachedAcceptRadius = 0.0f;
-    }
+    ReceiveMoveCompleted.Broadcast(RequestID, Result.Code);
 }
 
 EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor* Goal, float AcceptRadius)
@@ -107,6 +100,15 @@ void AAssassinsPlayerController::AbortMove()
     {
         PathFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
     }
+}
+
+void AAssassinsPlayerController::ResetMoveState()
+{
+    ReceiveMoveCompleted.Clear();
+
+    bShouldKeepMoving = false;
+    CachedMoveTarget = nullptr;
+    CachedAcceptRadius = 0.0f;
 }
 
 FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath)

@@ -42,6 +42,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void AbortMove();
 
+    UFUNCTION(BlueprintCallable, Category = "AI | Navigation")
+    void ResetMoveState();
+
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void SetShouldKeepMoving(bool Condition) { bShouldKeepMoving = Condition; }
 

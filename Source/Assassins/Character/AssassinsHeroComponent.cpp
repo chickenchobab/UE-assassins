@@ -408,5 +408,6 @@ void UAssassinsHeroComponent::CancelClickInterruptedAbilities()
     if (CachedPlayerController)
     {
         CachedPlayerController->AbortMove();
+        CachedPlayerController->ResetMoveState();
     }
 }
