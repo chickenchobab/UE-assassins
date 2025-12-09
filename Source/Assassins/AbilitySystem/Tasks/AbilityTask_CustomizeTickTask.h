@@ -6,6 +6,7 @@
 #include "AbilityTask_CustomizeTickTask.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTickTaskDelegate, float, DeltaTime);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStopTaskDelegate);
 
 /**
  * Bind custom logic to TickTask, by a delegate
@@ -25,6 +26,14 @@ public:
     virtual void TickTask(float DeltaTime) override;
     //~End of UGameplayTask interface
 
+    UFUNCTION(BlueprintCallable)
+    void SetShouldStop(bool bStop) { bShouldStop = bStop; }
+
     UPROPERTY(BlueprintAssignable)
     FOnTickTaskDelegate OnTickTask;
+    UPROPERTY(BlueprintAssignable)
+    FOnStopTaskDelegate OnStopTask;
+
+private:
+    bool bShouldStop = false;
 };

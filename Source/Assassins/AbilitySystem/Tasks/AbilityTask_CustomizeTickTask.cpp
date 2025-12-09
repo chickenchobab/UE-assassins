@@ -21,6 +21,12 @@ void UAbilityTask_CustomizeTickTask::TickTask(float DeltaTime)
     if (ShouldBroadcastAbilityTaskDelegates())
     {
         OnTickTask.Broadcast(DeltaTime);
+        
+        if (bShouldStop)
+        {
+            OnStopTask.Broadcast();
+            EndTask();
+        }
     }
     else
     {
