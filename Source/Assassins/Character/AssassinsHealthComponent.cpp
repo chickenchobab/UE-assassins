@@ -63,6 +63,19 @@ void UAssassinsHealthComponent::UninitializeFromAbilitySystem()
 	AbilitySystemComponent = nullptr;
 }
 
+float UAssassinsHealthComponent::GetHealthNormalized() const
+{
+    if (HealthSet)
+    {
+        const float Health = HealthSet->GetHealth();
+        const float MaxHealth = HealthSet->GetMaxHealth();
+
+        return (MaxHealth > 0.0f ? (Health / MaxHealth) : 0.0f);
+    }
+
+    return 0.0f;
+}
+
 void UAssassinsHealthComponent::HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
 	UE_LOG(LogTemp, Display, TEXT("Health changed [%f] -> [%f]"), OldValue, NewValue);

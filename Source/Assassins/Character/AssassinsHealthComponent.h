@@ -33,6 +33,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Health")
 	void UninitializeFromAbilitySystem();
 
+    UFUNCTION(BlueprintCallable)
+    float GetHealthNormalized() const;
+
 public:
 	UPROPERTY(BlueprintAssignable)
 	FAssassinsHealth_AttributeChanged OnHealthChanged;
