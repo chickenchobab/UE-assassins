@@ -5,6 +5,7 @@
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "Character/AssassinsCharacter.h"
 #include "Player/AssassinsPlayerController.h"
+#include "AbilitySystemBlueprintLibrary.h"
 
 UAssassinsGameplayAbility::UAssassinsGameplayAbility(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -33,4 +34,41 @@ AController* UAssassinsGameplayAbility::GetControllerFromActorInfo() const
 AAssassinsCharacter* UAssassinsGameplayAbility::GetAssassinsCharacterFromActorInfo() const
 {
     return Cast<AAssassinsCharacter>(GetAvatarActorFromActorInfo());
+}
+
+FGameplayEffectContextHandle UAssassinsGameplayAbility::MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const
+{
+    FGameplayEffectContextHandle ContextHandle = Super::MakeEffectContext(Handle, ActorInfo);
+
+    FGameplayEffectContext* EffectContext = ContextHandle.Get();
+
+    AActor* Instigator = ActorInfo ? ActorInfo->OwnerActor.Get() : nullptr;
+    AActor* EffectCauser = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
+    UObject* SourceObject = GetSourceObject(Handle, ActorInfo);
+
+    EffectContext->AddInstigator(Instigator, EffectCauser);
+    EffectContext->AddSourceObject(SourceObject);
+
+    return ContextHandle;
+}
+
+FGameplayEffectSpecHandle UAssassinsGameplayAbility::MakeEffectSpecHandle(TSubclassOf<UGameplayEffect> EffectClass)
+{
+    FGameplayEffectContextHandle EffectContext = MakeEffectContext(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo());
+
+    UAssassinsAbilitySystemComponent* AssassinsASC = GetAssassinsAbilitySystemComponentFromActorInfo();
+    check(AssassinsASC);
+
+    return AssassinsASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
+}
+
+FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor)
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+    check(ASC);
+
+    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
+    check(TargetASC);
+
+    return ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
 }

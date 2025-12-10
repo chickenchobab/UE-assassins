@@ -53,6 +53,17 @@ public:
 	EAssassinsAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
 protected:
+    //~UGameplayAbility interface
+    virtual FGameplayEffectContextHandle MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const override;
+    //~End of UGameplayAbility interface
+
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+    FGameplayEffectSpecHandle MakeEffectSpecHandle(TSubclassOf<UGameplayEffect> EffectClass);
+
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+    FActiveGameplayEffectHandle ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor);
+
+protected:
 	
 	// Defines how this ability is meant to activate.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability Activation")
