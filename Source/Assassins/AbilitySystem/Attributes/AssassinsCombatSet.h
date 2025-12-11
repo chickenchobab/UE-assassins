@@ -28,6 +28,9 @@ public:
 	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicPenetrationFlat);
 	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, AttackSpeed);
 	ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MoveSpeed);
+    ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, PhysicalDamage);
+    ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicDamage);
+    ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, TrueDamage);
 
 	mutable FAssassinsAttributeEvent OnMoveSpeedChanged;
 
@@ -70,4 +73,17 @@ private:
 	FGameplayAttributeData MoveSpeed;
 
 	float MoveSpeedBeforeAttributeChanged;
+
+    // -------------------------------------------------------------------------------------------------------
+    //	Meta Attribute that aren't 'stateful' and are populated only by calculation modifiers before execution
+    // -------------------------------------------------------------------------------------------------------
+
+    UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true, HideFromModifiers))
+    FGameplayAttributeData PhysicalDamage;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true, HideFromModifiers))
+    FGameplayAttributeData MagicDamage;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true, HideFromModifiers))
+    FGameplayAttributeData TrueDamage;
 };

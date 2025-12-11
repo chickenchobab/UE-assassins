@@ -15,6 +15,9 @@ UAssassinsCombatSet::UAssassinsCombatSet()
 	, MagicPenetrationFlat(0.0f)
 	, AttackSpeed(0.0f)
 	, MoveSpeed(0.0f)
+    , PhysicalDamage(0.0f)
+    , MagicDamage(0.0f)
+    , TrueDamage(0.0f)
 {
 }
 
@@ -35,12 +38,13 @@ void UAssassinsCombatSet::PostGameplayEffectExecute(const FGameplayEffectModCall
 	Super::PostGameplayEffectExecute(Data);
 
 	const FGameplayEffectContextHandle& EffectContext = Data.EffectSpec.GetEffectContext();
-	// Me: TODO: What is the original instigator which started the whole chain?
+	// Me: What is the original instigator which started the whole chain?
 	AActor* Instigator = EffectContext.GetOriginalInstigator();
 	AActor* Causer = EffectContext.GetEffectCauser();
 
 	if (GetMoveSpeed() != MoveSpeedBeforeAttributeChanged)
 	{
+        // Me: Notify character so its movement component can apply the update
 		OnMoveSpeedChanged.Broadcast(Instigator, Causer, &Data.EffectSpec, Data.EvaluatedData.Magnitude, MoveSpeedBeforeAttributeChanged, GetMoveSpeed());
 	}
 }
