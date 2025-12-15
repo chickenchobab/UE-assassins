@@ -26,7 +26,11 @@ AAssassinsCharacter::AAssassinsCharacter()
 
 	// Configure player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_GameTraceChannel1 /*targeting trace*/, ECollisionResponse::ECR_Block);
+    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1 /*targeting trace*/, ECR_Block);
+
+    // Me: Use the capsule component as the sole collision handler; disable mesh collision.
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Don't rotate character to camera direction
 	bUseControllerRotationPitch = false;

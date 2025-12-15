@@ -12,12 +12,15 @@ namespace AssassinsGameplayTags
     UE_DEFINE_GAMEPLAY_TAG(Ability_Interruptible_Click, "Ability.Interruptible.Click");
 
     UE_DEFINE_GAMEPLAY_TAG(Ability_Event_AttackHit, "Ability.Event.AttackHit");
+    UE_DEFINE_GAMEPLAY_TAG(Ability_Event_SpawnProjectile, "Ability.Event.SpawnProjectile");
 
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_SetDestination_Click, "InputTag.SetDestination.Click");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Attack, "InputTag.Attack");
+    UE_DEFINE_GAMEPLAY_TAG(InputTag_Ability1, "InputTag.Ability1");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_Suicide, "InputTag.Suicide");
 
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Attack, "GameplayCue.Attack");
+    UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Ability1, "GameplayCue.Ability1");
 
     UE_DEFINE_GAMEPLAY_TAG(Status_Channeling, "Status.Channeling");
 

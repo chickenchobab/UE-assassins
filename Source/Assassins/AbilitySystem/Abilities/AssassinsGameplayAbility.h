@@ -57,7 +57,7 @@ protected:
     virtual FGameplayEffectContextHandle MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const override;
     //~End of UGameplayAbility interface
 
-    UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+    UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
     FGameplayEffectSpecHandle MakeEffectSpecHandle(TSubclassOf<UGameplayEffect> EffectClass);
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
