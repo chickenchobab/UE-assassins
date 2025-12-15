@@ -29,7 +29,9 @@ UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& Objec
 	CachedDestination = FVector::ZeroVector;
 	FollowTime = 0.f;
 
-    ClickInterruptedAbilityTags.AddTag(AssassinsGameplayTags::Ability_Interruptible_Click);
+    MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Channeling);
+
+    MoveInterruptedAbilityTags.AddTag(AssassinsGameplayTags::Ability_Interruptible_Click);
 }
 
 bool UAssassinsHeroComponent::CanChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState) const
@@ -122,6 +124,12 @@ void UAssassinsHeroComponent::HandleChangeInitState(UGameFrameworkComponentManag
 			// The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
 			// The ability system component and attribute sets live on the player state.
 			PawnExtComp->InitializeAbilitySystem(AssassinsPS->GetAssassinsAbilitySystemComponent(), AssassinsPS);
+
+            if (UAssassinsAbilitySystemComponent* AssassinsASC = AssassinsPS->GetAssassinsAbilitySystemComponent())
+            {
+                AssassinsASC->OnBeginChanneling.AddDynamic(this, &UAssassinsHeroComponent::HandleBeginChanneling);
+                AssassinsASC->OnEndChanneling.AddDynamic(this, &UAssassinsHeroComponent::HandleEndChanneling);
+            }
 		}
 
 		if (AAssassinsPlayerController* AssassinsPC = GetController<AAssassinsPlayerController>())
@@ -263,10 +271,18 @@ void UAssassinsHeroComponent::InitializePlayerInput(UInputComponent* PlayerInput
 
 void UAssassinsHeroComponent::OnInputStarted()
 {
-	if (CachedPlayerController)
-	{
-		CachedPlayerController->StopMovement();
-	}
+    if (!CanMove())
+    {
+        return;
+    }
+
+    CancelMoveInterruptedAbilities();
+
+    if (CachedPlayerController)
+    {
+        CachedPlayerController->StopMovement();
+        CachedPlayerController->ResetMoveState();
+    }
 }
 
 // Triggered every frame when the input is held down
@@ -290,7 +306,10 @@ void UAssassinsHeroComponent::OnSetDestinationTriggered()
 		CachedDestination = Hit.Location;
 	}
 
-    CancelClickInterruptedAbilities();
+    if (!CanMove())
+    {
+        return;
+    }
 
 	// Move towards mouse pointer
 	APawn* ControlledPawn = GetPawn<APawn>();
@@ -303,11 +322,23 @@ void UAssassinsHeroComponent::OnSetDestinationTriggered()
 
 void UAssassinsHeroComponent::OnSetDestinationReleased()
 {
+    // Me: This function must not be called if the mouse cursor is pointing a target so 
+    // dummy input action is added to override the action bound to this function whenever 
+    // imput mapping contexts are switched due to the cursor.
+
 	// If it was a short press
 	if (FollowTime <= ShortPressThreshold)
 	{
 		// We move there and spawn some particles
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(CachedPlayerController, CachedDestination);
+        if (!CanMove())
+        {
+            if (CachedPlayerController)
+            {
+                // Me: Reserve movement 
+                CachedPlayerController->PauseMove();
+            }
+        }
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CachedDestination, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
 	}
 
@@ -392,7 +423,7 @@ void UAssassinsHeroComponent::HandleCursorTargetCleared()
 	}
 }
 
-void UAssassinsHeroComponent::CancelClickInterruptedAbilities()
+bool UAssassinsHeroComponent::CanMove()
 {
     if (const APawn* PlayerPawn = GetPawn<APawn>())
     {
@@ -400,14 +431,46 @@ void UAssassinsHeroComponent::CancelClickInterruptedAbilities()
         {
             if (UAssassinsAbilitySystemComponent* AssassinsASC = PawnExtComp->GetAssassinsAbilitySystemComponent())
             {
-                AssassinsASC->CancelAbilities(&ClickInterruptedAbilityTags);
+                return !AssassinsASC->HasAnyMatchingGameplayTags(MoveBlockingStatusTags);
             }
         }
     }
 
+    return false;
+}
+
+void UAssassinsHeroComponent::CancelMoveInterruptedAbilities()
+{
+    if (const APawn* PlayerPawn = GetPawn<APawn>())
+    {
+        if (const UAssassinsPawnExtensionComponent* PawnExtComp = UAssassinsPawnExtensionComponent::FindPawnExtensionComponent(PlayerPawn))
+        {
+            if (UAssassinsAbilitySystemComponent* AssassinsASC = PawnExtComp->GetAssassinsAbilitySystemComponent())
+            {
+                AssassinsASC->CancelAbilities(&MoveInterruptedAbilityTags);
+            }
+        }
+    }
+}
+
+void UAssassinsHeroComponent::HandleBeginChanneling()
+{
     if (CachedPlayerController)
     {
-        CachedPlayerController->AbortMove();
-        CachedPlayerController->ResetMoveState();
+        CachedPlayerController->HandleBeginChanneling();
+    }
+}
+
+void UAssassinsHeroComponent::HandleEndChanneling(bool bContinuePaused)
+{
+    if (CachedPlayerController)
+    {
+        // Me: If movement is neither paused nor reserved, allow the ability montage to play to completion as normal
+        /*if (CachedPlayerController->HasMovePaused())
+        {
+            CancelMoveInterruptedAbilities();
+        }*/
+
+        CachedPlayerController->HandleEndChanneling(bContinuePaused);
     }
 }

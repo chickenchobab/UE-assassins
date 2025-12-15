@@ -102,6 +102,11 @@ void AAssassinsPlayerController::AbortMove()
     }
 }
 
+void AAssassinsPlayerController::PauseMove()
+{
+    PathFollowingComponent->PauseMove();
+}
+
 void AAssassinsPlayerController::ResetMoveState()
 {
     ReceiveMoveCompleted.Clear();
@@ -109,6 +114,25 @@ void AAssassinsPlayerController::ResetMoveState()
     bShouldKeepMoving = false;
     CachedMoveTarget = nullptr;
     CachedAcceptRadius = 0.0f;
+}
+
+void AAssassinsPlayerController::HandleBeginChanneling()
+{
+    PathFollowingComponent->PauseMove();
+}
+
+void AAssassinsPlayerController::HandleEndChanneling(bool bResumeMove)
+{
+    // Me: Existing move request could have been aborted by a new request so check the status
+    if (bResumeMove && PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Paused)
+    {
+        PathFollowingComponent->ResumeMove();
+    }
+}
+
+bool AAssassinsPlayerController::HasMovePaused() const
+{
+    return (PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Paused);
 }
 
 FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath)

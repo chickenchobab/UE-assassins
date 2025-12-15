@@ -79,7 +79,14 @@ protected:
 	TObjectPtr<UInputMappingContext> AttackInputMapping;
 
 private:
-    void CancelClickInterruptedAbilities();
+
+    bool CanMove();
+    void CancelMoveInterruptedAbilities();
+
+    UFUNCTION()
+    void HandleBeginChanneling();
+    UFUNCTION()
+    void HandleEndChanneling(bool bContinuePaused);
 
 private:
 	UPROPERTY()
@@ -90,5 +97,8 @@ private:
 	float FollowTime; // For how long it has been pressed
 
     UPROPERTY(EditDefaultsOnly)
-    FGameplayTagContainer ClickInterruptedAbilityTags;
+    FGameplayTagContainer MoveBlockingStatusTags;
+
+    UPROPERTY(EditDefaultsOnly)
+    FGameplayTagContainer MoveInterruptedAbilityTags;
 };

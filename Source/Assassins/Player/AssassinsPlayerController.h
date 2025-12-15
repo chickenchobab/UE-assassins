@@ -42,6 +42,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void AbortMove();
 
+    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    void PauseMove();
+
     UFUNCTION(BlueprintCallable, Category = "AI | Navigation")
     void ResetMoveState();
 
@@ -50,6 +53,13 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     bool GetShouldKeepMoving() const { return bShouldKeepMoving; }
+
+
+    void HandleBeginChanneling();
+    void HandleEndChanneling(bool bResumeMove);
+
+    UFUNCTION(BlueprintCallable)
+    bool HasMovePaused() const;
 
 	/** Blueprint notification that we've completed the current movement request */
 	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "MoveCompleted"))

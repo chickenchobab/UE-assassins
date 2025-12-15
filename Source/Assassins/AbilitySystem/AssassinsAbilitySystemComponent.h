@@ -7,6 +7,9 @@
 
 #include "AssassinsAbilitySystemComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBeginStatusDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEndStatusDelegate, bool, bResumePaused);
+
 /**
  * 
  */
@@ -22,6 +25,15 @@ public:
 
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
+
+public:
+
+    // Me: Delegates for status changes, which are called in anim notifies
+
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Assassins|Status")
+    FOnBeginStatusDelegate OnBeginChanneling;
+    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Assassins|Status")
+    FOnEndStatusDelegate OnEndChanneling;
 
 protected:
 
