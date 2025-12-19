@@ -3,8 +3,10 @@
 #pragma once
 
 #include "Engine/AssetManager.h"
+
 #include "AssassinsAssetManager.generated.h"
 
+class UAssassinsGameData;
 class UAssassinsPawnData;
 
 struct FAssassinsBundles
@@ -32,6 +34,11 @@ public:
 	template<typename AssetType>
 	static AssetType* GetAsset(const TSoftObjectPtr<AssetType>& AssetPointer, bool bKeepInMemory = true);
 
+	//
+	template<typename AssetType>
+	static TSubclassOf<AssetType> GetSubclass(const TSoftClassPtr<AssetType>& AssetPointer, bool bKeepInMemory = true);
+
+	const UAssassinsGameData& GetGameData();
 	const UAssassinsPawnData* GetDefaultPawnData() const;
 
 protected:
@@ -40,7 +47,19 @@ protected:
 	// Thread safe way of adding a loaded asset to keep in memory.
 	void AddLoadedAsset(const UObject* Asset);
 
+	UAssassinsGameData* LoadGameData(const TSoftObjectPtr<UAssassinsGameData>& DataPath, FPrimaryAssetType PrimaryAssetType);
+
 protected:
+
+	// Global game data asset to use.
+	UPROPERTY(Config)
+	TSoftObjectPtr<UAssassinsGameData> AssassinsGameDataPath;
+
+	// Loaded game data
+	UPROPERTY(Transient)
+	TObjectPtr<UAssassinsGameData> LoadedGameData;
+
+	// Pawn data used when spawning player pawns if there isn't one set on the player state.
 	UPROPERTY(Config)
 	TSoftObjectPtr<UAssassinsPawnData> DefaultPawnData;
 
@@ -72,4 +91,30 @@ AssetType* UAssassinsAssetManager::GetAsset(const TSoftObjectPtr<AssetType>& Ass
 	}
 
 	return LoadedAsset;
+}
+
+template<typename AssetType>
+TSubclassOf<AssetType> UAssassinsAssetManager::GetSubclass(const TSoftClassPtr<AssetType>& AssetPointer, bool bKeepInMemory)
+{
+	TSubclassOf<AssetType> LoadedSubclass;
+
+	const FSoftObjectPath& AssetPath = AssetPointer.ToSoftObjectPath();
+
+	if (AssetPath.IsValid())
+	{
+		LoadedSubclass = AssetPointer.Get();
+		if (!LoadedSubclass)
+		{
+			LoadedSubclass = Cast<UClass>(SynchronousLoadAsset(AssetPath));
+			ensureAlwaysMsgf(LoadedSubclass, TEXT("Failed to load asset class [%s]"), *AssetPointer.ToString());
+		}
+
+		if (LoadedSubclass && bKeepInMemory)
+		{
+			// Added to loaded asset list.
+			Get().AddLoadedAsset(Cast<UObject>(LoadedSubclass));
+		}
+	}
+
+	return LoadedSubclass;
 }

@@ -3,6 +3,15 @@
 
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "AbilitySystem/Abilities/AssassinsGameplayAbility.h"
+#include "AssassinsLogCategories.h"
+#include "System/AssassinsAssetManager.h"
+#include "System/AssassinsGameData.h"
+
+UAssassinsAbilitySystemComponent::UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+
+}
 
 void UAssassinsAbilitySystemComponent::AbilityInputTagPressed(FGameplayTag& InputTag)
 {
@@ -127,6 +136,44 @@ void UAssassinsAbilitySystemComponent::ClearAbilityInput()
 	InputPressedSpecHandles.Reset();
 	InputReleasedSpecHandles.Reset();
 	InputHeldSpecHandles.Reset();
+}
+
+void UAssassinsAbilitySystemComponent::AddDynamicGameplayEffect(FGameplayTag Tag)
+{
+	const TSubclassOf<UGameplayEffect> DynamicTagGE = UAssassinsAssetManager::GetSubclass(UAssassinsGameData::Get().DynamicTagGameplayEffect);
+	if (!DynamicTagGE)
+	{
+		UE_LOG(LogAssassinsAbilitySystem, Warning, TEXT("AddDynamicTagGameplayEffect: Unable to find DynamicTagGameplayEffect [%s]."), *UAssassinsGameData::Get().DynamicTagGameplayEffect.GetAssetName());
+		return;
+	}
+
+	const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(DynamicTagGE, 1.0f, MakeEffectContext());
+	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+
+	if (!Spec)
+	{
+		UE_LOG(LogAssassinsAbilitySystem, Warning, TEXT("AddDynamicTagGameplayEffect: Unable to make outgoing spec for [%s]."), *GetNameSafe(DynamicTagGE));
+		return;
+	}
+
+	Spec->DynamicGrantedTags.AddTag(Tag);
+
+	ApplyGameplayEffectSpecToSelf(*Spec);
+}
+
+void UAssassinsAbilitySystemComponent::RemoveDynamicTagGameplayEffect(FGameplayTag Tag)
+{
+	const TSubclassOf<UGameplayEffect> DynamicTagGE = UAssassinsAssetManager::GetSubclass(UAssassinsGameData::Get().DynamicTagGameplayEffect);
+	if (!DynamicTagGE)
+	{
+		UE_LOG(LogAssassinsAbilitySystem, Warning, TEXT("RemoveDynamicTagGameplayEffect: Unable to find gameplay effect [%s]."), *UAssassinsGameData::Get().DynamicTagGameplayEffect.GetAssetName());
+		return;
+	}
+
+	FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(FGameplayTagContainer(Tag));
+	Query.EffectDefinition = DynamicTagGE;
+
+	RemoveActiveEffects(Query);
 }
 
 void UAssassinsAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)

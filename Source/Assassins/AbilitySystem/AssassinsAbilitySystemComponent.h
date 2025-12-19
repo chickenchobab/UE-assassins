@@ -19,12 +19,22 @@ class ASSASSINS_API UAssassinsAbilitySystemComponent : public UAbilitySystemComp
 	GENERATED_BODY()
 	
 public:
-	
+
+	UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer);
+
 	void AbilityInputTagPressed(FGameplayTag& InputTag);
 	void AbilityInputTagReleased(FGameplayTag& InputTag);
 
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
+
+	// Uses a gameplay effect to add the specified dynamic granted tag.
+	UFUNCTION(BlueprintCallable)
+	void AddDynamicGameplayEffect(FGameplayTag Tag);
+
+	// Removes all active instances of the gameplay effect that was used to add the specified dynamic granted tag.
+	UFUNCTION(BlueprintCallable)
+	void RemoveDynamicTagGameplayEffect(FGameplayTag Tag);
 
 public:
 
