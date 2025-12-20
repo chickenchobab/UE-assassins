@@ -63,6 +63,9 @@ protected:
     UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
     FActiveGameplayEffectHandle ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor);
 
+	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
+	bool DoesActorHaveTag(AActor* Actor, FGameplayTag TagToCheck);
+
 protected:
 	
 	// Defines how this ability is meant to activate.

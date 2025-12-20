@@ -72,3 +72,12 @@ FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecTo
 
     return ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
 }
+
+bool UAssassinsGameplayAbility::DoesActorHaveTag(AActor* Actor, FGameplayTag TagToCheck)
+{
+    if (UAbilitySystemComponent* ActorASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor))
+    {
+        return ActorASC->HasMatchingGameplayTag(TagToCheck);
+    }
+    return false;
+}
