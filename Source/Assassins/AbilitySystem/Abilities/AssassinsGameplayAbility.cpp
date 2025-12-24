@@ -42,7 +42,7 @@ FGameplayEffectContextHandle UAssassinsGameplayAbility::MakeEffectContext(const 
 
     FGameplayEffectContext* EffectContext = ContextHandle.Get();
 
-    AActor* Instigator = ActorInfo ? ActorInfo->OwnerActor.Get() : nullptr;
+    AActor* Instigator = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     AActor* EffectCauser = ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr;
     UObject* SourceObject = GetSourceObject(Handle, ActorInfo);
 
@@ -60,6 +60,17 @@ FGameplayEffectSpecHandle UAssassinsGameplayAbility::MakeEffectSpecHandle(TSubcl
     check(AssassinsASC);
 
     return AssassinsASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
+}
+
+void UAssassinsGameplayAbility::SetSetByCallerMagnitudeOfEffectSpec(const FGameplayEffectSpecHandle& SpecHandle, FGameplayTag DataTag, float Magnitude)
+{
+    if (SpecHandle.IsValid())
+    {
+        if (SpecHandle.Data.IsValid())
+        {
+            SpecHandle.Data->SetSetByCallerMagnitude(DataTag, Magnitude);
+        }
+    }
 }
 
 FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor)

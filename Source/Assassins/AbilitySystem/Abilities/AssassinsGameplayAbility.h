@@ -60,6 +60,9 @@ protected:
     UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
     FGameplayEffectSpecHandle MakeEffectSpecHandle(TSubclassOf<UGameplayEffect> EffectClass);
 
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void SetSetByCallerMagnitudeOfEffectSpec(const FGameplayEffectSpecHandle& SpecHandle, FGameplayTag DataTag, float Magnitude);
+
     UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
     FActiveGameplayEffectHandle ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor);
 

@@ -148,6 +148,15 @@ int32 UAssassinsAbilitySystemComponent::HandleGameplayEvent(FGameplayTag EventTa
 
 	return 0;
 }
+
+void UAssassinsAbilitySystemComponent::K2_CancelAbilities(FGameplayTag WithTag, FGameplayTag WithoutTag)
+{
+	FGameplayTagContainer WithTags(WithTag);
+	FGameplayTagContainer WithoutTags(WithoutTag);
+
+	CancelAbilities(&WithTags, &WithoutTags);
+}
+
 void UAssassinsAbilitySystemComponent::AddDynamicGameplayEffect(FGameplayTag Tag)
 {
 	const TSubclassOf<UGameplayEffect> DynamicTagGE = UAssassinsAssetManager::GetSubclass(UAssassinsGameData::Get().DynamicTagGameplayEffect);

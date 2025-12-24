@@ -31,12 +31,15 @@ public:
 	//~UAbilitySystemComponent interface
 	virtual int32 HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload) override;
 	//~End of UAbilitySystemComponent interface
-	// Uses a gameplay effect to add the specified dynamic granted tag.
-	UFUNCTION(BlueprintCallable)
-	void AddDynamicGameplayEffect(FGameplayTag Tag);
 
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability", DisplayName = "CancelAbilities", meta = (ScriptName = "CancelAbilities"))
+	void K2_CancelAbilities(FGameplayTag WithTag, FGameplayTag WithoutTag);
+
+	// Uses a gameplay effect to add the specified dynamic granted tag.
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void AddDynamicGameplayEffect(FGameplayTag Tag);
 	// Removes all active instances of the gameplay effect that was used to add the specified dynamic granted tag.
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveDynamicTagGameplayEffect(FGameplayTag Tag);
 
 public:
