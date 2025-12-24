@@ -5,36 +5,9 @@
 
 namespace AssassinsGameplayTags
 {
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Attack, "Ability.Attack");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Ability1, "Ability.Ability1");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Ability2, "Ability.Ability2");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Ability3, "Ability.Ability3");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Ability4, "Ability.Ability4");
-
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Type_UnitTargeted, "Ability.Type.UnitTargeted");
-
-    UE_DEFINE_GAMEPLAY_TAG(Ability_Interruptible_Click, "Ability.Interruptible.Click");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Cancelable_Ability1, "Ability.Cancelable.Ability1");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Cancelable_Ability2, "Ability.Cancelable.Ability2");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Cancelable_Ability3, "Ability.Cancelable.Ability3");
-	UE_DEFINE_GAMEPLAY_TAG(Ability_Cancelable_Ability4, "Ability.Cancelable.Ability4");
-
-    UE_DEFINE_GAMEPLAY_TAG(Ability_Event_AttackHit, "Ability.Event.AttackHit");
-    UE_DEFINE_GAMEPLAY_TAG(Ability_Event_SpawnProjectile, "Ability.Event.SpawnProjectile");
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Cancelable_Click, "Ability.Cancelable.Click");
 
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_SetDestination_Click, "InputTag.SetDestination.Click");
-	UE_DEFINE_GAMEPLAY_TAG(InputTag_Attack, "InputTag.Attack");
-    UE_DEFINE_GAMEPLAY_TAG(InputTag_Ability1, "InputTag.Ability1");
-    UE_DEFINE_GAMEPLAY_TAG(InputTag_Ability2, "InputTag.Ability2");
-	UE_DEFINE_GAMEPLAY_TAG(InputTag_Ability3, "InputTag.Ability3");
-	UE_DEFINE_GAMEPLAY_TAG(InputTag_Ability4, "InputTag.Ability4");
-	UE_DEFINE_GAMEPLAY_TAG(InputTag_Suicide, "InputTag.Suicide");
-
-	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Attack, "GameplayCue.Attack");
-    UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Ability1, "GameplayCue.Ability1");
-    UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Ability2, "GameplayCue.Ability2");
-	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Ability3, "GameplayCue.Ability3");
-	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Ability4, "GameplayCue.Ability4");
 
     UE_DEFINE_GAMEPLAY_TAG(Status_Channeling, "Status.Channeling");
 

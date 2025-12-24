@@ -100,5 +100,5 @@ private:
     FGameplayTagContainer MoveBlockingStatusTags;
 
     UPROPERTY(EditDefaultsOnly)
-    FGameplayTagContainer MoveInterruptedAbilityTags;
+    FGameplayTagContainer ClickCanceledAbilityTags;
 };

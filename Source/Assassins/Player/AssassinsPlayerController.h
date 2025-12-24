@@ -51,14 +51,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void SetShouldKeepMoving(bool Condition) { bShouldKeepMoving = Condition; }
 
-    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    UFUNCTION(BlueprintPure, Category = "AI|Navigation")
     bool GetShouldKeepMoving() const { return bShouldKeepMoving; }
 
 
     void HandleBeginChanneling();
     void HandleEndChanneling(bool bResumeMove);
 
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintPure, Category = "AI|Navigation")
     bool HasMovePaused() const;
 
 	/** Blueprint notification that we've completed the current movement request */

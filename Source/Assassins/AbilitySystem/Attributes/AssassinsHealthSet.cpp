@@ -35,7 +35,6 @@ void UAssassinsHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCall
 	float MinimumHealth = 0.f;
 
 	const FGameplayEffectContextHandle& EffectContext = Data.EffectSpec.GetEffectContext();
-	// Me: TODO: What is the original instigator which started the whole chain?
 	AActor* Instigator = EffectContext.GetOriginalInstigator();
 	AActor* Causer = EffectContext.GetEffectCauser();
 

@@ -30,7 +30,7 @@ UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& Objec
 
     MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Channeling);
 
-    MoveInterruptedAbilityTags.AddTag(AssassinsGameplayTags::Ability_Interruptible_Click);
+    ClickCanceledAbilityTags.AddTag(AssassinsGameplayTags::Ability_Cancelable_Click);
 }
 
 bool UAssassinsHeroComponent::CanChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState) const
@@ -446,7 +446,7 @@ void UAssassinsHeroComponent::CancelMoveInterruptedAbilities()
         {
             if (UAssassinsAbilitySystemComponent* AssassinsASC = PawnExtComp->GetAssassinsAbilitySystemComponent())
             {
-                AssassinsASC->CancelAbilities(&MoveInterruptedAbilityTags);
+                AssassinsASC->CancelAbilities(&ClickCanceledAbilityTags);
             }
         }
     }
