@@ -6,6 +6,7 @@
 #include "AssassinsLogCategories.h"
 #include "System/AssassinsAssetManager.h"
 #include "System/AssassinsGameData.h"
+#include "AssassinsGameplayTags.h"
 
 UAssassinsAbilitySystemComponent::UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -138,6 +139,15 @@ void UAssassinsAbilitySystemComponent::ClearAbilityInput()
 	InputHeldSpecHandles.Reset();
 }
 
+int32 UAssassinsAbilitySystemComponent::HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload)
+{
+	if (!HasMatchingGameplayTag(AssassinsGameplayTags::Status_Channeling))
+	{
+		return Super::HandleGameplayEvent(EventTag, Payload);
+	}
+
+	return 0;
+}
 void UAssassinsAbilitySystemComponent::AddDynamicGameplayEffect(FGameplayTag Tag)
 {
 	const TSubclassOf<UGameplayEffect> DynamicTagGE = UAssassinsAssetManager::GetSubclass(UAssassinsGameData::Get().DynamicTagGameplayEffect);

@@ -28,6 +28,9 @@ public:
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
 
+	//~UAbilitySystemComponent interface
+	virtual int32 HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload) override;
+	//~End of UAbilitySystemComponent interface
 	// Uses a gameplay effect to add the specified dynamic granted tag.
 	UFUNCTION(BlueprintCallable)
 	void AddDynamicGameplayEffect(FGameplayTag Tag);
