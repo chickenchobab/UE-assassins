@@ -38,19 +38,29 @@ void UAssassinsHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCall
 	AActor* Instigator = EffectContext.GetOriginalInstigator();
 	AActor* Causer = EffectContext.GetEffectCauser();
 
-	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
+	if (Data.EvaluatedData.Attribute == GetPhysicalDamageAttribute())
 	{
-		// Me: Send message
-	
 		// Convert into -Health and then clamp
-		SetHealth(FMath::Clamp(GetHealth() - GetDamage(), MinimumHealth, GetMaxHealth()));
-		SetDamage(0.0f);
+		SetHealth(FMath::Clamp(GetHealth() - GetPhysicalDamage(), MinimumHealth, GetMaxHealth()));
+		SetPhysicalDamage(0.0f);
+	}
+	else if (Data.EvaluatedData.Attribute == GetMagicDamageAttribute())
+	{
+		// Convert into -Health and then clamp
+		SetHealth(FMath::Clamp(GetHealth() - GetMagicDamage(), MinimumHealth, GetMaxHealth()));
+		SetMagicDamage(0.0f);
+	}
+	else if (Data.EvaluatedData.Attribute == GetTrueDamageAttribute())
+	{
+		// Convert into -Health and then clamp
+		SetHealth(FMath::Clamp(GetHealth() - GetTrueDamage(), MinimumHealth, GetMaxHealth()));
+		SetTrueDamage(0.0f);
 	}
 	else if (Data.EvaluatedData.Attribute == GetHealingAttribute())
 	{
 		// Convert into +Health and then clamp
 		SetHealth(FMath::Clamp(GetHealth() + GetHealing(), MinimumHealth, GetMaxHealth()));
-		SetDamage(0.0f);
+		SetHealing(0.0f);
 	}
 	else if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{

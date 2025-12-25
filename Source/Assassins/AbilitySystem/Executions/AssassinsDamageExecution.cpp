@@ -98,16 +98,39 @@ void UAssassinsDamageExecution::Execute_Implementation(const FGameplayEffectCust
 	// Clamping is done when damage is converted to -health
 	const float PhysicalDamageDone = FMath::Max(PhysicalDamage - PhysicalDamageAttenuation, 0.0f);
     const float MagicDamageDone = FMath::Max(MagicDamage - MagicDamageAttenuation, 0.0f);
-    const float DamageDone = PhysicalDamageDone + MagicDamageDone;
 
-	if (DamageDone > 0.0f)
+	if (PhysicalDamageDone > 0.0f)
 	{
 		// Apply a damage modifier, this gets turned into -health on the target.
 		OutExecutionOutput.AddOutputModifier(
 			FGameplayModifierEvaluatedData(
-				UAssassinsHealthSet::GetDamageAttribute(),
+				UAssassinsHealthSet::GetPhysicalDamageAttribute(),
 				EGameplayModOp::Additive,
-				DamageDone
+				PhysicalDamageDone
+			)
+		);
+	}
+
+	if (MagicDamageDone > 0.0f)
+	{
+		// Apply a damage modifier, this gets turned into -health on the target.
+		OutExecutionOutput.AddOutputModifier(
+			FGameplayModifierEvaluatedData(
+				UAssassinsHealthSet::GetMagicDamageAttribute(),
+				EGameplayModOp::Additive,
+				MagicDamageDone
+			)
+		);
+	}
+
+	if (TrueDamage > 0.0f)
+	{
+		// Apply a damage modifier, this gets turned into -health on the target.
+		OutExecutionOutput.AddOutputModifier(
+			FGameplayModifierEvaluatedData(
+				UAssassinsHealthSet::GetTrueDamageAttribute(),
+				EGameplayModOp::Additive,
+				TrueDamage
 			)
 		);
 	}

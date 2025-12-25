@@ -24,7 +24,9 @@ public:
 	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, Health);
 	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, MaxHealth);
 	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, Healing);
-	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, Damage);
+	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, PhysicalDamage);
+	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, MagicDamage);
+	ATTRIBUTE_ACCESSORS(UAssassinsHealthSet, TrueDamage);
 
 	// Delegate when health changes due to damage/healing, some information may be missing on the client
 	mutable FAssassinsAttributeEvent OnHealthChanged;
@@ -71,5 +73,11 @@ private:
 
 	// Incoming damage. This is mapped directly to -Health
 	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Health", Meta = (HideFromModifiers, AllowPrivateAccess = true))
-	FGameplayAttributeData Damage;
+	FGameplayAttributeData PhysicalDamage;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Health", Meta = (HideFromModifiers, AllowPrivateAccess = true))
+	FGameplayAttributeData MagicDamage;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Health", Meta = (HideFromModifiers, AllowPrivateAccess = true))
+	FGameplayAttributeData TrueDamage;
 };
