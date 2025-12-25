@@ -62,17 +62,6 @@ FGameplayEffectSpecHandle UAssassinsGameplayAbility::MakeEffectSpecHandle(TSubcl
     return AssassinsASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
 }
 
-void UAssassinsGameplayAbility::SetSetByCallerMagnitudeOfEffectSpec(const FGameplayEffectSpecHandle& SpecHandle, FGameplayTag DataTag, float Magnitude)
-{
-    if (SpecHandle.IsValid())
-    {
-        if (SpecHandle.Data.IsValid())
-        {
-            SpecHandle.Data->SetSetByCallerMagnitude(DataTag, Magnitude);
-        }
-    }
-}
-
 FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor)
 {
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
