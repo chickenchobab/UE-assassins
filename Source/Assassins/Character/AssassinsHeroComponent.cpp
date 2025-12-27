@@ -17,6 +17,8 @@
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "NiagaraFunctionLibrary.h"
 #include "UI/AssassinsGameViewportClient.h"
+#include "GameModes/AssassinsGameState.h"
+#include "Camera/AssassinsCameraComponent.h"
 
 
 const FName UAssassinsHeroComponent::NAME_ActorFeatureName("Hero");
@@ -142,6 +144,12 @@ void UAssassinsHeroComponent::HandleChangeInitState(UGameFrameworkComponentManag
 			{
 				InitializePlayerInput(Pawn->InputComponent);
 			}
+		}
+
+		// Hook up the delegate for all pawns, in case we spectate later
+		if (UAssassinsCameraComponent* CameraComponent = UAssassinsCameraComponent::FindCameraComponent(Pawn))
+		{
+			CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
 		}
 	}
 }
@@ -370,6 +378,22 @@ void UAssassinsHeroComponent::Input_AbilityInputTagReleased(FGameplayTag InputTa
 			}
 		}
 	}
+}
+
+TSubclassOf<UAssassinsCameraMode> UAssassinsHeroComponent::DetermineCameraMode() const
+{
+	if (UWorld* World = GetWorld())
+	{
+		if (AGameModeBase* GameMode = World->GetAuthGameMode())
+		{
+			if (AAssassinsGameState* AssassinsGameState = GameMode->GetGameState<AAssassinsGameState>())
+			{
+				return AssassinsGameState->GetExperienceCameraMode();
+			}
+		}
+	}
+
+	return nullptr;
 }
 
 void UAssassinsHeroComponent::HandleCursorTargetSet(AAssassinsCharacter* CursorTarget)

@@ -13,4 +13,14 @@ AAssassinsGameState::AAssassinsGameState(const FObjectInitializer& ObjectInitial
 
 	ExperienceComponent = CreateDefaultSubobject<UAssassinsExperienceStateComponent>(TEXT("ExperienceComponent"));
 }
+
+TSubclassOf<UAssassinsCameraMode> AAssassinsGameState::GetExperienceCameraMode() const
+{
+	if (ExperienceComponent)
+	{
+		return ExperienceComponent->GetCurrentExperienceCameraMode();
+	}
+	return nullptr;
+}
+
 }

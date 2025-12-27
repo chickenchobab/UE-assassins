@@ -150,6 +150,16 @@ bool UAssassinsExperienceStateComponent::IsExperienceLoaded() const
 	return (LoadState == EAssassinsExperienceLoadState::Loaded) && (CurrentExperience != nullptr);
 }
 
+const TSubclassOf<UAssassinsCameraMode> UAssassinsExperienceStateComponent::GetCurrentExperienceCameraMode() const
+{
+	if (CurrentExperience)
+	{
+		return CurrentExperience->CameraMode;
+	}
+	
+	return nullptr;
+}
+
 void UAssassinsExperienceStateComponent::StartExperienceLoad()
 {
 	check(CurrentExperience != nullptr);

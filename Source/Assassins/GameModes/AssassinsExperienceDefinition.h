@@ -9,6 +9,7 @@
 class UAssassinsPawnData;
 class UGameFeatureAction;
 class UAssassinsExperienceActionSet;
+class UAssassinsCameraMode;
 
 
 /**
@@ -28,6 +29,9 @@ public:
 	//@TODO: Make soft?
 	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
 	TObjectPtr<const UAssassinsPawnData> DefaultPawnData;
+
+	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
+	TSubclassOf<UAssassinsCameraMode> CameraMode;
 
 	// List of actions to perform as this experience is loaded/activated/deactivated/unloaded
 	UPROPERTY(EditDefaultsOnly, Instanced, Category = "Actions")

@@ -9,6 +9,7 @@
 
 namespace UE::GameFeatures { struct FResult; }
 class UAssassinsExperienceDefinition;
+class UAssassinsCameraMode;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAssassinsExperienceLoaded, const UAssassinsExperienceDefinition* /*Experience*/);
 
@@ -61,6 +62,8 @@ public:
 	const UAssassinsExperienceDefinition* GetCurrentExperienceChecked() const;
 
 	bool IsExperienceLoaded() const;
+
+	const TSubclassOf<UAssassinsCameraMode> GetCurrentExperienceCameraMode() const;
 
 private:
 

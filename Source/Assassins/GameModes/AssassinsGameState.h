@@ -6,6 +6,7 @@
 #include "AssassinsGameState.generated.h"
 
 class UAssassinsExperienceStateComponent;
+class UAssassinsCameraMode;
 
 /**
  * 
@@ -17,6 +18,8 @@ class ASSASSINS_API AAssassinsGameState : public AModularGameStateBase
 
 public:
 	AAssassinsGameState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	TSubclassOf<UAssassinsCameraMode> GetExperienceCameraMode() const;
 
 
 private:

@@ -11,6 +11,7 @@
 class UNiagaraSystem;
 class AAssassinsPlayerController;
 class AAssassinsCharacter;
+class UAssassinsCameraMode;
 
 /**
  * Component that sets up input and camera handling for player controlled pawns (or bots that simulate players).
@@ -64,6 +65,8 @@ protected:
 	/** Input handlers for ability action. */
 	void Input_AbilityInputTagPressed(FGameplayTag InputTag);
 	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
+
+	TSubclassOf<UAssassinsCameraMode> DetermineCameraMode() const;
 
 	//Me: Handle cursor position changes w.r.t ability target
 	void HandleCursorTargetSet(AAssassinsCharacter* CursorTarget);
