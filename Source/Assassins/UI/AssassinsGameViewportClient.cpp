@@ -11,7 +11,7 @@ void UAssassinsGameViewportClient::MouseMove(FViewport* InViewport, int32 X, int
 	APlayerController* PC = GetGameInstance()->GetFirstLocalPlayerController();
 	FHitResult Hit;
 	bool bHitSuccessful = false;
-
+	
 	if (PC)
 	{
 		bHitSuccessful = PC->GetHitResultUnderCursor(ECollisionChannel::ECC_GameTraceChannel1 /*targeting trace*/, true, Hit);
@@ -31,5 +31,28 @@ void UAssassinsGameViewportClient::MouseMove(FViewport* InViewport, int32 X, int
 	else
 	{
 		OnCursorTargetCleared.ExecuteIfBound();
+	}
+
+	if (Viewport)
+	{
+		FIntPoint ViewportSizeXY = Viewport->GetSizeXY();
+
+		if (X <= 10)
+		{
+			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Left);
+		}
+		else if (X > ViewportSizeXY.X - 10)
+		{
+			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Right);
+		}
+
+		if (Y <= 10)
+		{
+			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Up);
+		}
+		else if (Y > ViewportSizeXY.Y - 10)
+		{
+			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Down);
+		}
 	}
 }

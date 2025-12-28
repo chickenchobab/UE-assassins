@@ -5,6 +5,8 @@
 #include "Camera/AssassinsCameraMode.h"
 #include "AssassinsCameraMode_TopDown.generated.h"
 
+enum class ECardinalDirection : uint8;
+
 /**
  * 
  */
@@ -12,12 +14,22 @@ UCLASS(Abstract, Blueprintable)
 class UAssassinsCameraMode_TopDown : public UAssassinsCameraMode
 {
 	GENERATED_BODY()
+
+public:
+
+	UAssassinsCameraMode_TopDown();
 	
 protected:
 
-	//~UAssassinsGameMode interface
+	//~UAssassinsCameraMode interface
 	virtual void UpdateView(float DeltaTime) override;
-	//~End of UAssassinsGameMode interface
+	virtual void OnSelected() override;
+	virtual void OnDiselected() override;
+	//~End of UAssassinsCameraMode interface
+
+	void MovePivotLoaction(ECardinalDirection CardinalDirection);
+	void BeginFocusOnTargetActor();
+	void EndFocusOnTargetActor();
 
 protected:
 
@@ -26,4 +38,13 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "TopDown")
 	double CameraLoftDistance;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TopDown")
+	float PivotMoveSpeed;
+
+private:
+
+	FVector CurrentPivotLocation;
+
+	bool bIsFocusingOnTargetActor;
 };

@@ -13,6 +13,8 @@ void UAssassinsCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo&
 {
 	UpdateCameraMode();
 
+	check(CurrentCameraMode);
+
 	FAssassinsCameraModeView CameraModeView;
 	CurrentCameraMode->EvaluateCameraMode(DeltaTime, CameraModeView);
 
@@ -81,8 +83,14 @@ void UAssassinsCameraComponent::SetCurrentCameraMode(TSubclassOf<UAssassinsCamer
 	}
 
 	// Not found, so we need to create it.
+	if ((CurrentCameraMode != nullptr) && (CurrentCameraMode->GetClass() != CameraModeClass))
+	{
+		CurrentCameraMode->OnDiselected();
+	}
+
 	UAssassinsCameraMode* NewCameraMode = NewObject<UAssassinsCameraMode>(this, CameraModeClass, NAME_None, RF_NoFlags);
 	check(NewCameraMode);
 
 	CurrentCameraMode = NewCameraMode;
+	CurrentCameraMode->OnSelected();
 }

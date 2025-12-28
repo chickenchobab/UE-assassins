@@ -46,6 +46,9 @@ public:
 
 	void EvaluateCameraMode(float DeltaTime, FAssassinsCameraModeView& OutCameraModeView);
 
+	virtual void OnSelected() {}
+	virtual void OnDiselected() {}
+
 protected:
 	UE_API virtual void UpdateView(float DeltaTime);
 

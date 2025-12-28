@@ -10,6 +10,16 @@ class AAssassinsCharacter;
 DECLARE_DELEGATE_OneParam(FAssassinsOnCursorTargetSet, AAssassinsCharacter*);
 DECLARE_DELEGATE(FAssassinsOnCursorTargetCleared);
 
+enum class ECardinalDirection : uint8
+{
+	Up,
+	Down,
+	Left,
+	Right
+};
+
+DECLARE_DELEGATE_OneParam(FAssassinsOnCursorAtViewportEdge, ECardinalDirection);
+
 /**
  * 
  */
@@ -22,6 +32,8 @@ public:
 
 	FAssassinsOnCursorTargetSet OnCursorTargetSet;
 	FAssassinsOnCursorTargetCleared OnCursorTargetCleared;
+
+	FAssassinsOnCursorAtViewportEdge OnCursorAtViewportEdge;
 
 protected:
 	

@@ -330,6 +330,6 @@ FAIRequestID AAssassinsPlayerController::RequestMove(const FAIMoveRequest& MoveR
 	{
 		RequestID = PathFollowingComponent->RequestMove(MoveRequest, Path);
 	}
-
+	
 	return RequestID;
 }
