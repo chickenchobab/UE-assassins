@@ -89,6 +89,22 @@ void AAssassinsPlayerState::PostInitializeComponents()
     }
 }
 
+
+void AAssassinsPlayerState::SetGenericTeamId(const FGenericTeamId& NewTeamID)
+{
+    if (HasAuthority())
+    {
+        const FGenericTeamId OldTeamID = MyTeamID;
+
+        MyTeamID = NewTeamID;
+    }
+}
+
+FGenericTeamId AAssassinsPlayerState::GetGenericTeamId() const
+{
+    return MyTeamID;
+}
+
 void AAssassinsPlayerState::OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience)
 {
     if (AAssassinsGameMode* AssassinsGameMode = GetWorld()->GetAuthGameMode<AAssassinsGameMode>())

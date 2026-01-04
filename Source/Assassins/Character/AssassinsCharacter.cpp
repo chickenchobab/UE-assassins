@@ -15,6 +15,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
+#include "AssassinsLogCategories.h"
 
 AAssassinsCharacter::AAssassinsCharacter()
 {
@@ -70,6 +71,16 @@ UAbilitySystemComponent* AAssassinsCharacter::GetAbilitySystemComponent() const
 	return PawnExtComponent->GetAssassinsAbilitySystemComponent();
 }
 
+void AAssassinsCharacter::SetGenericTeamId(const FGenericTeamId& NewTeamID)
+{
+	UE_LOG(LogAssassinsTeams, Error, TEXT("You can't set the team ID on a character (%s) except on the authority"), *GetPathNameSafe(this));
+}
+
+FGenericTeamId AAssassinsCharacter::GetGenericTeamId() const
+{
+	return MyTeamID;
+}
+
 void AAssassinsCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -77,11 +88,39 @@ void AAssassinsCharacter::PossessedBy(AController* NewController)
 	PawnExtComponent->HandleControllerChanged();
 }
 
+void AAssassinsCharacter::UnPossessed()
+{
+	Super::UnPossessed();
+
+	PawnExtComponent->HandleControllerChanged();
+}
+
+void AAssassinsCharacter::NotifyControllerChanged()
+{
+	const FGenericTeamId OldTeamId = GetGenericTeamId();
+
+	Super::NotifyControllerChanged();
+
+	// Update our team ID based on the controller (player state actually)
+	if (HasAuthority() && (GetController() != nullptr))
+	{
+		if (IAssassinsTeamAgentInterface* ControllerWithTeam = Cast<IAssassinsTeamAgentInterface>(GetController()))
+		{
+			MyTeamID = ControllerWithTeam->GetGenericTeamId();
+		}
+	}
+}
+
 void AAssassinsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PawnExtComponent->SetupPlayerInputComponent();
+}
+
+void AAssassinsCharacter::SetTeamId(const FGenericTeamId& NewTeamID)
+{
+	MyTeamID = NewTeamID;
 }
 
 void AAssassinsCharacter::OnAbilitySystemInitialized()

@@ -4,6 +4,7 @@
 
 #include "Templates/SubclassOf.h"
 #include "CommonPlayerController.h"
+#include "Teams/AssassinsTeamAgentInterface.h"
 #include "GameplayTagContainer.h"
 #include "AITypes.h"
 
@@ -25,7 +26,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMoveCompletedSignature, FAIRequest
 
 
 UCLASS()
-class AAssassinsPlayerController : public ACommonPlayerController
+class AAssassinsPlayerController : public ACommonPlayerController, public IAssassinsTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -33,6 +34,11 @@ public:
 	AAssassinsPlayerController();
 
 	UAssassinsAbilitySystemComponent* GetAssassinsAbilitySystemComponent() const;
+
+	//~IAssassinsTeamAgentInterface interface
+	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	//~End of IAssassinsTeamAgentInterface interface
 
 	/** Makes AI go toward specified Goal actor(destination will be continuously updated), aborts any active path following */
 	// Me: It's for unit-targeted abilities(including basic attack), which force the avatar to move towards the target until the target is within the fire range.
@@ -53,7 +59,6 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "AI|Navigation")
     bool GetShouldKeepMoving() const { return bShouldKeepMoving; }
-
 
     void HandleBeginChanneling();
     void HandleEndChanneling(bool bResumeMove);

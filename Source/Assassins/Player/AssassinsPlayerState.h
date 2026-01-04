@@ -4,20 +4,24 @@
 
 #include "AbilitySystemInterface.h"
 #include "ModularPlayerState.h"
+#include "Teams/AssassinsTeamAgentInterface.h"
+
 #include "AssassinsPlayerState.generated.h"
 
 class UAssassinsPawnData;
 class UAssassinsAbilitySystemComponent;
 class AAssassinsPlayerController;
 class UAssassinsExperienceDefinition;
+class UAssassinsExperienceEntry;
 class UAssassinsHealthSet;
 class UAssassinsCombatSet;
+class AAssassinsCharacter;
 
 /**
  * 
  */
 UCLASS()
-class ASSASSINS_API AAssassinsPlayerState : public AModularPlayerState, public IAbilitySystemInterface
+class ASSASSINS_API AAssassinsPlayerState : public AModularPlayerState, public IAbilitySystemInterface, public IAssassinsTeamAgentInterface
 {
 	GENERATED_BODY()
 	
@@ -51,6 +55,10 @@ protected:
 	UPROPERTY()
 	TObjectPtr<const UAssassinsPawnData> PawnData;
 
+	//~IAssassinsTeamAgentInterface interface
+	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	//~End of IAssassinsTeamAgentInterface interface
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Assassins|PlayerState")
 	TObjectPtr<UAssassinsAbilitySystemComponent> AbilitySystemComponent;

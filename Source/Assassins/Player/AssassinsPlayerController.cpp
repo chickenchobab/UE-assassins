@@ -34,6 +34,21 @@ UAssassinsAbilitySystemComponent* AAssassinsPlayerController::GetAssassinsAbilit
 	return AssassinsPS ? AssassinsPS->GetAssassinsAbilitySystemComponent() : nullptr;
 }
 
+void AAssassinsPlayerController::SetGenericTeamId(const FGenericTeamId& NewTeamID)
+{
+	UE_LOG(LogAssassinsTeams, Error, TEXT("You can't set the team ID on a player controller (%s); it's deriven by the associated player state"), *GetPathNameSafe(this));
+}
+
+FGenericTeamId AAssassinsPlayerController::GetGenericTeamId() const
+{
+	if (const IAssassinsTeamAgentInterface* PSWithTeamInterface = Cast<IAssassinsTeamAgentInterface>(PlayerState))
+	{
+		return PSWithTeamInterface->GetGenericTeamId();
+	}
+
+	return FGenericTeamId::NoTeam;
+}
+
 void AAssassinsPlayerController::OnUnPossess()
 {
 	// Make sure the pawn that is being unpossessed doesn't remain our ASC's avatar actor

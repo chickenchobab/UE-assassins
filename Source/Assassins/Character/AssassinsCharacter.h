@@ -3,7 +3,9 @@
 #pragma once
 
 #include "AbilitySystemInterface.h"
+#include "Teams/AssassinsTeamAgentInterface.h"
 #include "ModularCharacter.h"
+
 #include "AssassinsCharacter.generated.h"
 
 class UAssassinsPawnExtensionComponent;
@@ -13,7 +15,7 @@ class UAssassinsCameraComponent;
 struct FGameplayEffectSpec;
 
 UCLASS(Blueprintable)
-class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface
+class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface, public IAssassinsTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -33,10 +35,22 @@ public:
 	FORCEINLINE void SetAbilityTarget(AAssassinsCharacter* Target) { AbilityTarget = Target; }
 	FORCEINLINE void ClearAbilityTarget() { AbilityTarget = nullptr; }
 
-protected:
-	virtual void PossessedBy(AController* NewController) override;
+	//~IAssassinsTeamAgentInterface interface
+	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	//~End of IAssassinsTeamAgentInterface interface
 
+protected:
+	
+	//~APawn interface
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	//~End of APawn interface
+
+	// Bot(AssassinsCharacterWithAbilities) can set its team ID
+	void SetTeamId(const FGenericTeamId& NewTeamID);
 
 	virtual void OnAbilitySystemInitialized();
 	virtual void OnAbilitySystemUninitialized();
@@ -58,5 +72,8 @@ private:
 	//Me: Target of abilities set when the mouse cursor is on it.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = "true"))
 	TWeakObjectPtr<AAssassinsCharacter> AbilityTarget;
+
+	UPROPERTY()
+	FGenericTeamId MyTeamID;
 };
 
