@@ -140,11 +140,6 @@ void UAssassinsHeroComponent::HandleChangeInitState(UGameFrameworkComponentManag
 			CachedPlayerController->bShowMouseCursor = true;
 			CachedPlayerController->DefaultMouseCursor = EMouseCursor::Default;
 
-			if (UGameViewportClient* GameViewportClient = GetWorld()->GetGameViewport())
-			{
-				GameViewportClient->SetMouseLockMode(EMouseLockMode::LockAlways);
-			}
-
 			if (Pawn->InputComponent)
 			{
 				InitializePlayerInput(Pawn->InputComponent);

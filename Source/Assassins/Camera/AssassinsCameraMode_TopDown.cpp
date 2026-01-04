@@ -35,7 +35,8 @@ void UAssassinsCameraMode_TopDown::OnSelected()
 	{
 		if (UAssassinsGameViewportClient* ViewportClient = Cast<UAssassinsGameViewportClient>(World->GetGameViewport()))
 		{
-			ViewportClient->OnCursorAtViewportEdge.BindUObject(this, &ThisClass::MovePivotLoaction);
+			ViewportClient->OnCursorAtViewportEdge.AddUObject(this, &ThisClass::MovePivotLoaction);
+			ViewportClient->SetMouseLockMode(EMouseLockMode::LockAlways);
 		}
 	}
 
@@ -55,6 +56,15 @@ void UAssassinsCameraMode_TopDown::OnSelected()
 
 void UAssassinsCameraMode_TopDown::OnDiselected()
 {
+	if (UWorld* World = GetWorld())
+	{
+		if (UAssassinsGameViewportClient* ViewportClient = Cast<UAssassinsGameViewportClient>(World->GetGameViewport()))
+		{
+			ViewportClient->OnCursorAtViewportEdge.RemoveAll(this);
+			ViewportClient->SetMouseLockMode(EMouseLockMode::DoNotLock);
+		}
+	}
+
 	// Me: Unbind space bar
 	if (AActor* TargetActor = GetTargetActor())
 	{

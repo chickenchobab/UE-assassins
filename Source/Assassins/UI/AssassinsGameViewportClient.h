@@ -7,9 +7,6 @@
 
 class AAssassinsCharacter;
 
-DECLARE_DELEGATE_OneParam(FAssassinsOnCursorTargetSet, AAssassinsCharacter*);
-DECLARE_DELEGATE(FAssassinsOnCursorTargetCleared);
-
 enum class ECardinalDirection : uint8
 {
 	Up,
@@ -18,11 +15,10 @@ enum class ECardinalDirection : uint8
 	Right
 };
 
-DECLARE_DELEGATE_OneParam(FAssassinsOnCursorAtViewportEdge, ECardinalDirection);
+DECLARE_DELEGATE_OneParam(FAssassinsOnCursorTargetSet, AAssassinsCharacter*);
+DECLARE_DELEGATE(FAssassinsOnCursorTargetCleared);
+DECLARE_MULTICAST_DELEGATE_OneParam(FAssassinsOnCursorAtViewportEdge, ECardinalDirection);
 
-/**
- * 
- */
 UCLASS(BlueprintType)
 class ASSASSINS_API UAssassinsGameViewportClient : public UCommonGameViewportClient
 {

@@ -39,20 +39,20 @@ void UAssassinsGameViewportClient::MouseMove(FViewport* InViewport, int32 X, int
 
 		if (X <= 10)
 		{
-			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Left);
+			OnCursorAtViewportEdge.Broadcast(ECardinalDirection::Left);
 		}
 		else if (X > ViewportSizeXY.X - 10)
 		{
-			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Right);
+			OnCursorAtViewportEdge.Broadcast(ECardinalDirection::Right);
 		}
 
 		if (Y <= 10)
 		{
-			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Up);
+			OnCursorAtViewportEdge.Broadcast(ECardinalDirection::Up);
 		}
 		else if (Y > ViewportSizeXY.Y - 10)
 		{
-			OnCursorAtViewportEdge.ExecuteIfBound(ECardinalDirection::Down);
+			OnCursorAtViewportEdge.Broadcast(ECardinalDirection::Down);
 		}
 	}
 }
