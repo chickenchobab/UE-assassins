@@ -7,6 +7,7 @@
 
 class UAssassinsAbilitySet;
 class UAssassinsInputConfig;
+class UTexture2D;
 
 /**
  * 
@@ -19,7 +20,7 @@ class UAssassinsPawnData : public UPrimaryDataAsset
 public:
 
 	// Class to instantiate for this pawn (should usually derive from AAssassinsPawn or AAssassinsCharacter).
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Abilities")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Pawn")
 	TSubclassOf<APawn> PawnClass;
 
 	// Ability sets to grant to this pawn's ability system.
@@ -27,6 +28,15 @@ public:
 	TArray<TObjectPtr<UAssassinsAbilitySet>> AbilitySets;
 
 	// Input configuration used by player controlled pawns to create input mappings and bind input actions.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Abilities")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Input")
 	TObjectPtr<UAssassinsInputConfig> InputConfig;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Pawn")
+	FText Name;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Pawn")
+	FText Description;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Pawn")
+	TObjectPtr<UTexture2D> Icon;
 };
