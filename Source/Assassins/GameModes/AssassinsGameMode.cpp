@@ -26,6 +26,8 @@ AAssassinsGameMode::AAssassinsGameMode()
 	PlayerStateClass = AAssassinsPlayerState::StaticClass();
 	DefaultPawnClass = AAssassinsCharacter::StaticClass();
 	HUDClass = AAssassinsHUD::StaticClass();
+
+	bUseSeamlessTravel = true;
 }
 
 const UAssassinsPawnData* AAssassinsGameMode::GetPawnDataForController(const AController* InController) const

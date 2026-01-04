@@ -47,13 +47,6 @@ void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData)
         return;
     }
 
-    if (PawnData)
-    {
-        UE_LOG(LogAssassins, Error, TEXT("Trying to set PawnData [%s] on player state [%s] that already has valid PawnData [%s]"), *GetNameSafe(InPawnData), *GetNameSafe(this), *GetNameSafe(PawnData));
-        return;
-    }
-
-    //Me: TODO Use specifier for replication
     //MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PawnData, this);
 
     PawnData = InPawnData;
@@ -89,6 +82,17 @@ void AAssassinsPlayerState::PostInitializeComponents()
     }
 }
 
+void AAssassinsPlayerState::CopyProperties(APlayerState* PlayerState)
+{
+    Super::CopyProperties(PlayerState);
+
+    if (AAssassinsPlayerState* AssassinsPS = Cast<AAssassinsPlayerState>(PlayerState))
+    {
+        AssassinsPS->SelectedExperience = SelectedExperience;
+        AssassinsPS->MyTeamID = MyTeamID;
+        AssassinsPS->PawnData = PawnData;
+    }
+}
 
 void AAssassinsPlayerState::SetGenericTeamId(const FGenericTeamId& NewTeamID)
 {

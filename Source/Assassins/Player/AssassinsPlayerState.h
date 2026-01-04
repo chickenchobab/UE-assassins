@@ -48,17 +48,31 @@ public:
 	virtual void PostInitializeComponents() override;
 	//~End of AActor interface
 
-private:
-	void OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience);
-
-protected:
-	UPROPERTY()
-	TObjectPtr<const UAssassinsPawnData> PawnData;
+	//~APlayerState interface
+	virtual void CopyProperties(APlayerState* PlayerState) override;
+	//~End of APlayerState interface
 
 	//~IAssassinsTeamAgentInterface interface
 	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	//~End of IAssassinsTeamAgentInterface interface
+
+	//////////////////////////////////
+	// Selected in the starting menu
+	//////////////////////////////////
+
+	UPROPERTY(BlueprintReadWrite, Category = PlayerMenu)
+	TSoftObjectPtr<UAssassinsExperienceEntry> SelectedExperience;
+
+	UPROPERTY(BlueprintReadWrite, Category = "PlayerMenu|Team")
+	FGenericTeamId MyTeamID;
+
+	UPROPERTY(BlueprintReadWrite, Category = "PlayerMenu|Pawn")
+	TObjectPtr<const UAssassinsPawnData> PawnData;
+
+private:
+	void OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience);
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Assassins|PlayerState")
 	TObjectPtr<UAssassinsAbilitySystemComponent> AbilitySystemComponent;
