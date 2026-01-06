@@ -13,6 +13,7 @@
 /** Forward declaration to improve compiling times */
 class UInputAction;
 class UAssassinsAbilitySystemComponent;
+class UAssassinsTargetChasingComponent;
 class UPathFollowingComponent;
 struct FPathFollowingResult;
 struct FPathFollowingRequestResult;
@@ -35,59 +36,52 @@ public:
 
 	UAssassinsAbilitySystemComponent* GetAssassinsAbilitySystemComponent() const;
 
-	//~IAssassinsTeamAgentInterface interface
-	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
-	virtual FGenericTeamId GetGenericTeamId() const override;
-	//~End of IAssassinsTeamAgentInterface interface
-
-	/** Makes AI go toward specified Goal actor(destination will be continuously updated), aborts any active path following */
-	// Me: It's for unit-targeted abilities(including basic attack), which force the avatar to move towards the target until the target is within the fire range.
-	UFUNCTION(BlueprintCallable, Category="AI|Navigation")
-	EPathFollowingRequestResult::Type MoveToActor(AActor* Goal, float AcceptRadius);
-
-    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
-    void AbortMove();
-
-    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
-    void PauseMove();
-
-    UFUNCTION(BlueprintCallable, Category = "AI | Navigation")
-    void ResetMoveState();
-
-    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
-    void SetShouldKeepMoving(bool Condition) { bShouldKeepMoving = Condition; }
-
-    UFUNCTION(BlueprintPure, Category = "AI|Navigation")
-    bool GetShouldKeepMoving() const { return bShouldKeepMoving; }
-
-    void HandleBeginChanneling();
-    void HandleEndChanneling(bool bResumeMove);
-
-    UFUNCTION(BlueprintPure, Category = "AI|Navigation")
-    bool HasMovePaused() const;
-
-	/** Blueprint notification that we've completed the current movement request */
-	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "MoveCompleted"))
-	FMoveCompletedSignature ReceiveMoveCompleted;
-
-protected:	
+	//~Actor interface
+	virtual void BeginPlay() override;
+	//~End of Actor interface
 
 	//~AController interface
 	virtual void OnUnPossess() override;
 	//~End of AController interface
 
 	//~APlayerController interface
-    virtual void PlayerTick(float DeltaTime) override;
+	virtual void PlayerTick(float DeltaTime) override;
 	virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
 	//~End of APlayerController interface
 
-	virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result);
+	//~IAssassinsTeamAgentInterface interface
+	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	//~End of IAssassinsTeamAgentInterface interface
 
-private:
+    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    void AbortMove();
+    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    void PauseMove();
+    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+    void ResetMoveState();
+
+	UFUNCTION(BlueprintPure, Category = "AI|Navigation")
+	bool HasMovePaused() const;
 	
-	/**
-	* Me: Functions of AI component, which are called in MoveToActor.
-	*/
+    void HandleBeginChanneling();
+    void HandleEndChanneling(bool bResumeMove);
+
+public:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ability")
+	TObjectPtr<UAssassinsTargetChasingComponent> TargetChasingComponent;
+
+protected:
+
+	void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result);
+	
+	//////////////////////////////////////////
+	// AI controller functions for navigation
+	//////////////////////////////////////////
+
+	/** Makes AI go toward specified Goal actor(destination will be continuously updated), aborts any active path following */
+	EPathFollowingRequestResult::Type MoveToActor(AActor* Goal, float AcceptRadius);
 
 	/** Makes AI go toward specified destination */
 	FPathFollowingRequestResult MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath = nullptr);
@@ -105,19 +99,13 @@ private:
 	FAIRequestID RequestMove(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr Path);
 
 private:
-
 	/** Component used for moving along a path. */
 	UPROPERTY(VisibleDefaultsOnly, Category = "AI|Navigation")
 	TObjectPtr<UPathFollowingComponent> PathFollowingComponent;
 
-    // Me: Whether to keep MoveToActor
-    bool bShouldKeepMoving;
-
-    // Me: Arguments to call MoveToActor again
-    UPROPERTY()
-    TWeakObjectPtr<AActor> CachedMoveTarget;
-
-    float CachedAcceptRadius;
+	/** Blueprint notification that we've completed the current movement request */
+	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "MoveCompleted"))
+	FMoveCompletedSignature ReceiveMoveCompleted;
 };
 
 

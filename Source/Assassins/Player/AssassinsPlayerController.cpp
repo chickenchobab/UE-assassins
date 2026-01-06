@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "AbilitySystem/AssassinsTargetChasingComponent.h"
 #include "AbilitySystemGlobals.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "NavigationSystem.h"
@@ -18,14 +19,8 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 AAssassinsPlayerController::AAssassinsPlayerController()
 {
 	PathFollowingComponent = CreateDefaultSubobject<UPathFollowingComponent>(TEXT("PathFollowingComponent"));
-	if (PathFollowingComponent)
-	{
-		PathFollowingComponent->OnRequestFinished.AddUObject(this, &ThisClass::OnMoveCompleted);
-	}
 
-    bShouldKeepMoving = false;
-    CachedMoveTarget = nullptr;
-    CachedAcceptRadius = 0.0f;
+	TargetChasingComponent = CreateDefaultSubobject<UAssassinsTargetChasingComponent>(TEXT("TargetChasingComponent"));
 }
 
 UAssassinsAbilitySystemComponent* AAssassinsPlayerController::GetAssassinsAbilitySystemComponent() const
@@ -34,19 +29,27 @@ UAssassinsAbilitySystemComponent* AAssassinsPlayerController::GetAssassinsAbilit
 	return AssassinsPS ? AssassinsPS->GetAssassinsAbilitySystemComponent() : nullptr;
 }
 
-void AAssassinsPlayerController::SetGenericTeamId(const FGenericTeamId& NewTeamID)
+void AAssassinsPlayerController::BeginPlay()
 {
-	UE_LOG(LogAssassinsTeams, Error, TEXT("You can't set the team ID on a player controller (%s); it's deriven by the associated player state"), *GetPathNameSafe(this));
-}
+	Super::BeginPlay();
 
-FGenericTeamId AAssassinsPlayerController::GetGenericTeamId() const
-{
-	if (const IAssassinsTeamAgentInterface* PSWithTeamInterface = Cast<IAssassinsTeamAgentInterface>(PlayerState))
+	if (PathFollowingComponent)
 	{
-		return PSWithTeamInterface->GetGenericTeamId();
+		PathFollowingComponent->OnRequestFinished.AddUObject(this, &ThisClass::OnMoveCompleted);
 	}
 
-	return FGenericTeamId::NoTeam;
+	if (TargetChasingComponent)
+	{
+		TargetChasingComponent->ChaseTargetDelegate.BindLambda([this](AActor* Target, float AcceptRadius)
+		{
+			if (PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Idle)
+			{
+				MoveToActor(Target, AcceptRadius);
+			}
+		});
+
+		TargetChasingComponent->StopChaseDelegate.BindLambda([this]() { AbortMove(); });
+	}
 }
 
 void AAssassinsPlayerController::OnUnPossess()
@@ -68,12 +71,7 @@ void AAssassinsPlayerController::OnUnPossess()
 
 void AAssassinsPlayerController::PlayerTick(float DeltaTime)
 {
-    Super::PlayerTick(DeltaTime);
-
-    if (bShouldKeepMoving && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Idle)
-    {
-        MoveToActor(CachedMoveTarget.IsValid() ? CachedMoveTarget.Get() : nullptr, CachedAcceptRadius);
-    }
+	Super::PlayerTick(DeltaTime);
 }
 
 void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
@@ -86,27 +84,19 @@ void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const b
 	Super::PostProcessInput(DeltaTime, bGamePaused);
 }
 
-void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
+void AAssassinsPlayerController::SetGenericTeamId(const FGenericTeamId& NewTeamID)
 {
-    ReceiveMoveCompleted.Broadcast(RequestID, Result.Code);
+	UE_LOG(LogAssassinsTeams, Error, TEXT("You can't set the team ID on a player controller (%s); it's deriven by the associated player state"), *GetPathNameSafe(this));
 }
 
-EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor* Goal, float AcceptRadius)
+FGenericTeamId AAssassinsPlayerController::GetGenericTeamId() const
 {
-    AbortMove();
+	if (const IAssassinsTeamAgentInterface* PSWithTeamInterface = Cast<IAssassinsTeamAgentInterface>(PlayerState))
+	{
+		return PSWithTeamInterface->GetGenericTeamId();
+	}
 
-    CachedMoveTarget = Goal;
-    CachedAcceptRadius = AcceptRadius;
-
-	FAIMoveRequest MoveReq(Goal);
-	MoveReq.SetAcceptanceRadius(AcceptRadius);
-
-	MoveReq.SetUsePathfinding(true);
-	MoveReq.SetAllowPartialPath(true);
-	MoveReq.SetReachTestIncludesAgentRadius(true);
-	MoveReq.SetCanStrafe(false); // Me: No side walk
-
-	return MoveTo(MoveReq);
+	return FGenericTeamId::NoTeam;
 }
 
 void AAssassinsPlayerController::AbortMove()
@@ -119,16 +109,20 @@ void AAssassinsPlayerController::AbortMove()
 
 void AAssassinsPlayerController::PauseMove()
 {
-    PathFollowingComponent->PauseMove();
+	if (PathFollowingComponent)
+	{
+		PathFollowingComponent->PauseMove();
+	}
 }
 
 void AAssassinsPlayerController::ResetMoveState()
 {
     ReceiveMoveCompleted.Clear();
-
-    bShouldKeepMoving = false;
-    CachedMoveTarget = nullptr;
-    CachedAcceptRadius = 0.0f;
+	
+	if (TargetChasingComponent)
+	{
+		TargetChasingComponent->ResetTargetState();
+	}
 }
 
 void AAssassinsPlayerController::HandleBeginChanneling()
@@ -148,6 +142,31 @@ void AAssassinsPlayerController::HandleEndChanneling(bool bResumeMove)
 bool AAssassinsPlayerController::HasMovePaused() const
 {
     return (PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Paused);
+}
+
+void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
+{
+	ReceiveMoveCompleted.Broadcast(RequestID, Result.Code);
+
+	if (TargetChasingComponent)
+	{
+		TargetChasingComponent->HandleChaseCompleted.Broadcast(RequestID, Result.Code);
+	}
+}
+
+EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor* Goal, float AcceptRadius)
+{
+	AbortMove();
+
+	FAIMoveRequest MoveReq(Goal);
+	MoveReq.SetAcceptanceRadius(AcceptRadius);
+
+	MoveReq.SetUsePathfinding(true);
+	MoveReq.SetAllowPartialPath(true);
+	MoveReq.SetReachTestIncludesAgentRadius(true);
+	MoveReq.SetCanStrafe(false); // Me: No side walk
+
+	return MoveTo(MoveReq);
 }
 
 FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath)
