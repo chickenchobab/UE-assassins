@@ -5,6 +5,8 @@
 #include "Character/AssassinsCharacter.h"
 #include "AssassinsCharacterWithAbilities.generated.h"
 
+class UAssassinsAbilitySet;
+
 /**
  * AssassinsCharacter typically gets the ability system component from the possessing player state.
  * This represents a character with a self-contained ability system component.
@@ -29,6 +31,12 @@ public:
     //~IAssassinsTeamAgentInterface interface
     virtual void SetGenericTeamId(const FGenericTeamId& NewID) override;
     //~End of IAssassinsTeamAgentInterface interface
+
+
+public:
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Assassins|Ability")
+    TObjectPtr<UAssassinsAbilitySet> AbilitySet;
 
 private:
 
