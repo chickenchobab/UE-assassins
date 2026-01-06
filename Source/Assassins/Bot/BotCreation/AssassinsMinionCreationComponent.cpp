@@ -89,6 +89,7 @@ void UAssassinsMinionCreationComponent::SpawnOneBot()
 		{
 			ControllerWithTeam->SetGenericTeamId(MinionTeamID);
 		}
+		SetBlackBoardValues(Minion->GetController());
 	}
 
 	MinionSpawnState = EAssassinsMinionWaveSpawningState::DelayBetweenMinion;

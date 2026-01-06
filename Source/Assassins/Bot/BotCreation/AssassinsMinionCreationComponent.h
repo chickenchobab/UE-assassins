@@ -44,6 +44,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = Gameplay)
 	void UpgradeMinion();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = Gameplay)
+	void SetBlackBoardValues(AController* MinionController);
+
 protected:
 
 	//////////////////////////////////////////
