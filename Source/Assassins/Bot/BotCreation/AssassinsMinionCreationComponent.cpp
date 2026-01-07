@@ -27,6 +27,11 @@ void UAssassinsMinionCreationComponent::TickComponent(float DeltaTime, ELevelTic
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (MinionWaveSize == 0)
+	{
+		return;
+	}
+
 	if (MinionSpawnState == EAssassinsMinionWaveSpawningState::SpawningMinion)
 	{
 		SpawnOneBot();

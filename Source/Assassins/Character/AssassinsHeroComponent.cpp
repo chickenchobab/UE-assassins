@@ -287,8 +287,8 @@ void UAssassinsHeroComponent::OnInputStarted()
 
     if (CachedPlayerController)
     {
-        CachedPlayerController->StopMovement();
         CachedPlayerController->ResetMoveState();
+        CachedPlayerController->StopMovement();
     }
 }
 
