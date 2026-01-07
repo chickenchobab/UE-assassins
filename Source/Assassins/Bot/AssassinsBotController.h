@@ -37,7 +37,7 @@ public:
 
 public:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ability")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Ability")
 	TObjectPtr<UAssassinsTargetChasingComponent> TargetChasingComponent;
 
 protected:
@@ -52,4 +52,7 @@ private:
 	TWeakObjectPtr<AActor> CachedTarget;
 
 	float CachedAcceptRadius;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
+	float CollisionQueryRange = 300.f;
 };

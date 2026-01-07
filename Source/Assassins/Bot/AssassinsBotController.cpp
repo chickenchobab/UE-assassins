@@ -3,11 +3,11 @@
 
 #include "Bot/AssassinsBotController.h"
 #include "Character/AssassinsCharacterWithAbilities.h"
-#include "Navigation/PathFollowingComponent.h"
+#include "Navigation/CrowdFollowingComponent.h"
 #include "AbilitySystem/AssassinsTargetChasingComponent.h"
 
 AAssassinsBotController::AAssassinsBotController(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCrowdFollowingComponent>(TEXT("PathFollowingComponent")))
 {
 	bCanSetTeamId = false;
 
@@ -22,6 +22,13 @@ void AAssassinsBotController::Tick(float DeltaTime)
 void AAssassinsBotController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (UCrowdFollowingComponent* CrowdFollowingComponent = Cast<UCrowdFollowingComponent>(GetPathFollowingComponent()))
+	{
+		CrowdFollowingComponent->SetCrowdSimulationState(ECrowdSimulationState::Enabled);
+		CrowdFollowingComponent->SetCrowdAvoidanceQuality(ECrowdAvoidanceQuality::Medium);
+		CrowdFollowingComponent->SetCrowdCollisionQueryRange(CollisionQueryRange);
+	}
 
 	if (TargetChasingComponent)
 	{
@@ -44,6 +51,13 @@ void AAssassinsBotController::SetGenericTeamId(const FGenericTeamId& NewID)
 		Bot->SetGenericTeamId(NewID);
 	}
 	bCanSetTeamId = false;
+
+	if (UCrowdFollowingComponent* CrowdFollowingComponent = Cast<UCrowdFollowingComponent>(GetPathFollowingComponent()))
+	{
+		int32 AvoidanceGroup = GenericTeamIdToInteger(NewID);
+		CrowdFollowingComponent->SetAvoidanceGroup(1 << AvoidanceGroup);
+		CrowdFollowingComponent->SetGroupsToAvoid(1 << AvoidanceGroup);
+	}
 }
 
 FGenericTeamId AAssassinsBotController::GetGenericTeamId() const
@@ -53,6 +67,8 @@ FGenericTeamId AAssassinsBotController::GetGenericTeamId() const
 
 void AAssassinsBotController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
+	Super::OnMoveCompleted(RequestID, Result);
+
 	if (TargetChasingComponent)
 	{
 		TargetChasingComponent->HandleChaseCompleted.Broadcast(RequestID, Result.Code);

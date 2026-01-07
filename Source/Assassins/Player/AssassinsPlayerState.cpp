@@ -99,8 +99,12 @@ void AAssassinsPlayerState::SetGenericTeamId(const FGenericTeamId& NewTeamID)
     if (HasAuthority())
     {
         const FGenericTeamId OldTeamID = MyTeamID;
-
         MyTeamID = NewTeamID;
+
+        if (AAssassinsPlayerController* AssassinsPC = GetAssassinsPlayerController())
+        {
+            AssassinsPC->SetAvoidanceGroup(GenericTeamIdToInteger(NewTeamID));
+        }
     }
 }
 

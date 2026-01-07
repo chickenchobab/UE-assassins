@@ -9,7 +9,7 @@
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "AbilitySystem/AssassinsTargetChasingComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "Navigation/PathFollowingComponent.h"
+#include "Navigation/CrowdFollowingComponent.h"
 #include "NavigationSystem.h"
 #include "NavFilters/NavigationQueryFilter.h"
 #include "AssassinsLogCategories.h"
@@ -18,7 +18,7 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AAssassinsPlayerController::AAssassinsPlayerController()
 {
-	PathFollowingComponent = CreateDefaultSubobject<UPathFollowingComponent>(TEXT("PathFollowingComponent"));
+	CrowdFollowingComponent = CreateDefaultSubobject<UCrowdFollowingComponent>(TEXT("PathFollowingComponent"));
 
 	TargetChasingComponent = CreateDefaultSubobject<UAssassinsTargetChasingComponent>(TEXT("TargetChasingComponent"));
 }
@@ -33,22 +33,36 @@ void AAssassinsPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (PathFollowingComponent)
+	if (CrowdFollowingComponent)
 	{
-		PathFollowingComponent->OnRequestFinished.AddUObject(this, &ThisClass::OnMoveCompleted);
+		CrowdFollowingComponent->OnRequestFinished.AddUObject(this, &ThisClass::OnMoveCompleted);
+
+		CrowdFollowingComponent->SetCrowdSimulationState(ECrowdSimulationState::Enabled);
+		CrowdFollowingComponent->SetCrowdAvoidanceQuality(ECrowdAvoidanceQuality::Medium);
+		CrowdFollowingComponent->SetCrowdCollisionQueryRange(CollisionQueryRange);
 	}
 
 	if (TargetChasingComponent)
 	{
 		TargetChasingComponent->ChaseTargetDelegate.BindLambda([this](AActor* Target, float AcceptRadius)
 		{
-			if (PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Idle)
+			if (CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() == EPathFollowingStatus::Idle)
 			{
 				MoveToActor(Target, AcceptRadius);
 			}
 		});
 
 		TargetChasingComponent->StopChaseDelegate.BindLambda([this]() { AbortMove(); });
+	}
+}
+
+void AAssassinsPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	if (CrowdFollowingComponent)
+	{
+		CrowdFollowingComponent->Initialize();
 	}
 }
 
@@ -64,6 +78,11 @@ void AAssassinsPlayerController::OnUnPossess()
 				ASC->SetAvatarActor(nullptr);
 			}
 		}
+	}
+
+	if (CrowdFollowingComponent)
+	{
+		CrowdFollowingComponent->Cleanup();
 	}
 
 	Super::OnUnPossess();
@@ -101,17 +120,17 @@ FGenericTeamId AAssassinsPlayerController::GetGenericTeamId() const
 
 void AAssassinsPlayerController::AbortMove()
 {
-    if (PathFollowingComponent && PathFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
+    if (CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
     {
-        PathFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
+        CrowdFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
     }
 }
 
 void AAssassinsPlayerController::PauseMove()
 {
-	if (PathFollowingComponent)
+	if (CrowdFollowingComponent)
 	{
-		PathFollowingComponent->PauseMove();
+		CrowdFollowingComponent->PauseMove();
 	}
 }
 
@@ -127,21 +146,30 @@ void AAssassinsPlayerController::ResetMoveState()
 
 void AAssassinsPlayerController::HandleBeginChanneling()
 {
-    PathFollowingComponent->PauseMove();
+    CrowdFollowingComponent->PauseMove();
 }
 
 void AAssassinsPlayerController::HandleEndChanneling(bool bResumeMove)
 {
     // Me: Existing move request could have been aborted by a new request so check the status
-    if (bResumeMove && PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Paused)
+    if (bResumeMove && CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() == EPathFollowingStatus::Paused)
     {
-        PathFollowingComponent->ResumeMove();
+        CrowdFollowingComponent->ResumeMove();
     }
 }
 
 bool AAssassinsPlayerController::HasMovePaused() const
 {
-    return (PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Paused);
+    return (CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() == EPathFollowingStatus::Paused);
+}
+
+void AAssassinsPlayerController::SetAvoidanceGroup(int32 AvoidanceGroup)
+{
+	if (CrowdFollowingComponent)
+	{
+		CrowdFollowingComponent->SetAvoidanceGroup(1 << AvoidanceGroup);
+		CrowdFollowingComponent->SetGroupsToAvoid(1 << AvoidanceGroup);
+	}
 }
 
 void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
@@ -163,7 +191,7 @@ EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor
 
 	MoveReq.SetUsePathfinding(true);
 	MoveReq.SetAllowPartialPath(true);
-	MoveReq.SetReachTestIncludesAgentRadius(true);
+	MoveReq.SetReachTestIncludesAgentRadius(false);
 	MoveReq.SetCanStrafe(false); // Me: No side walk
 
 	return MoveTo(MoveReq);
@@ -179,18 +207,18 @@ FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequ
 		return ResultData;
 	}
 
-	if (PathFollowingComponent == nullptr)
+	if (CrowdFollowingComponent == nullptr)
 	{
 		return ResultData;
 	}
 
 	bool bCanRequestMove = true;
-	bool bAlreadyAtGoal = bCanRequestMove && PathFollowingComponent->HasReached(MoveRequest);
+	bool bAlreadyAtGoal = bCanRequestMove && CrowdFollowingComponent->HasReached(MoveRequest);
 
 	if (bAlreadyAtGoal)
 	{
 		UE_VLOG(this, LogAssassinsAINavigation, Log, TEXT("MoveTo: already at goal!"));
-		ResultData.MoveId = PathFollowingComponent->RequestMoveWithImmediateFinish(EPathFollowingResult::Success);
+		ResultData.MoveId = CrowdFollowingComponent->RequestMoveWithImmediateFinish(EPathFollowingResult::Success);
 		ResultData.Code = EPathFollowingRequestResult::AlreadyAtGoal;
 	}
 	else if (bCanRequestMove)
@@ -201,7 +229,7 @@ FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequ
 		FVector StartLocation = GetNavAgentLocation();
 		if (MoveRequest.ShouldStartFromPreviousPath())
 		{
-			FNavPathSharedPtr CurrentPath = PathFollowingComponent->GetPath();
+			FNavPathSharedPtr CurrentPath = CrowdFollowingComponent->GetPath();
 			if (CurrentPath.IsValid() && CurrentPath->IsValid() && CurrentPath->GetPathPoints().Num() > 0)
 			{
 				StartLocation = CurrentPath->GetPathPoints().Last();
@@ -218,7 +246,7 @@ FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequ
 			if (bShouldMergePaths && Path.IsValid())
 			{
 				// Merge the newly generated path with the current one
-				MergePaths(PathFollowingComponent->GetPath(), Path);
+				MergePaths(CrowdFollowingComponent->GetPath(), Path);
 			}
 
 			const FAIRequestID RequestID = Path.IsValid() ? RequestMove(MoveRequest, Path) : FAIRequestID::InvalidRequest;
@@ -237,7 +265,7 @@ FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequ
 
 	if (ResultData.Code == EPathFollowingRequestResult::Failed)
 	{
-		ResultData.MoveId = PathFollowingComponent->RequestMoveWithImmediateFinish(EPathFollowingResult::Invalid);
+		ResultData.MoveId = CrowdFollowingComponent->RequestMoveWithImmediateFinish(EPathFollowingResult::Invalid);
 	}
 
 	return ResultData;
@@ -278,9 +306,9 @@ bool AAssassinsPlayerController::BuildPathfindingQuery(const FAIMoveRequest& Mov
 			OutQuery.CostLimit = FPathFindingQuery::ComputeCostLimitFromHeuristic(OutQuery.StartLocation, OutQuery.EndLocation, HeuristicScale, MoveRequest.GetCostLimitFactor(), MoveRequest.GetMinimumCostLimit());
 		}
 
-		if (PathFollowingComponent)
+		if (CrowdFollowingComponent)
 		{
-			PathFollowingComponent->OnPathfindingQuery(OutQuery);
+			CrowdFollowingComponent->OnPathfindingQuery(OutQuery);
 		}
 
 		bResult = true;
@@ -350,7 +378,7 @@ void AAssassinsPlayerController::MergePaths(const FNavPathSharedPtr& InitialPath
 	}
 
 	// We don't want to keep path points that have already been traversed, so only merge the points starting from "CurrentPathIndex".
-	const int32 StartingPointIndex = PathFollowingComponent ? PathFollowingComponent->GetCurrentPathIndex() : 0;
+	const int32 StartingPointIndex = CrowdFollowingComponent ? CrowdFollowingComponent->GetCurrentPathIndex() : 0;
 	if (StartingPointIndex < InitialPathPoints.Num())
 	{
 		InOutPathPoints.Insert(&InitialPathPoints[StartingPointIndex], InitialPathPoints.Num() - StartingPointIndex - 1, 0);
@@ -360,9 +388,9 @@ void AAssassinsPlayerController::MergePaths(const FNavPathSharedPtr& InitialPath
 FAIRequestID AAssassinsPlayerController::RequestMove(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr Path)
 {
 	uint32 RequestID = FAIRequestID::InvalidRequest;
-	if (PathFollowingComponent)
+	if (CrowdFollowingComponent)
 	{
-		RequestID = PathFollowingComponent->RequestMove(MoveRequest, Path);
+		RequestID = CrowdFollowingComponent->RequestMove(MoveRequest, Path);
 	}
 	
 	return RequestID;

@@ -14,7 +14,7 @@
 class UInputAction;
 class UAssassinsAbilitySystemComponent;
 class UAssassinsTargetChasingComponent;
-class UPathFollowingComponent;
+class UCrowdFollowingComponent;
 struct FPathFollowingResult;
 struct FPathFollowingRequestResult;
 
@@ -41,6 +41,7 @@ public:
 	//~End of Actor interface
 
 	//~AController interface
+	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 	//~End of AController interface
 
@@ -66,6 +67,8 @@ public:
 	
     void HandleBeginChanneling();
     void HandleEndChanneling(bool bResumeMove);
+
+	void SetAvoidanceGroup(int32 AvoidanceGroup);
 
 public:
 
@@ -101,11 +104,14 @@ protected:
 private:
 	/** Component used for moving along a path. */
 	UPROPERTY(VisibleDefaultsOnly, Category = "AI|Navigation")
-	TObjectPtr<UPathFollowingComponent> PathFollowingComponent;
+	TObjectPtr<UCrowdFollowingComponent> CrowdFollowingComponent;
 
 	/** Blueprint notification that we've completed the current movement request */
 	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "MoveCompleted"))
 	FMoveCompletedSignature ReceiveMoveCompleted;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
+	float CollisionQueryRange = 100.f;
 };
 
 
