@@ -44,9 +44,13 @@ void UAssassinsMinionCreationComponent::TickComponent(float DeltaTime, ELevelTic
 		{
 			UpgradeMinion();
 		}
-		else if (MinionSpawnCount == MinionWaveSize)
+		
+		if (MinionSpawnCount == MinionWaveSize)
 		{
-			UpgradeMinion();
+			if (MinionSpawnCount % NumNormalMinions != 0)
+			{
+				UpgradeMinion();
+			}
 			MinionSpawnCount = 0;
 
 			MinionSpawnState = EAssassinsMinionWaveSpawningState::WaitingSpawnNewWave;
@@ -59,6 +63,21 @@ void UAssassinsMinionCreationComponent::TickComponent(float DeltaTime, ELevelTic
 						MinionSpawnState = EAssassinsMinionWaveSpawningState::SpawningMinion;
 					}),
 				MinionWaveTerm,
+				false
+			);
+		}
+		else
+		{
+			MinionSpawnState = EAssassinsMinionWaveSpawningState::DelayBetweenMinion;
+
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(
+				TimerHandle,
+				FTimerDelegate::CreateLambda([this]()
+					{
+						MinionSpawnState = EAssassinsMinionWaveSpawningState::SpawningMinion;
+					}),
+				SpawnDelay,
 				false
 			);
 		}
@@ -96,19 +115,6 @@ void UAssassinsMinionCreationComponent::SpawnOneBot()
 		}
 		SetBlackBoardValues(Minion->GetController());
 	}
-
-	MinionSpawnState = EAssassinsMinionWaveSpawningState::DelayBetweenMinion;
-
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(
-		TimerHandle,
-		FTimerDelegate::CreateLambda([this]()
-			{
-				MinionSpawnState = EAssassinsMinionWaveSpawningState::SpawningMinion;
-			}),
-		SpawnDelay,
-		false
-	);
 }
 
 #endif
