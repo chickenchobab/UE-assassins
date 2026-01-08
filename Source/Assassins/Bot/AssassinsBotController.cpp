@@ -12,6 +12,9 @@ AAssassinsBotController::AAssassinsBotController(const FObjectInitializer& Objec
 	bCanSetTeamId = false;
 
 	TargetChasingComponent = CreateDefaultSubobject<UAssassinsTargetChasingComponent>(TEXT("TargetChasingComponent"));
+
+	CollisionQueryRange = 300.0f;
+	SeparationWeight = 2.0f;
 }
 
 void AAssassinsBotController::Tick(float DeltaTime)
@@ -26,8 +29,10 @@ void AAssassinsBotController::BeginPlay()
 	if (UCrowdFollowingComponent* CrowdFollowingComponent = Cast<UCrowdFollowingComponent>(GetPathFollowingComponent()))
 	{
 		CrowdFollowingComponent->SetCrowdSimulationState(ECrowdSimulationState::Enabled);
-		CrowdFollowingComponent->SetCrowdAvoidanceQuality(ECrowdAvoidanceQuality::Medium);
+		CrowdFollowingComponent->SetCrowdAvoidanceQuality(ECrowdAvoidanceQuality::Good);
 		CrowdFollowingComponent->SetCrowdCollisionQueryRange(CollisionQueryRange);
+		CrowdFollowingComponent->SetCrowdSeparation(true);
+		CrowdFollowingComponent->SetCrowdSeparationWeight(SeparationWeight);
 	}
 
 	if (TargetChasingComponent)

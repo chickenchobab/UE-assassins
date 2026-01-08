@@ -54,5 +54,8 @@ private:
 	float CachedAcceptRadius;
 
 	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
-	float CollisionQueryRange = 300.f;
+	float CollisionQueryRange;
+
+	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
+	float SeparationWeight;
 };
