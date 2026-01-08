@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Character/AssassinsCharacter.h"
+#include "AbilitySystemComponent.h"
 
 AAssassinsProjectile::AAssassinsProjectile()
 {
@@ -27,6 +28,9 @@ AAssassinsProjectile::AAssassinsProjectile()
 
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
     ProjectileMovement->ProjectileGravityScale = 0.0f;
+
+    StartTime = 0.0f;
+    StartLocation = FVector::Zero();
 }
 
 bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor) const
@@ -46,6 +50,18 @@ void AAssassinsProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
+    if (bUseLifeSpan)
+    {
+        FTimerHandle TimerHandle;
+
+        GetWorldTimerManager().SetTimer(
+            TimerHandle,
+            [this]() { Destroy(); },
+            ProjectileLifeSpan,
+            false
+        );
+    }
+
     StartLocation = GetActorLocation();
 }
 
@@ -53,11 +69,14 @@ void AAssassinsProjectile::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    const float MovedDistance = FVector::Dist2D(GetActorLocation(), StartLocation);
-
-    if (MovedDistance >= DistanceRange)
+    if (bUseDistanceRange)
     {
-        Destroy();
+        const float MovedDistance = FVector::Dist2D(GetActorLocation(), StartLocation);
+
+        if (MovedDistance >= DistanceRange)
+        {
+            Destroy();
+        }
     }
 }
 
@@ -80,4 +99,18 @@ void AAssassinsProjectile::HandleProjectileBeginOverlap(UPrimitiveComponent* Ove
     ActorsToIgnore.Add(OtherActor);
 
     K2_HandleProjectileBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+}
+
+void AAssassinsProjectile::ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor)
+{
+    AAssassinsCharacter* OwnerCharacter = Cast<AAssassinsCharacter>(GetOwner());
+    check(OwnerCharacter);
+
+    if (AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor))
+    {
+        if (UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent())
+        {
+            ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetCharacter->GetAbilitySystemComponent());
+        }
+    }
 }
