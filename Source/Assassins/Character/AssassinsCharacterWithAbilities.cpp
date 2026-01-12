@@ -42,6 +42,8 @@ void AAssassinsCharacterWithAbilities::PostInitializeComponents()
         FAssassinsAbilitySet_GrantedHandles Handles;
         AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, &Handles);
     }
+
+    InitializeGameplayTags();
 }
 
 UAbilitySystemComponent* AAssassinsCharacterWithAbilities::GetAbilitySystemComponent() const

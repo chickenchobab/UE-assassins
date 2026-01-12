@@ -3,6 +3,7 @@
 #pragma once
 
 #include "AbilitySystemInterface.h"
+#include "GameplayTagAssetInterface.h"
 #include "Teams/AssassinsTeamAgentInterface.h"
 #include "ModularCharacter.h"
 
@@ -15,7 +16,7 @@ class UAssassinsCameraComponent;
 struct FGameplayEffectSpec;
 
 UCLASS(Blueprintable)
-class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface, public IAssassinsTeamAgentInterface
+class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayTagAssetInterface, public IAssassinsTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -28,17 +29,35 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	//~End of IAbilitySystemInterface interface
 
+	//~IGameplayTagAssetInterface
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
+	virtual bool HasMatchingGameplayTag(FGameplayTag TagToCheck) const override;
+	virtual bool HasAllMatchingGameplayTags(const FGameplayTagContainer& TagContainer) const override;
+	virtual bool HasAnyMatchingGameplayTags(const FGameplayTagContainer& TagContainer) const override;
+	//~End of IGameplayTagAssetInterface
+
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
+	void SetGameplayTag(FGameplayTag Tag);
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
+	void UnsetGameplayTag(FGameplayTag Tag);
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
+	void AddGameplayTag(FGameplayTag Tag);
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
+	void RemoveGameplayTag(FGameplayTag Tag);
+	UFUNCTION(BlueprintPure, Category = "Assassins|Character|Status")
+	bool HasGameplayTag(FGameplayTag Tag);
+
+	//~IAssassinsTeamAgentInterface interface
+	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
+	virtual FGenericTeamId GetGenericTeamId() const override;
+	//~End of IAssassinsTeamAgentInterface interface
+
 	/** Returns TopDownCameraComponent subobject **/
 	FORCEINLINE class UAssassinsCameraComponent* GetAssassinsCameraComponent() const { return CameraComponent; }
 
 	FORCEINLINE AAssassinsCharacter* GetAbilityTarget() const { return (AbilityTarget.IsValid() ? AbilityTarget.Get() : nullptr); }
 	FORCEINLINE void SetAbilityTarget(AAssassinsCharacter* Target) { AbilityTarget = Target; }
 	FORCEINLINE void ClearAbilityTarget() { AbilityTarget = nullptr; }
-
-	//~IAssassinsTeamAgentInterface interface
-	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
-	virtual FGenericTeamId GetGenericTeamId() const override;
-	//~End of IAssassinsTeamAgentInterface interface
 
 protected:
 	
@@ -54,6 +73,11 @@ protected:
 
 	virtual void OnAbilitySystemInitialized();
 	virtual void OnAbilitySystemUninitialized();
+
+	void InitializeGameplayTags();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Assassins|Character|Status", DisplayName = "Handle Generic Gameplay Tag Event")
+	void HandleGenericGameplayTagEvent(const FGameplayTag Tag, int32 NewCount);
 
 	virtual void HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
 
@@ -75,5 +99,8 @@ private:
 
 	UPROPERTY()
 	FGenericTeamId MyTeamID;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Assassins|Character", Meta = (AllowPrivateAccess = "true"))
+	FGameplayTagContainer CharacterOwnedTags;
 };
 

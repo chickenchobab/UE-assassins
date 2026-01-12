@@ -71,6 +71,84 @@ UAbilitySystemComponent* AAssassinsCharacter::GetAbilitySystemComponent() const
 	return PawnExtComponent->GetAssassinsAbilitySystemComponent();
 }
 
+void AAssassinsCharacter::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
+{
+	if (const UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->GetOwnedGameplayTags(TagContainer);
+	}
+}
+
+bool AAssassinsCharacter::HasMatchingGameplayTag(FGameplayTag TagToCheck) const
+{
+	if (const UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{ 
+		return ASC->HasMatchingGameplayTag(TagToCheck);
+	}
+	
+	return false;
+}
+
+bool AAssassinsCharacter::HasAllMatchingGameplayTags(const FGameplayTagContainer& TagContainer) const
+{
+	if (const UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		return ASC->HasAllMatchingGameplayTags(TagContainer);
+	}
+
+	return false;
+}
+
+bool AAssassinsCharacter::HasAnyMatchingGameplayTags(const FGameplayTagContainer& TagContainer) const
+{
+	if (const UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		return ASC->HasAnyMatchingGameplayTags(TagContainer);
+	}
+
+	return false;
+}
+
+void AAssassinsCharacter::SetGameplayTag(FGameplayTag Tag)
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->SetLooseGameplayTagCount(Tag, 1);
+	}
+}
+
+void AAssassinsCharacter::UnsetGameplayTag(FGameplayTag Tag)
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->SetLooseGameplayTagCount(Tag, 0);
+	}
+}
+
+void AAssassinsCharacter::AddGameplayTag(FGameplayTag Tag)
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->AddLooseGameplayTag(Tag);
+	}
+}
+
+void AAssassinsCharacter::RemoveGameplayTag(FGameplayTag Tag)
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		if (ASC->HasMatchingGameplayTag(Tag))
+		{
+			ASC->RemoveLooseGameplayTag(Tag);
+		}
+	}
+}
+
+bool AAssassinsCharacter::HasGameplayTag(FGameplayTag Tag)
+{
+	return HasMatchingGameplayTag(Tag);
+}
+
 void AAssassinsCharacter::SetGenericTeamId(const FGenericTeamId& NewTeamID)
 {
 	UE_LOG(LogAssassinsTeams, Error, TEXT("You can't set the team ID on a character (%s) except on the authority"), *GetPathNameSafe(this));
@@ -137,11 +215,23 @@ void AAssassinsCharacter::OnAbilitySystemInitialized()
 		// Me: GetSet returns const pointer but member delegates are set mutable
 		CombatSet->OnMoveSpeedChanged.AddUObject(this, &AAssassinsCharacter::HandleMoveSpeedChanged);
 	}
+
+	InitializeGameplayTags();
 }
 
 void AAssassinsCharacter::OnAbilitySystemUninitialized()
 {
 	HealthComponent->UninitializeFromAbilitySystem();
+}
+
+void AAssassinsCharacter::InitializeGameplayTags()
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->AddLooseGameplayTags(CharacterOwnedTags);
+
+		ASC->RegisterGenericGameplayTagEvent().AddUObject(this, &ThisClass::HandleGenericGameplayTagEvent);
+	}
 }
 
 void AAssassinsCharacter::HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
