@@ -31,6 +31,12 @@ protected:
 	virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void EnableHoming(USceneComponent* TargetComponent);
+
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void DisableHoming();
+
     UFUNCTION()
     void HandleProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
     UFUNCTION(BlueprintImplementableEvent, Category = "Assassins|Projectile", DisplayName = "HandleProjectileHit")

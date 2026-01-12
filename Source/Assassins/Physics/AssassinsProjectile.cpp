@@ -80,6 +80,24 @@ void AAssassinsProjectile::Tick(float DeltaTime)
     }
 }
 
+void AAssassinsProjectile::EnableHoming(USceneComponent* TargetComponent)
+{
+    if (ProjectileMovement)
+    {
+        ProjectileMovement->bIsHomingProjectile = true;
+        ProjectileMovement->HomingTargetComponent = TargetComponent;
+    }
+}
+
+void AAssassinsProjectile::DisableHoming()
+{
+    if (ProjectileMovement)
+    {
+        ProjectileMovement->bIsHomingProjectile = false;
+        ProjectileMovement->HomingTargetComponent = nullptr;
+    }
+}
+
 void AAssassinsProjectile::HandleProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 }
