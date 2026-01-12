@@ -19,7 +19,7 @@ void UAssassinsTargetChasingComponent::TickComponent(float DeltaTime, ELevelTick
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// If bKeepChase was just set to false, allow movement for one additional tick.
-	if (bKeepChaseBefore && CachedTarget.IsValid())
+	if ((bKeepChaseBefore || bKeepChase) && CachedTarget.IsValid())
 	{
 		ChaseTargetDelegate.ExecuteIfBound(CachedTarget.Get(), CachedAcceptRadius);
 	}
