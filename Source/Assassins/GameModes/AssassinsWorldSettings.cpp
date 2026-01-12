@@ -5,6 +5,11 @@
 #include "Engine/AssetManager.h"
 #include "AssassinsLogCategories.h"
 
+AAssassinsWorldSettings::AAssassinsWorldSettings(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
+
 FPrimaryAssetId AAssassinsWorldSettings::GetDefaultGameplayExperience() const
 {
 	FPrimaryAssetId Result;

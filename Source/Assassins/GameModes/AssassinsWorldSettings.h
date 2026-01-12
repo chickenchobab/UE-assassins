@@ -8,14 +8,16 @@
 class UAssassinsExperienceDefinition;
 
 /**
- * 
+ * The default world settings object, used primarily to set the default gameplay experience to use when playing on this map
  */
 UCLASS()
-class ASSASSINS_API AAssassinsWorldSettings : public AWorldSettings
+class AAssassinsWorldSettings : public AWorldSettings
 {
 	GENERATED_BODY()
 	
 public:
+	AAssassinsWorldSettings(const FObjectInitializer& ObjectInitializer);
+
 	FPrimaryAssetId GetDefaultGameplayExperience() const;
 
 protected:
