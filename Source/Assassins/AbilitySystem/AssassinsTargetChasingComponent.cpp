@@ -36,6 +36,7 @@ void UAssassinsTargetChasingComponent::ChaseTarget(AActor* Target, float AcceptR
 
 void UAssassinsTargetChasingComponent::StopChase()
 {
+	ResetTargetState();
 	StopChaseDelegate.ExecuteIfBound();
 }
 
@@ -48,6 +49,7 @@ void UAssassinsTargetChasingComponent::SetTargetState(AActor* Target, float Acce
 void UAssassinsTargetChasingComponent::ResetTargetState()
 {
 	bKeepChase = false;
+	bKeepChaseBefore = false;
 
 	HandleChaseCompleted.Clear();
 

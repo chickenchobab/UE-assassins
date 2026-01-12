@@ -31,7 +31,7 @@ public:
 	//~End of IAssassinsTeamAgentInterface interface
 
 	UFUNCTION(BlueprintPure, Category = "Assassins|Bot")
-	FGenericTeamId GetTeamId() const { return MyTeamID; }
+	int32 GetTeamId() const { return GenericTeamIdToInteger(MyTeamID); }
 
 	bool CanSetPawnTeamId() const { return bCanSetTeamId; }
 

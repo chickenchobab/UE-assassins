@@ -122,7 +122,7 @@ void AAssassinsPlayerController::AbortMove()
 {
     if (CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
     {
-        CrowdFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
+        CrowdFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
     }
 }
 
