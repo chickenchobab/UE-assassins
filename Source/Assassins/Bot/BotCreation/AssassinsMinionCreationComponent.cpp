@@ -9,6 +9,9 @@
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "Character/AssassinsHealthComponent.h"
 #include "Character/AssassinsCharacterWithAbilities.h"
+#include "Teams/AssassinsTeamSubsystem.h"
+#include "Teams/AssassinsTeamInfo.h"
+#include "Teams/AssassinsTeamAsset.h"
 
 UAssassinsMinionCreationComponent::UAssassinsMinionCreationComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -19,6 +22,9 @@ UAssassinsMinionCreationComponent::UAssassinsMinionCreationComponent(const FObje
 	MinionSpawnState = EAssassinsMinionWaveSpawningState::WaitingSpawnNewWave;
 
 	MinionSpawnCount = 0;
+
+	CurrentTeamIndex = 0;
+	CurrentMinionTypeIndex = 0;
 }
 
 #if WITH_SERVER_CODE
@@ -27,29 +33,30 @@ void UAssassinsMinionCreationComponent::TickComponent(float DeltaTime, ELevelTic
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (MinionWaveSize == 0)
+	if (MinionSpawnState == EAssassinsMinionWaveSpawningState::SpawningMinion && MinionWaveSize > 0)
 	{
-		return;
-	}
+		const UAssassinsTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<UAssassinsTeamSubsystem>();
+		check(TeamSubsystem);
 
-	if (MinionSpawnState == EAssassinsMinionWaveSpawningState::SpawningMinion)
-	{
-		SpawnOneBot();
-		ChangeTeam();
-		SpawnOneBot();
+		int32 NumTeams = TeamSubsystem->GetNumTeams();
+		for (int TeamIndex = 0; TeamIndex < NumTeams; ++TeamIndex)
+		{
+			SpawnOneBot();
+			ChangeTeam();
+		}
 
 		++MinionSpawnCount;
 
 		if (MinionSpawnCount % NumNormalMinions == 0)
 		{
-			UpgradeMinion();
+			ChangeMinionType();
 		}
 		
 		if (MinionSpawnCount == MinionWaveSize)
 		{
 			if (MinionSpawnCount % NumNormalMinions != 0)
 			{
-				UpgradeMinion();
+				ChangeMinionType();
 			}
 			MinionSpawnCount = 0;
 
@@ -96,6 +103,13 @@ void UAssassinsMinionCreationComponent::ServerCreateBots_Implementation()
 		InitialSpawnDelay, 
 		false
 	);
+
+	const UAssassinsTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<UAssassinsTeamSubsystem>();
+	if (ensure(TeamSubsystem))
+	{
+		TeamSubsystem->GetMinionInfo(MinionClass, MinionSpawnTransform, CurrentTeamIndex, CurrentMinionTypeIndex, false, false);
+		MinionTeamId = TeamSubsystem->GetTeamOfIndex(CurrentTeamIndex);
+	}
 }
 
 void UAssassinsMinionCreationComponent::SpawnOneBot()
@@ -105,15 +119,34 @@ void UAssassinsMinionCreationComponent::SpawnOneBot()
 	SpawnInfo.OverrideLevel = GetComponentLevel();
 	SpawnInfo.ObjectFlags |= RF_Transient;
 
-	AAssassinsCharacterWithAbilities* Minion = GetWorld()->SpawnActor<AAssassinsCharacterWithAbilities>(MinionClass, MinionSpawnLocation, MinionSpawnRotation, SpawnInfo);
+	AAssassinsCharacterWithAbilities* Minion = GetWorld()->SpawnActor<AAssassinsCharacterWithAbilities>(MinionClass, MinionSpawnTransform, SpawnInfo);
 	if (Minion)
 	{
 		// Auto Possess AI setting of the minion should be set to 'Placed In World Or Spawned'
 		if (IAssassinsTeamAgentInterface* ControllerWithTeam = Cast<IAssassinsTeamAgentInterface>(Minion->GetController()))
 		{
-			ControllerWithTeam->SetGenericTeamId(MinionTeamID);
+			ControllerWithTeam->SetGenericTeamId(IntegerToGenericTeamId(MinionTeamId));
 		}
 		SetBlackBoardValues(Minion->GetController());
+	}
+}
+
+void UAssassinsMinionCreationComponent::ChangeTeam_Implementation()
+{
+	const UAssassinsTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<UAssassinsTeamSubsystem>();
+	if (ensure(TeamSubsystem))
+	{
+		TeamSubsystem->GetMinionInfo(MinionClass, MinionSpawnTransform, CurrentTeamIndex, CurrentMinionTypeIndex, true, false);
+		MinionTeamId = TeamSubsystem->GetTeamOfIndex(CurrentTeamIndex);
+	}
+}
+
+void UAssassinsMinionCreationComponent::ChangeMinionType_Implementation()
+{
+	const UAssassinsTeamSubsystem* TeamSubsystem = GetWorld()->GetSubsystem<UAssassinsTeamSubsystem>();
+	if (ensure(TeamSubsystem))
+	{
+		TeamSubsystem->GetMinionInfo(MinionClass, MinionSpawnTransform, CurrentTeamIndex, CurrentMinionTypeIndex, false, true);
 	}
 }
 

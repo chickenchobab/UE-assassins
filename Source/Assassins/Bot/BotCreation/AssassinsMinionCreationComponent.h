@@ -38,11 +38,11 @@ protected:
 	virtual void SpawnOneBot() override;
 	//~End of UAssassinsBotCreationComponent interface
 
-	UFUNCTION(BlueprintImplementableEvent, Category = Gameplay)
+	UFUNCTION(BlueprintNativeEvent, Category = Gameplay)
 	void ChangeTeam();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = Gameplay)
-	void UpgradeMinion();
+	UFUNCTION(BlueprintNativeEvent, Category = Gameplay)
+	void ChangeMinionType();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = Gameplay)
 	void SetBlackBoardValues(AController* MinionController);
@@ -68,15 +68,13 @@ protected:
 	////////////////////////////////////////////////
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = Gameplay)
-	FGenericTeamId MinionTeamID;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = Gameplay)
 	TSubclassOf<AAssassinsCharacterWithAbilities> MinionClass;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = Gameplay)
-	FVector MinionSpawnLocation;
+	FTransform MinionSpawnTransform;
+
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = Gameplay)
-	FRotator MinionSpawnRotation;
+	int32 MinionTeamId;
 
 private:
 
@@ -85,5 +83,9 @@ private:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Gameplay, meta = (AllowPrivateAccess = "true"))
 	int32 MinionSpawnCount;
+
+	int32 CurrentTeamIndex;
+
+	int32 CurrentMinionTypeIndex;
 };
  

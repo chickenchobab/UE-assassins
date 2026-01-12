@@ -6,6 +6,8 @@
 #include "AssassinsTeamSubsystem.generated.h"
 
 class AAssassinsPlayerState;
+class AAssassinsTeamInfo;
+class AAssassinsCharacterWithAbilities;
 
 UENUM(BlueprintType)
 enum class EAssassinsTeamComparison : uint8
@@ -30,6 +32,19 @@ class ASSASSINS_API UAssassinsTeamSubsystem : public UWorldSubsystem
 	
 public:
 	UAssassinsTeamSubsystem();
+	
+	UFUNCTION(BlueprintPure, Category = Teams)
+	const AAssassinsTeamInfo* GetTeamInfo(int32 TeamId) const;
+
+	UFUNCTION(BlueprintPure, Category = Teams)
+	int32 GetTeamOfIndex(int32 TeamIndex) const;
+
+	UFUNCTION(BlueprintPure, Category = Teams)
+	int32 GetNumTeams() const;
+
+	// Tries to register or unregister a team
+	bool RegisterTeamInfo(AAssassinsTeamInfo* TeamInfo);
+	bool UnregisterTeamInfo(AAssassinsTeamInfo* TeamInfo);
 
 	// Returns the team this object belongs to, or INDEX_NONE if it is not part of a team
 	int32 FindTeamFromObject(const UObject* TestObject) const;
@@ -40,4 +55,10 @@ public:
 	// Compare the teams of two actors and returns a value indicating if they are on same teams, different teams, or one/both are invalid
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Teams, meta = (ExpandEnumAsExecs = ReturnValue))
 	EAssassinsTeamComparison CompareTeams(const UObject* A, const UObject* B, int32& OutTeamIdA, int32& OutTeamIdB) const;
+
+	void GetMinionInfo(TSubclassOf<AAssassinsCharacterWithAbilities>& MinionClass, FTransform& MinionSpawnTransform, int32& TeamIndex, int32& MinionTypeIndex, bool bAdvanceTeamIndex, bool bAdvanceMinionTypeIndex) const;
+
+private:
+	UPROPERTY()
+	TArray<TObjectPtr<AAssassinsTeamInfo>> Teams;
 };
