@@ -39,7 +39,10 @@ void AAssassinsBotController::BeginPlay()
 	{
 		TargetChasingComponent->ChaseTargetDelegate.BindLambda([this](AActor* Target, float AcceptRadius)
 		{
-			MoveToActor(Target, AcceptRadius);
+			if (GetPathFollowingComponent() && GetPathFollowingComponent()->GetStatus() == EPathFollowingStatus::Idle)
+			{
+				MoveToActor(Target, AcceptRadius);
+			}
 		});
 
 		TargetChasingComponent->StopChaseDelegate.BindLambda([this]() { StopMovement(); });
