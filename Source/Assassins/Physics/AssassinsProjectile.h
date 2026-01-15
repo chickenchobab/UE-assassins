@@ -32,7 +32,7 @@ protected:
     virtual void Tick(float DeltaTime) override;
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
-    void EnableHoming(USceneComponent* TargetComponent);
+    void EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration);
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void DisableHoming();

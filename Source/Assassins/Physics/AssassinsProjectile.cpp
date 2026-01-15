@@ -80,12 +80,13 @@ void AAssassinsProjectile::Tick(float DeltaTime)
     }
 }
 
-void AAssassinsProjectile::EnableHoming(USceneComponent* TargetComponent)
+void AAssassinsProjectile::EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration)
 {
     if (ProjectileMovement)
     {
         ProjectileMovement->bIsHomingProjectile = true;
         ProjectileMovement->HomingTargetComponent = TargetComponent;
+        ProjectileMovement->HomingAccelerationMagnitude = HomingAcceleration;
     }
 }
 
@@ -95,6 +96,7 @@ void AAssassinsProjectile::DisableHoming()
     {
         ProjectileMovement->bIsHomingProjectile = false;
         ProjectileMovement->HomingTargetComponent = nullptr;
+        ProjectileMovement->HomingAccelerationMagnitude = 0.0f;
     }
 }
 
