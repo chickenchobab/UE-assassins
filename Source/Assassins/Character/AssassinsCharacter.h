@@ -76,10 +76,17 @@ protected:
 
 	void InitializeGameplayTags();
 
+	virtual void HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "Assassins|Character|Status", DisplayName = "Handle Generic Gameplay Tag Event")
 	void HandleGenericGameplayTagEvent(const FGameplayTag Tag, int32 NewCount);
 
-	virtual void HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
+	UFUNCTION()
+	virtual void HandleDeathStarted();
+	UFUNCTION()
+	virtual void HandleDeathFinished();
+
+	void DestroyDueToDeath();
 
 private:
 	

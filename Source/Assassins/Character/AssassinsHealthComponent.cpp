@@ -5,7 +5,7 @@
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/AssassinsHealthSet.h"
 #include "AssassinsLogCategories.h"
-
+#include "AssassinsGameplayTags.h"
 
 UAssassinsHealthComponent::UAssassinsHealthComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -15,6 +15,7 @@ UAssassinsHealthComponent::UAssassinsHealthComponent(const FObjectInitializer& O
 
 	AbilitySystemComponent = nullptr;
 	HealthSet = nullptr;
+	DeathState = EAssassinsDeathState::NotDead;
 }
 
 void UAssassinsHealthComponent::InitializeWithAbilitySystem(UAssassinsAbilitySystemComponent* InASC)
@@ -48,11 +49,15 @@ void UAssassinsHealthComponent::InitializeWithAbilitySystem(UAssassinsAbilitySys
 	// Reset attributes to default values. Eventually this will be driven by a spread sheet.
 	AbilitySystemComponent->SetNumericAttributeBase(UAssassinsHealthSet::GetHealthAttribute(), HealthSet->GetMaxHealth());
 
+	ClearGameplayTags();
+
 	OnHealthChanged.Broadcast(this, HealthSet->GetHealth(), HealthSet->GetHealth(), nullptr);
 }
 
 void UAssassinsHealthComponent::UninitializeFromAbilitySystem()
 {
+	ClearGameplayTags();
+
 	if (HealthSet)
 	{
 		HealthSet->OnHealthChanged.RemoveAll(this);
@@ -76,6 +81,49 @@ float UAssassinsHealthComponent::GetHealthNormalized() const
     return 0.0f;
 }
 
+void UAssassinsHealthComponent::StartDeath()
+{
+	if (DeathState != EAssassinsDeathState::NotDead)
+	{
+		return;
+	}
+
+	DeathState = EAssassinsDeathState::DeathStarted;
+
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->SetLooseGameplayTagCount(AssassinsGameplayTags::Status_Death_Dying, 1);
+	}
+
+	OnDeathStarted.Broadcast();
+}
+
+void UAssassinsHealthComponent::FinishDeath()
+{
+	if (DeathState != EAssassinsDeathState::DeathStarted)
+	{
+		return;
+	}
+
+	DeathState = EAssassinsDeathState::DeathFinished;
+
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->SetLooseGameplayTagCount(AssassinsGameplayTags::Status_Death_Dead, 1);
+	}
+
+	OnDeathFinished.Broadcast();
+}
+
+void UAssassinsHealthComponent::ClearGameplayTags()
+{
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->SetLooseGameplayTagCount(AssassinsGameplayTags::Status_Death_Dying, 0);
+		AbilitySystemComponent->SetLooseGameplayTagCount(AssassinsGameplayTags::Status_Death_Dead, 0);
+	}
+}
+
 void UAssassinsHealthComponent::HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
 	UE_LOG(LogTemp, Display, TEXT("Health changed [%f] -> [%f]"), OldValue, NewValue);
@@ -84,5 +132,23 @@ void UAssassinsHealthComponent::HandleHealthChanged(AActor* DamageInstigator, AA
 
 void UAssassinsHealthComponent::HandleOutOfHealth(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
-	UE_LOG(LogTemp, Display, TEXT("You died."));
+#if WITH_SERVER_CODE
+	if (AbilitySystemComponent && DamageEffectSpec)
+	{
+		// Send the "Event.Death" gameplay event through the owner's ability system.
+		// This can be used to trigger a death gameplay ability.
+		FGameplayEventData Payload;
+		Payload.EventTag = AssassinsGameplayTags::Event_Death;
+		Payload.Instigator = DamageInstigator;
+		Payload.Target = AbilitySystemComponent->GetAvatarActor();
+		Payload.OptionalObject = DamageEffectSpec->Def;
+		Payload.ContextHandle = DamageEffectSpec->GetEffectContext();
+		Payload.InstigatorTags = *DamageEffectSpec->CapturedSourceTags.GetAggregatedTags();
+		Payload.TargetTags = *DamageEffectSpec->CapturedTargetTags.GetAggregatedTags();
+		Payload.EventMagnitude = DamageMagnitude;
+
+		FScopedPredictionWindow NewScopeWindow(AbilitySystemComponent, true);
+		AbilitySystemComponent->HandleGameplayEvent(Payload.EventTag, &Payload);
+	}
+#endif
 }

@@ -22,8 +22,10 @@ AAssassinsCharacter::AAssassinsCharacter()
 	PawnExtComponent = CreateDefaultSubobject<UAssassinsPawnExtensionComponent>(TEXT("PawnExtensionComponent"));
 	PawnExtComponent->OnAbilitySystemInitialized_RegisterAndCall(FSimpleMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::OnAbilitySystemInitialized));
 	PawnExtComponent->OnAbilitySystemUninitialized_Register(FSimpleMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::OnAbilitySystemUninitialized));
-
+	 
 	HealthComponent = CreateDefaultSubobject<UAssassinsHealthComponent>(TEXT("HealthComponent"));
+	HealthComponent->OnDeathStarted.AddDynamic(this, &ThisClass::HandleDeathStarted);
+	HealthComponent->OnDeathFinished.AddDynamic(this, &ThisClass::HandleDeathFinished);
 
 	// Configure player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -232,6 +234,40 @@ void AAssassinsCharacter::InitializeGameplayTags()
 
 		ASC->RegisterGenericGameplayTagEvent().AddUObject(this, &ThisClass::HandleGenericGameplayTagEvent);
 	}
+}
+
+void AAssassinsCharacter::HandleDeathStarted()
+{
+	if (GetController())
+	{
+		GetController()->SetIgnoreMoveInput(true);
+	}
+
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	check(Capsule);
+	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	check(MovementComponent);
+	MovementComponent->StopMovementImmediately();
+	MovementComponent->DisableMovement();
+}
+
+void AAssassinsCharacter::HandleDeathFinished()
+{
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::DestroyDueToDeath);
+}
+
+void AAssassinsCharacter::DestroyDueToDeath()
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		DetachFromControllerPendingDestroy();
+		SetLifeSpan(0.1f);
+	}
+
+	SetActorHiddenInGame(true);
 }
 
 void AAssassinsCharacter::HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
