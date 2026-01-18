@@ -13,7 +13,11 @@ void UAssassinsCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo&
 {
 	UpdateCameraMode();
 
-	check(CurrentCameraMode);
+	if (CurrentCameraMode == nullptr)
+	{
+		Super::GetCameraView(DeltaTime, DesiredView);
+		return;
+	}
 
 	FAssassinsCameraModeView CameraModeView;
 	CurrentCameraMode->EvaluateCameraMode(DeltaTime, CameraModeView);
