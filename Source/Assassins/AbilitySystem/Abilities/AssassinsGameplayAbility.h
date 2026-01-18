@@ -64,7 +64,7 @@ protected:
     FActiveGameplayEffectHandle ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor);
 
 	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
-	bool DoesActorHaveTag(AActor* Actor, FGameplayTag TagToCheck);
+	bool IsValidEnemy(AActor* TargetActor) const;
 
 protected:
 	

@@ -25,7 +25,7 @@ public:
 	void SetProjectileClass();
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
-	void SetProjectileSpawnTransform();
+	void SetProjectileSpawnTransform(AActor* SourceActor, FTransform& SpawnTransform);
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
 	void HandleProjectile(AAssassinsProjectile* SpawnedProjectile);

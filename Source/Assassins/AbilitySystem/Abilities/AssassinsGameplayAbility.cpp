@@ -6,6 +6,7 @@
 #include "Character/AssassinsCharacter.h"
 #include "Player/AssassinsPlayerController.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "Teams/AssassinsTeamSubsystem.h"
 
 UAssassinsGameplayAbility::UAssassinsGameplayAbility(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -83,11 +84,15 @@ FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecTo
     return ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
 }
 
-bool UAssassinsGameplayAbility::DoesActorHaveTag(AActor* Actor, FGameplayTag TagToCheck)
+bool UAssassinsGameplayAbility::IsValidEnemy(AActor* TargetActor) const
 {
-    if (UAbilitySystemComponent* ActorASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor))
+    AAssassinsCharacter* AvatarCharacter = GetAssassinsCharacterFromActorInfo();
+    check(AvatarCharacter);
+
+    if (AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor))
     {
-        return ActorASC->HasMatchingGameplayTag(TagToCheck);
+        return TargetCharacter->GetGenericTeamId() != AvatarCharacter->GetGenericTeamId();
     }
+
     return false;
 }

@@ -20,8 +20,8 @@ public:
 
 	AAssassinsProjectile();
 
-    UFUNCTION(BlueprintPure)
-    virtual bool IsValidTarget(AActor* TargetActor) const;
+    UFUNCTION(BlueprintPure, Category = "Assassins|Projectile")
+    virtual bool IsValidTarget(AActor* TargetActor, bool bShouldNotBeOwner=true, bool bShouldBeEnemy=true) const;
 
     UFUNCTION(BlueprintPure)
     UParticleSystemComponent* GetProjectileParticle() const { return ParticleSystemComponent; }

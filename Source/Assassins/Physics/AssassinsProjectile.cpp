@@ -33,17 +33,30 @@ AAssassinsProjectile::AAssassinsProjectile()
     StartLocation = FVector::Zero();
 }
 
-bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor) const
+bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeOwner, bool bShouldBeEnemy) const
 {
-    if (TargetActor->IsA<AAssassinsCharacter>())
+    AAssassinsCharacter* OwnerCharacter = Cast<AAssassinsCharacter>(GetOwner());
+    check(OwnerCharacter);
+
+    AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor);
+    if (TargetCharacter == nullptr)
     {
-        if (GetOwner() && GetOwner() != TargetActor)
-        {
-            return true;
-        }
+        return false;
+    }
+    
+    bool bValidTarget = true;
+
+    if (bShouldNotBeOwner)
+    {
+        bValidTarget &= (TargetCharacter != OwnerCharacter);
     }
 
-    return false;
+    if (bShouldBeEnemy)
+    {
+        bValidTarget &= (TargetCharacter->GetGenericTeamId() != OwnerCharacter->GetGenericTeamId());
+    }
+
+    return bValidTarget;
 }
 
 void AAssassinsProjectile::BeginPlay()
