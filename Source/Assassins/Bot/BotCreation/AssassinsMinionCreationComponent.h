@@ -34,9 +34,10 @@ public:
 protected:
 
 	//~UAssassinsBotCreationComponent interface
-	virtual void ServerCreateBots_Implementation() override;
-	virtual void SpawnOneBot() override;
+	virtual void ServerCreateBots() override;
 	//~End of UAssassinsBotCreationComponent interface
+
+	void SpawnOneBot();
 
 	UFUNCTION(BlueprintNativeEvent, Category = Gameplay)
 	void ChangeTeam();

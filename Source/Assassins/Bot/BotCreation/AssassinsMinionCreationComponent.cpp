@@ -91,7 +91,7 @@ void UAssassinsMinionCreationComponent::TickComponent(float DeltaTime, ELevelTic
 	}
 }
 
-void UAssassinsMinionCreationComponent::ServerCreateBots_Implementation()
+void UAssassinsMinionCreationComponent::ServerCreateBots()
 {
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(

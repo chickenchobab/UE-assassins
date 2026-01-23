@@ -33,35 +33,14 @@ void UAssassinsBotCreationComponent::OnExperienceLoaded(const UAssassinsExperien
 
 #if WITH_SERVER_CODE
 
-void UAssassinsBotCreationComponent::ServerCreateBots_Implementation()
+void UAssassinsBotCreationComponent::ServerCreateBots()
 {
 
 }
-
-void UAssassinsBotCreationComponent::SpawnOneBot()
-{
-
-}
-
-void UAssassinsBotCreationComponent::RemoveOneBot(AAIController* Controller)
-{
-	
-}
-
 
 #else // !WITH_SERVER_CODE
 
 void UAssassinsBotCreationComponent::ServerCreateBots()
-{
-	ensureMsgf(0, TEXT("Bot functions do not exist in Assassins client!"))
-}
-
-void UAssassinsBotCreationComponent::SpawnOneBot()
-{
-	ensureMsgf(0, TEXT("Bot functions do not exist in Assassins client!"))
-}
-
-void UAssassinsBotCreationComponent::RemoveOneBot()
 {
 	ensureMsgf(0, TEXT("Bot functions do not exist in Assassins client!"))
 }

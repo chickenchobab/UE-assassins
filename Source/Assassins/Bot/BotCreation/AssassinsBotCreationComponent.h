@@ -25,17 +25,7 @@ private:
 
 protected:
 
-	/** Spawns bots up to NumBotsToCreate */
-	UFUNCTION(BlueprintNativeEvent, BlueprintAuthorityOnly, Category = Gameplay)
-	void ServerCreateBots();
-
-	/** Always creates a single bot */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Gameplay)
-	virtual void SpawnOneBot();
-
-	/** Deletes the last created bot if possible */
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Gameplay)
-	virtual void RemoveOneBot(AAIController* Controller);
+	virtual void ServerCreateBots();
 
 protected:
 

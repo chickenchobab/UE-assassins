@@ -3,7 +3,7 @@
 
 #include "Player/AssassinsPlayerSpawnerComponent.h"
 #include "Player/AssassinsPlayerStart.h"
-//#include "GameFramework/PlayerStart.h"
+#include "Teams/AssassinsTeamAgentInterface.h"
 #include "EngineUtils.h"
 #include "Engine/PlayerStartPIE.h"
 
@@ -66,11 +66,21 @@ AActor* UAssassinsPlayerSpawnerComponent::ChoosePlayerStart(AController* Player)
 			}
 		}
 
-		if (!StarterPoints.IsEmpty())
+		if (IAssassinsTeamAgentInterface* ControllerWithTeam = Cast<IAssassinsTeamAgentInterface>(Player))
 		{
-			return StarterPoints[FMath::RandRange(0, StarterPoints.Num() - 1)];
+			for (AAssassinsPlayerStart* PlayerStart : StarterPoints)
+			{
+				if (PlayerStart->GetOccupancy(Player) == EAssassinsPlayerStartOccupancy::Empty && 
+					PlayerStart->GetTeamId() == GenericTeamIdToInteger(ControllerWithTeam->GetGenericTeamId()))
+				{
+					return PlayerStart;
+				}
+			}
 		}
+
+		return StarterPoints[FMath::RandRange(0, StarterPoints.Num() - 1)];
 	}
+
 	return nullptr;
 }
 

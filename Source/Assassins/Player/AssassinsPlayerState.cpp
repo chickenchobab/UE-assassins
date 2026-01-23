@@ -115,9 +115,15 @@ FGenericTeamId AAssassinsPlayerState::GetGenericTeamId() const
 
 void AAssassinsPlayerState::OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience)
 {
+    // Me: Pawn data for a champion bot is set later.
+    if (IsABot())
+    {
+        return;
+    }
+
     if (AAssassinsGameMode* AssassinsGameMode = GetWorld()->GetAuthGameMode<AAssassinsGameMode>())
     {
-        // Me: Because this PlayerState doesn't have one, the function gets the PawnData from the loaded experience.
+        // Me: Check whether this player already has PawnData; otherwise, retrieve the default from the loaded Experience.
         if (const UAssassinsPawnData* NewPawnData = AssassinsGameMode->GetPawnDataForController(GetOwningController()))
         {
             SetPawnData(NewPawnData);

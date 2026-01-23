@@ -4,6 +4,7 @@
 #include "Player/AssassinsPlayerController.h"
 #include "Player/AssassinsPlayerSpawnerComponent.h"
 #include "Player/AssassinsPlayerState.h"
+#include "Player/AssassinsPlayerStart.h"
 #include "GameModes/AssassinsExperienceDefinition.h"
 #include "GameModes/AssassinsExperienceStateComponent.h"
 #include "GameModes/AssassinsWorldSettings.h"
@@ -17,6 +18,7 @@
 #include "AssassinsLogCategories.h"
 #include "System/AssassinsAssetManager.h"
 #include "UI/AssassinsHUD.h"
+#include "Bot/AssassinsPlayerBotController.h"
 
 
 AAssassinsGameMode::AAssassinsGameMode()
@@ -91,6 +93,11 @@ bool AAssassinsGameMode::UpdatePlayerStartSpot(AController* Player, const FStrin
 	return true;
 }
 
+void AAssassinsGameMode::GenericPlayerInitialization(AController* NewPlayer)
+{
+	Super::GenericPlayerInitialization(NewPlayer);
+}
+
 void AAssassinsGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
 	// Delay starting new players until the experience has been loaded
@@ -120,6 +127,16 @@ AActor* AAssassinsGameMode::ChoosePlayerStart_Implementation(AController* Player
 	}
 
 	return Super::ChoosePlayerStart_Implementation(Player);
+}
+
+void AAssassinsGameMode::RestartPlayerAtPlayerStart(AController* NewPlayer, AActor* StartSpot)
+{
+	if (AAssassinsPlayerStart* AssassinsStart = Cast<AAssassinsPlayerStart>(StartSpot))
+	{
+		AssassinsStart->SetOccupied();
+	}
+
+	Super::RestartPlayerAtPlayerStart(NewPlayer, StartSpot);
 }
 
 UClass* AAssassinsGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
@@ -224,8 +241,10 @@ void AAssassinsGameMode::RequestPlayerRestartNextFrame(AController* Controller, 
 	{
 		GetWorldTimerManager().SetTimerForNextTick(PC, &APlayerController::ServerRestartPlayer_Implementation);
 	}
-	
-	// Me: TODO Bot controller version
+	else if (AAssassinsPlayerBotController* BotController = Cast<AAssassinsPlayerBotController>(Controller))
+	{
+		GetWorldTimerManager().SetTimerForNextTick(BotController, &AAssassinsPlayerBotController::ServerRestartController);
+	}
 }
 
 bool AAssassinsGameMode::ControllerCanRestart(AController* Controller)
@@ -237,8 +256,14 @@ bool AAssassinsGameMode::ControllerCanRestart(AController* Controller)
 			return false;
 		}
 	}
-
-	// Me: Bot version?
+	else
+	{
+		// Bot version of Super::PlayerCanRestart_Implementation
+		if ((Controller == nullptr) || (Controller->IsPendingKillPending()))
+		{
+			return false;
+		}
+	}
 	
 	if (UAssassinsPlayerSpawnerComponent* PlayerSpawnerComponent = GameState->FindComponentByClass<UAssassinsPlayerSpawnerComponent>())
 	{
