@@ -15,6 +15,7 @@ namespace AssassinsGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Status_Dashing, "Status.Dashing");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Death_Dying, "Status.Death.Dying");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Death_Dead, "Status.Death.Dead");
+	UE_DEFINE_GAMEPLAY_TAG(Status_Untargetable_Invisible, "Status.Untargetable.Invisible");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InitState_Spawned, "InitState.Spawned", "1: Actor/component has initially spawned and can be extended");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InitState_DataAvailable, "InitState.DataAvailable", "2: All required data has been loaded/replicated and is ready for initialization");

@@ -15,6 +15,8 @@ class UAssassinsAbilitySystemComponent;
 class UAssassinsCameraComponent;
 struct FGameplayEffectSpec;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FStatusChangeDelegate);
+
 UCLASS(Blueprintable)
 class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayTagAssetInterface, public IAssassinsTeamAgentInterface
 {
@@ -59,6 +61,22 @@ public:
 	FORCEINLINE void SetAbilityTarget(AAssassinsCharacter* Target) { AbilityTarget = Target; }
 	FORCEINLINE void ClearAbilityTarget() { AbilityTarget = nullptr; }
 
+public:
+
+	////////////////////////////////////////////////////////////////////////////////////
+	// Character plays montage or the effect causer implements gameplay logic and vfx.
+	////////////////////////////////////////////////////////////////////////////////////
+	
+	UPROPERTY(BlueprintAssignable, Category = "Assassins|Character|Status")
+	FStatusChangeDelegate OnChannelingStarted;
+	UPROPERTY(BlueprintAssignable, Category = "Assassins|Character|Status")
+	FStatusChangeDelegate OnChannelingEnded;
+
+	UPROPERTY(BlueprintAssignable, Category = "Assassins|Character|Status")
+	FStatusChangeDelegate OnInvisibilityStarted;
+	UPROPERTY(BlueprintAssignable, Category = "Assassins|Character|Status")
+	FStatusChangeDelegate OnInvisibilityEnded;
+
 protected:
 	
 	//~APawn interface
@@ -78,8 +96,19 @@ protected:
 
 	virtual void HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
 
+	////////////////////////////////////////////////////
+	// Functions bound to the status tag count changes
+	////////////////////////////////////////////////////
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "Assassins|Character|Status", DisplayName = "Handle Generic Gameplay Tag Event")
 	void HandleGenericGameplayTagEvent(const FGameplayTag Tag, int32 NewCount);
+
+	UFUNCTION()
+	void OnChannelingTagChanged(const FGameplayTag Tag, int32 NewCount);
+	UFUNCTION()
+	void OnUntargetableTagChanged(const FGameplayTag Tag, int32 NewCount);
+	UFUNCTION()
+	void OnInvisibleTagChanged(const FGameplayTag Tag, int32 NewCount);
 
 	UFUNCTION()
 	virtual void HandleDeathStarted();

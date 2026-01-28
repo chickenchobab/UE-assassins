@@ -16,6 +16,12 @@
 #include "Materials/Material.h"
 #include "Engine/World.h"
 #include "AssassinsLogCategories.h"
+#include "NativeGameplayTags.h"
+#include "Player/AssassinsPlayerController.h"
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_CHANNELING, "Status.Channeling");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_UNTARGETABLE, "Status.Untargetable");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_INVISIBLE, "Status.Untargetable.Invisible");
 
 AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UAssassinsCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
@@ -43,7 +49,7 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Rotate character to moving direction
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 1500.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(-1.f, -1.f, -1.f);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
 
@@ -234,6 +240,9 @@ void AAssassinsCharacter::InitializeGameplayTags()
 		ASC->AddLooseGameplayTags(CharacterOwnedTags);
 
 		ASC->RegisterGenericGameplayTagEvent().AddUObject(this, &ThisClass::HandleGenericGameplayTagEvent);
+		ASC->RegisterGameplayTagEvent(TAG_STATUS_CHANNELING).AddUObject(this, &ThisClass::OnChannelingTagChanged);
+		ASC->RegisterGameplayTagEvent(TAG_STATUS_UNTARGETABLE).AddUObject(this, &ThisClass::OnUntargetableTagChanged);
+		ASC->RegisterGameplayTagEvent(TAG_STATUS_INVISIBLE).AddUObject(this, &ThisClass::OnInvisibleTagChanged);
 	}
 }
 
@@ -274,4 +283,66 @@ void AAssassinsCharacter::DestroyDueToDeath()
 void AAssassinsCharacter::HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
 	GetCharacterMovement()->MaxWalkSpeed = NewValue;
+}
+
+void AAssassinsCharacter::OnChannelingTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	if (NewCount > 0)
+	{
+		GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 0.0f);
+
+		if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetController()))
+		{
+			AssassinsPC->PauseMove();
+		}
+		OnChannelingStarted.Broadcast();
+	}
+	else
+	{
+		GetCharacterMovement()->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
+
+		if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetController()))
+		{
+			AssassinsPC->ResumeMove();
+		}
+		OnChannelingEnded.Broadcast();
+	}
+}
+
+void AAssassinsCharacter::OnUntargetableTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	if (NewCount > 0)
+	{
+		if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+		{
+			Capsule->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
+		}
+	}
+	else
+	{
+		if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+		{
+			Capsule->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
+		}
+	}
+}
+
+void AAssassinsCharacter::OnInvisibleTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	if (NewCount > 0)
+	{
+		OnInvisibilityStarted.Broadcast();
+		if (GetLocalRole() != ROLE_AutonomousProxy)
+		{
+			SetActorHiddenInGame(true);
+		}
+	}
+	else
+	{
+		OnInvisibilityEnded.Broadcast();
+		if (GetLocalRole() != ROLE_AutonomousProxy)
+		{
+			SetActorHiddenInGame(false);
+		}
+	}
 }

@@ -86,11 +86,6 @@ private:
     bool CanMove();
     void CancelMoveInterruptedAbilities();
 
-    UFUNCTION()
-    void HandleBeginChanneling();
-    UFUNCTION()
-    void HandleEndChanneling(bool bContinuePaused);
-
 private:
 	UPROPERTY()
 	TObjectPtr<AAssassinsPlayerController> CachedPlayerController;

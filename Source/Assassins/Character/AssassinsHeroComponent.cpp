@@ -126,12 +126,6 @@ void UAssassinsHeroComponent::HandleChangeInitState(UGameFrameworkComponentManag
 			// The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
 			// The ability system component and attribute sets live on the player state.
 			PawnExtComp->InitializeAbilitySystem(AssassinsPS->GetAssassinsAbilitySystemComponent(), AssassinsPS);
-
-            if (UAssassinsAbilitySystemComponent* AssassinsASC = AssassinsPS->GetAssassinsAbilitySystemComponent())
-            {
-                AssassinsASC->OnBeginChanneling.AddDynamic(this, &UAssassinsHeroComponent::HandleBeginChanneling);
-                AssassinsASC->OnEndChanneling.AddDynamic(this, &UAssassinsHeroComponent::HandleEndChanneling);
-            }
 		}
 
 		if (AAssassinsPlayerController* AssassinsPC = GetController<AAssassinsPlayerController>())
@@ -474,27 +468,5 @@ void UAssassinsHeroComponent::CancelMoveInterruptedAbilities()
                 AssassinsASC->CancelAbilities(&ClickCanceledAbilityTags);
             }
         }
-    }
-}
-
-void UAssassinsHeroComponent::HandleBeginChanneling()
-{
-    if (CachedPlayerController)
-    {
-        CachedPlayerController->HandleBeginChanneling();
-    }
-}
-
-void UAssassinsHeroComponent::HandleEndChanneling(bool bContinuePaused)
-{
-    if (CachedPlayerController)
-    {
-        // Me: If movement is neither paused nor reserved, allow the ability montage to play to completion as normal
-        /*if (CachedPlayerController->HasMovePaused())
-        {
-            CancelMoveInterruptedAbilities();
-        }*/
-
-        CachedPlayerController->HandleEndChanneling(bContinuePaused);
     }
 }

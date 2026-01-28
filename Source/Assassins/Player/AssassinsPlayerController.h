@@ -60,14 +60,13 @@ public:
     void AbortMove();
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void PauseMove();
+	UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
+	void ResumeMove();
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void ResetMoveState();
 
 	UFUNCTION(BlueprintPure, Category = "AI|Navigation")
 	bool HasMovePaused() const;
-	
-    void HandleBeginChanneling();
-    void HandleEndChanneling(bool bResumeMove);
 
 	void SetAvoidanceGroup(int32 AvoidanceGroup);
 
@@ -114,5 +113,3 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
 	float CollisionQueryRange = 100.f;
 };
-
-

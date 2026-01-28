@@ -142,6 +142,14 @@ void AAssassinsPlayerController::PauseMove()
 	}
 }
 
+void AAssassinsPlayerController::ResumeMove()
+{
+	if (CrowdFollowingComponent)
+	{
+		CrowdFollowingComponent->ResumeMove();
+	}
+}
+
 void AAssassinsPlayerController::ResetMoveState()
 {
     ReceiveMoveCompleted.Clear();
@@ -150,20 +158,6 @@ void AAssassinsPlayerController::ResetMoveState()
 	{
 		TargetChasingComponent->ResetTargetState();
 	}
-}
-
-void AAssassinsPlayerController::HandleBeginChanneling()
-{
-    CrowdFollowingComponent->PauseMove();
-}
-
-void AAssassinsPlayerController::HandleEndChanneling(bool bResumeMove)
-{
-    // Me: Existing move request could have been aborted by a new request so check the status
-    if (bResumeMove && CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() == EPathFollowingStatus::Paused)
-    {
-        CrowdFollowingComponent->ResumeMove();
-    }
 }
 
 bool AAssassinsPlayerController::HasMovePaused() const
