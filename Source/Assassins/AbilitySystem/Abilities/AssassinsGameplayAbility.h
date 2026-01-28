@@ -53,6 +53,7 @@ public:
 	EAssassinsAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
 protected:
+
     //~UGameplayAbility interface
     virtual FGameplayEffectContextHandle MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const override;
     //~End of UGameplayAbility interface
@@ -63,6 +64,9 @@ protected:
     UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
     FActiveGameplayEffectHandle ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor);
 
+	UFUNCTION(BlueprintPure, Category = "Assassins|Ability", meta = (DataTablePin = "CurveTable"))
+	float EvaluateCurveTableRowByAbilityLevel(UCurveTable* CurveTable, FName RowName, const FString& ContextString) const;
+	
 	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
 	bool IsValidEnemy(AActor* TargetActor) const;
 

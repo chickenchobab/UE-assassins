@@ -7,6 +7,7 @@
 #include "Player/AssassinsPlayerController.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Teams/AssassinsTeamSubsystem.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UAssassinsGameplayAbility::UAssassinsGameplayAbility(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -82,6 +83,21 @@ FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecTo
     check(TargetASC);
 
     return ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
+}
+
+float UAssassinsGameplayAbility::EvaluateCurveTableRowByAbilityLevel(UCurveTable* CurveTable, FName RowName, const FString& ContextString) const
+{
+    FCurveTableRowHandle Handle;
+    Handle.CurveTable = CurveTable;
+    Handle.RowName = RowName;
+
+    float ReturnValue;
+    if (Handle.Eval(GetAbilityLevel(), &ReturnValue, ContextString))
+    {
+        return ReturnValue;
+    }
+    
+    return 0.0f;
 }
 
 bool UAssassinsGameplayAbility::IsValidEnemy(AActor* TargetActor) const
