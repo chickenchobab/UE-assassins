@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "TestFeature",
+	"FriendlyName": "SummonersRift",
 	"Description": "",
 	"Category": "Game Features",
 	"CreatedBy": "",
@@ -10,18 +10,18 @@
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
-	"EnabledByDefault": false,
+	"EnabledByDefault": true,
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "TestFeatureRuntime",
+			"Name": "SummonersRiftRuntime",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}
 	],
 	"ExplicitlyLoaded": true,
-	"BuiltInInitialFeatureState": "Active"
+	"BuiltInInitialFeatureState": "Registered"
 }

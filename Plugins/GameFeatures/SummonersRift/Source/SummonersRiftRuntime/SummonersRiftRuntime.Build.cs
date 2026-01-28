@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class TestFeatureRuntime : ModuleRules
+public class SummonersRiftRuntime : ModuleRules
 {
-	public TestFeatureRuntime(ReadOnlyTargetRules Target) : base(Target)
+	public SummonersRiftRuntime(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
