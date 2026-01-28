@@ -52,7 +52,7 @@ void AAssassinsPlayerController::BeginPlay()
 			}
 		});
 
-		TargetChasingComponent->StopChaseDelegate.BindLambda([this]() { AbortMove(); });
+		TargetChasingComponent->StopChaseDelegate.BindLambda([this]() { StopMovement(); });
 	}
 }
 
@@ -86,6 +86,14 @@ void AAssassinsPlayerController::OnUnPossess()
 	}
 
 	Super::OnUnPossess();
+}
+
+void AAssassinsPlayerController::StopMovement()
+{
+	ResetMoveState();
+
+	// AbortMove is called
+	Super::StopMovement();
 }
 
 void AAssassinsPlayerController::PlayerTick(float DeltaTime)
@@ -184,7 +192,11 @@ void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const F
 
 EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor* Goal, float AcceptRadius)
 {
-	AbortMove();
+	if (CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
+	{
+		CrowdFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest
+			, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
+	}
 
 	FAIMoveRequest MoveReq(Goal);
 	MoveReq.SetAcceptanceRadius(AcceptRadius);

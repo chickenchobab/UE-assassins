@@ -25,6 +25,10 @@ public:
 	virtual void BeginPlay() override;
 	//~End of AActor interface
 
+	//~AController interface
+	virtual void StopMovement() override;
+	//~End of AController interface
+
 	//~IAssassinsTeamAgentInterface interface
 	virtual void SetGenericTeamId(const FGenericTeamId& NewID) override;
 	FGenericTeamId GetGenericTeamId() const override;

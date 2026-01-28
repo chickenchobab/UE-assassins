@@ -28,10 +28,6 @@ public:
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
 
-	//~UAbilitySystemComponent interface
-	virtual int32 HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload) override;
-	//~End of UAbilitySystemComponent interface
-
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability", DisplayName = "CancelAbilities", meta = (ScriptName = "CancelAbilities"))
 	void K2_CancelAbilities(FGameplayTag WithTag, FGameplayTag WithoutTag);
 

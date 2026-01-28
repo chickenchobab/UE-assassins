@@ -49,6 +49,16 @@ void AAssassinsBotController::BeginPlay()
 	}
 }
 
+void AAssassinsBotController::StopMovement()
+{
+	if (TargetChasingComponent)
+	{
+		TargetChasingComponent->HandleChaseCompleted.Clear();
+	}
+
+	Super::StopMovement();
+}
+
 void AAssassinsBotController::SetGenericTeamId(const FGenericTeamId& NewID)
 {
 	MyTeamID = NewID;

@@ -139,16 +139,6 @@ void UAssassinsAbilitySystemComponent::ClearAbilityInput()
 	InputHeldSpecHandles.Reset();
 }
 
-int32 UAssassinsAbilitySystemComponent::HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload)
-{
-	if (!HasMatchingGameplayTag(AssassinsGameplayTags::Status_Channeling))
-	{
-		return Super::HandleGameplayEvent(EventTag, Payload);
-	}
-
-	return 0;
-}
-
 void UAssassinsAbilitySystemComponent::K2_CancelAbilities(FGameplayTag WithTag, FGameplayTag WithoutTag)
 {
 	FGameplayTagContainer WithTags(WithTag);
