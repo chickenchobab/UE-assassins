@@ -21,26 +21,31 @@ public:
 	AAssassinsProjectile();
 
     UFUNCTION(BlueprintPure, Category = "Assassins|Projectile")
-    virtual bool IsValidTarget(AActor* TargetActor, bool bShouldNotBeOwner=true, bool bShouldBeEnemy=true) const;
+    virtual bool IsValidTarget(AActor* TargetActor, bool bShouldNotBeInstigator=true, bool bShouldBeEnemy=true) const;
 
     UFUNCTION(BlueprintPure)
     UParticleSystemComponent* GetProjectileParticle() const { return ParticleSystemComponent; }
 
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void EnableAndSetDistanceRange(float NewDistanceRange);
+
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void EnableAndSetLifeSpan(float NewLifeSpan);
+
 protected:
 	
+    //~AActor interface
 	virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
+    //~End of AActor interface
+
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void SetVelocity(const FVector& NewVelocity);
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration);
-
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void DisableHoming();
-
-    UFUNCTION()
-    void HandleProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-    UFUNCTION(BlueprintImplementableEvent, Category = "Assassins|Projectile", DisplayName = "HandleProjectileHit")
-    void K2_HandleProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
     UFUNCTION()
     void HandleProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

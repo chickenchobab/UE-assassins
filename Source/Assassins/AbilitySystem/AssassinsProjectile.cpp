@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Physics/AssassinsProjectile.h"
+#include "AbilitySystem/AssassinsProjectile.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Character/AssassinsCharacter.h"
@@ -16,7 +16,6 @@ AAssassinsProjectile::AAssassinsProjectile()
     CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     CollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
     CollisionBox->SetGenerateOverlapEvents(true);
-    CollisionBox->OnComponentHit.AddUniqueDynamic(this, &AAssassinsProjectile::HandleProjectileHit);
     CollisionBox->OnComponentBeginOverlap.AddUniqueDynamic(this, &AAssassinsProjectile::HandleProjectileBeginOverlap);
 
     StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
@@ -33,10 +32,10 @@ AAssassinsProjectile::AAssassinsProjectile()
     StartLocation = FVector::Zero();
 }
 
-bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeOwner, bool bShouldBeEnemy) const
+bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeInstigator, bool bShouldBeEnemy) const
 {
-    AAssassinsCharacter* OwnerCharacter = Cast<AAssassinsCharacter>(GetOwner());
-    check(OwnerCharacter);
+    AAssassinsCharacter* InstigatorCharacter = Cast<AAssassinsCharacter>(GetInstigator());
+    check(InstigatorCharacter);
 
     AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor);
     if (TargetCharacter == nullptr)
@@ -46,17 +45,29 @@ bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeO
     
     bool bValidTarget = true;
 
-    if (bShouldNotBeOwner)
+    if (bShouldNotBeInstigator)
     {
-        bValidTarget &= (TargetCharacter != OwnerCharacter);
+        bValidTarget &= (TargetCharacter != InstigatorCharacter);
     }
 
     if (bShouldBeEnemy)
     {
-        bValidTarget &= (TargetCharacter->GetGenericTeamId() != OwnerCharacter->GetGenericTeamId());
+        bValidTarget &= (TargetCharacter->GetGenericTeamId() != InstigatorCharacter->GetGenericTeamId());
     }
 
     return bValidTarget;
+}
+
+void AAssassinsProjectile::EnableAndSetDistanceRange(float NewDistanceRange)
+{
+    bUseDistanceRange = true;
+    DistanceRange = NewDistanceRange;
+}
+
+void AAssassinsProjectile::EnableAndSetLifeSpan(float NewLifeSpan)
+{
+    bUseLifeSpan = true;
+    ProjectileLifeSpan = NewLifeSpan;
 }
 
 void AAssassinsProjectile::BeginPlay()
@@ -93,6 +104,20 @@ void AAssassinsProjectile::Tick(float DeltaTime)
     }
 }
 
+void AAssassinsProjectile::SetVelocity(const FVector& NewVelocity)
+{
+    if (NewVelocity.IsNearlyZero())
+    {
+        return;
+    }
+
+    if (ProjectileMovement)
+    {
+        ProjectileMovement->Velocity = NewVelocity;
+        ProjectileMovement->MaxSpeed = NewVelocity.Size();
+    }
+}
+
 void AAssassinsProjectile::EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration)
 {
     if (ProjectileMovement)
@@ -111,10 +136,6 @@ void AAssassinsProjectile::DisableHoming()
         ProjectileMovement->HomingTargetComponent = nullptr;
         ProjectileMovement->HomingAccelerationMagnitude = 0.0f;
     }
-}
-
-void AAssassinsProjectile::HandleProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
 }
 
 void AAssassinsProjectile::HandleProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -136,14 +157,17 @@ void AAssassinsProjectile::HandleProjectileBeginOverlap(UPrimitiveComponent* Ove
 
 void AAssassinsProjectile::ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor)
 {
-    AAssassinsCharacter* OwnerCharacter = Cast<AAssassinsCharacter>(GetOwner());
-    check(OwnerCharacter);
+    AAssassinsCharacter* InstigatorCharacter = Cast<AAssassinsCharacter>(GetInstigator());
+    check(InstigatorCharacter);
 
     if (AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor))
     {
-        if (UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent())
+        if (UAbilitySystemComponent* ASC = InstigatorCharacter->GetAbilitySystemComponent())
         {
-            ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetCharacter->GetAbilitySystemComponent());
+            if (SpecHandle.Data.IsValid())
+            {
+                ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetCharacter->GetAbilitySystemComponent());
+            }
         }
     }
 }
