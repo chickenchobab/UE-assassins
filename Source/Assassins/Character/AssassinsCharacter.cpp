@@ -7,17 +7,18 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "Character/AssassinsHealthComponent.h"
+#include "Character/Movements/AssassinsCharacterMovementComponent.h"
 #include "Camera/AssassinsCameraComponent.h"
 #include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
 #include "AssassinsLogCategories.h"
 
-AAssassinsCharacter::AAssassinsCharacter()
+AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UAssassinsCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PawnExtComponent = CreateDefaultSubobject<UAssassinsPawnExtensionComponent>(TEXT("PawnExtensionComponent"));
 	PawnExtComponent->OnAbilitySystemInitialized_RegisterAndCall(FSimpleMulticastDelegate::FDelegate::CreateUObject(this, &ThisClass::OnAbilitySystemInitialized));

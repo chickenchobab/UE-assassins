@@ -31,6 +31,7 @@ UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& Objec
 	FollowTime = 0.f;
 
     MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Channeling);
+	MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Dashing);
 
     ClickCanceledAbilityTags.AddTag(AssassinsGameplayTags::Ability_Cancelable_Click);
 }

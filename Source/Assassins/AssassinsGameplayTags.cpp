@@ -12,6 +12,7 @@ namespace AssassinsGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_Death, "Event.Death");
 
     UE_DEFINE_GAMEPLAY_TAG(Status_Channeling, "Status.Channeling");
+	UE_DEFINE_GAMEPLAY_TAG(Status_Dashing, "Status.Dashing");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Death_Dying, "Status.Death.Dying");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Death_Dead, "Status.Death.Dead");
 

@@ -21,7 +21,7 @@ class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInter
 	GENERATED_BODY()
 
 public:
-	AAssassinsCharacter();
+	AAssassinsCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Character")
 	UAssassinsAbilitySystemComponent* GetAssassinsAbilitySystemComponent() const;
