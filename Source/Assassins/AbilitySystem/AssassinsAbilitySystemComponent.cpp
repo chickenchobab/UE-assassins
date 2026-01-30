@@ -147,13 +147,13 @@ void UAssassinsAbilitySystemComponent::K2_CancelAbilities(FGameplayTag WithTag, 
 	CancelAbilities(&WithTags, &WithoutTags);
 }
 
-void UAssassinsAbilitySystemComponent::AddDynamicTagGameplayEffect(FGameplayTag Tag)
+FActiveGameplayEffectHandle UAssassinsAbilitySystemComponent::AddDynamicTagGameplayEffect(FGameplayTag Tag)
 {
 	const TSubclassOf<UGameplayEffect> DynamicTagGE = UAssassinsAssetManager::GetSubclass(UAssassinsGameData::Get().DynamicTagGameplayEffect);
 	if (!DynamicTagGE)
 	{
 		UE_LOG(LogAssassinsAbilitySystem, Warning, TEXT("AddDynamicTagGameplayEffect: Unable to find DynamicTagGameplayEffect [%s]."), *UAssassinsGameData::Get().DynamicTagGameplayEffect.GetAssetName());
-		return;
+		return FActiveGameplayEffectHandle();
 	}
 
 	const FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(DynamicTagGE, 1.0f, MakeEffectContext());
@@ -162,12 +162,12 @@ void UAssassinsAbilitySystemComponent::AddDynamicTagGameplayEffect(FGameplayTag 
 	if (!Spec)
 	{
 		UE_LOG(LogAssassinsAbilitySystem, Warning, TEXT("AddDynamicTagGameplayEffect: Unable to make outgoing spec for [%s]."), *GetNameSafe(DynamicTagGE));
-		return;
+		return FActiveGameplayEffectHandle();
 	}
 
 	Spec->DynamicGrantedTags.AddTag(Tag);
 
-	ApplyGameplayEffectSpecToSelf(*Spec);
+	return ApplyGameplayEffectSpecToSelf(*Spec);
 }
 
 void UAssassinsAbilitySystemComponent::RemoveDynamicTagGameplayEffect(FGameplayTag Tag)

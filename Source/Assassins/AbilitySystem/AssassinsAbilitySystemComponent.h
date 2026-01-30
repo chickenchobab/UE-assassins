@@ -33,7 +33,7 @@ public:
 
 	// Uses a gameplay effect to add the specified dynamic granted tag.
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
-	void AddDynamicTagGameplayEffect(FGameplayTag Tag);
+	FActiveGameplayEffectHandle AddDynamicTagGameplayEffect(FGameplayTag Tag);
 	// Removes all active instances of the gameplay effect that was used to add the specified dynamic granted tag.
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveDynamicTagGameplayEffect(FGameplayTag Tag);
