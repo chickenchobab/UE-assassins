@@ -102,4 +102,7 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AActor> TargetActor;
+
+	UPROPERTY()
+	float TargetRadius;
 };

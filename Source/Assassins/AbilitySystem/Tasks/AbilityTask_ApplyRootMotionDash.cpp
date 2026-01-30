@@ -204,6 +204,7 @@ UAbilityTask_DashToActor::UAbilityTask_DashToActor(const FObjectInitializer& Obj
 	: Super(ObjectInitializer)
 {
 	AcceptRadius = 80.0f;
+	TargetRadius = 0.0f;
 }
 
 UAbilityTask_DashToActor* UAbilityTask_DashToActor::DashToActor(UGameplayAbility* OwningAbility, FName TaskInstanceName, AActor* TargetActor, float DashSpeed, float AcceptRadius, ERootMotionFinishVelocityMode VelocityOnFinishMode, FVector SetVelocityOnFinish, float ClampVelocityOnFinish)
@@ -270,12 +271,21 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 		if (MovementComponent.IsValid())
 		{
 			AActor* MyActor = ASC->GetAvatarActor();
+
+			if (ACharacter* TargetCharacter = Cast<ACharacter>(TargetActor))
+			{
+				if (UCapsuleComponent* Capsule = TargetCharacter->GetCapsuleComponent())
+				{
+					TargetRadius = Capsule->GetScaledCapsuleRadius();
+				}
+			}
+
 			if (TargetActor && MyActor)
 			{
 				StartLocation = MyActor->GetActorLocation();
 
 				const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-				TargetLocation = TargetActor->GetActorLocation() - AcceptRadius * ToTarget;
+				TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
 			}
 
 			SetMovementAndCollision();
@@ -309,7 +319,7 @@ bool UAbilityTask_DashToActor::UpdateTargetLocation(float DeltaTime)
 		if (TargetActor && MyActor)
 		{
 			const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-			TargetLocation = TargetActor->GetActorLocation() - AcceptRadius * ToTarget;
+			TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
 			return true;
 		}
 	}
