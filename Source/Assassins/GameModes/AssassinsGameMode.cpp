@@ -196,6 +196,13 @@ void AAssassinsGameMode::FinishRestartPlayer(AController* NewPlayer, const FRota
 	}
 	
 	Super::FinishRestartPlayer(NewPlayer, StartRotation);
+
+	check(NewPlayer);
+
+	if (AAssassinsPlayerState* AssassinsPS = Cast<AAssassinsPlayerState>(NewPlayer->PlayerState))
+	{
+		AssassinsPS->ApplyAbilitySets();
+	}
 }
 
 void AAssassinsGameMode::FailedToRestartPlayer(AController* NewPlayer)

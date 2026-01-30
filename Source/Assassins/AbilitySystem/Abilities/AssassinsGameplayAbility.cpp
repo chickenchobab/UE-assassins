@@ -48,6 +48,24 @@ AAssassinsCharacter* UAssassinsGameplayAbility::GetAssassinsCharacterFromActorIn
     return Cast<AAssassinsCharacter>(GetAvatarActorFromActorInfo());
 }
 
+void UAssassinsGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
+{
+    Super::OnGiveAbility(ActorInfo, Spec);
+
+    // Try activate the ability on spawn.
+    if (ActorInfo && !Spec.IsActive() && (ActivationPolicy == EAssassinsAbilityActivationPolicy::OnSpawn))
+    {
+        UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+        const AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+
+        // If avatar actor is torn off or about to die, don't try to activate until we get the new one.
+        if (ASC && AvatarActor && (AvatarActor->GetLifeSpan() <= 0.0f))
+        {
+            ASC->TryActivateAbility(Spec.Handle);
+        }
+    }
+}
+
 FGameplayEffectContextHandle UAssassinsGameplayAbility::MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const
 {
     FGameplayEffectContextHandle ContextHandle = Super::MakeEffectContext(Handle, ActorInfo);

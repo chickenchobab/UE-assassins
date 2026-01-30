@@ -51,16 +51,24 @@ void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData)
 
     PawnData = InPawnData;
 
-    for (UAssassinsAbilitySet* AbilitySet : PawnData->AbilitySets)
-    {
-        if (AbilitySet)
-        {
-            // Me: Shouldn't handles be needed to remove abilities?
-            AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
-        }
-    }
+    ApplyAbilitySets();
+}
 
-    UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(this, NAME_AssassinsAbilityReady);
+void AAssassinsPlayerState::ApplyAbilitySets()
+{
+    if (PawnData)
+    {
+        for (UAssassinsAbilitySet* AbilitySet : PawnData->AbilitySets)
+        {
+            if (AbilitySet)
+            {
+                // Me: Shouldn't handles be needed to remove abilities?
+                AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
+            }
+        }
+
+        UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(this, NAME_AssassinsAbilityReady);
+    }
 }
 
 void AAssassinsPlayerState::PostInitializeComponents()
@@ -71,15 +79,15 @@ void AAssassinsPlayerState::PostInitializeComponents()
  
     AbilitySystemComponent->InitAbilityActorInfo(this, GetPawn());
 
-    UWorld* World = GetWorld();
-    if (World && World->IsGameWorld() && World->GetNetMode() != NM_Client)
-    {
-        AGameStateBase* GameState = World->GetGameState();
-        check(GameState);
-        UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
-        check(ExperienceComponent);
-        ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
-    }
+    //UWorld* World = GetWorld();
+    //if (World && World->IsGameWorld() && World->GetNetMode() != NM_Client)
+    //{
+    //    AGameStateBase* GameState = World->GetGameState();
+    //    check(GameState);
+    //    UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
+    //    check(ExperienceComponent);
+    //    ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+    //}
 }
 
 void AAssassinsPlayerState::CopyProperties(APlayerState* PlayerState)

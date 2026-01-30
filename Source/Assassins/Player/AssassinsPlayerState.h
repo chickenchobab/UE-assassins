@@ -43,6 +43,7 @@ public:
 	const T* GetPawnData() const { return Cast<T>(PawnData); }
 
 	void SetPawnData(const UAssassinsPawnData* InPawnData);
+	void ApplyAbilitySets();
 
 	//~AActor interface
 	virtual void PostInitializeComponents() override;
