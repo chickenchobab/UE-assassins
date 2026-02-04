@@ -97,7 +97,8 @@ void UAbilityTask_ApplyRootMotionDash::CheckDashFinish()
 	AActor* MyActor = GetAvatarActor();
 
 	const float AcceptRadiusSqr = AcceptRadius * AcceptRadius;
-	const bool bReachedDestination = FVector::DistSquared(TargetLocation, MyActor->GetActorLocation()) <= AcceptRadiusSqr;
+	const bool bReachedDestination = FVector::DistSquared(TargetLocation, MyActor->GetActorLocation() * FVector(1.0f, 1.0f, 0.0f)) <= AcceptRadiusSqr;
+	UE_LOG(LogTemp, Display, TEXT("%s and %s"), *MyActor->GetActorLocation().ToString(), *TargetLocation.ToString());
 
 	if (bReachedDestination)
 	{
@@ -203,7 +204,7 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 UAbilityTask_DashToActor::UAbilityTask_DashToActor(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	AcceptRadius = 80.0f;
+	AcceptRadius = 100.0f;
 	TargetRadius = 0.0f;
 }
 
@@ -285,7 +286,7 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 				StartLocation = MyActor->GetActorLocation();
 
 				const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-				TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
+				TargetLocation = TargetActor->GetActorLocation() * FVector(1.0f, 1.0f, 0.0f) - (AcceptRadius + TargetRadius) * ToTarget;
 			}
 
 			SetMovementAndCollision();
@@ -319,7 +320,7 @@ bool UAbilityTask_DashToActor::UpdateTargetLocation(float DeltaTime)
 		if (TargetActor && MyActor)
 		{
 			const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-			TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
+			TargetLocation = TargetActor->GetActorLocation() * FVector(1.0f, 1.0f, 0.0f) - (AcceptRadius + TargetRadius) * ToTarget;
 			return true;
 		}
 	}
