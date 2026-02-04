@@ -22,6 +22,10 @@ public:
 
 	UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer);
 
+	//~UAbilitySystemComponent interface
+	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+	//~End of UAbilitySystemComponent interface
+
 	void AbilityInputTagPressed(FGameplayTag& InputTag);
 	void AbilityInputTagReleased(FGameplayTag& InputTag);
 

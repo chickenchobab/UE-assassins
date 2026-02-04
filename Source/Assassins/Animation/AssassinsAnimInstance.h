@@ -3,7 +3,11 @@
 #pragma once
 
 #include "Animation/AnimInstance.h"
+#include "GameplayEffectTypes.h"
+
 #include "AssassinsAnimInstance.generated.h"
+
+class UAbilitySystemComponent;
 
 /**
  * The base game animation instance class used by this project
@@ -17,12 +21,16 @@ public:
 
 	UAssassinsAnimInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	virtual void InitializeWithAbilitySystem(UAbilitySystemComponent* ASC);
+
 	//~UAnimInstance interface
-	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeInitializeAnimation() override;
 	//~End of UAnimInstance interface
 
 protected:
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Movement")
-	float GroundSpeed;
+	// Gameplay tags that can be mapped to blueprint variables. The variables will automatically update as the tags are added or removed.
+	// These should be used instead of manually querying for the gameplay tags.
+	UPROPERTY(EditDefaultsOnly, Category = "GameplayTags")
+	FGameplayTagBlueprintPropertyMap GameplayTagPropertyMap;
 };

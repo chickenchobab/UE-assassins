@@ -7,11 +7,26 @@
 #include "System/AssassinsAssetManager.h"
 #include "System/AssassinsGameData.h"
 #include "AssassinsGameplayTags.h"
+#include "Animation/AssassinsAnimInstance.h"
 
 UAssassinsAbilitySystemComponent::UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 
+}
+
+void UAssassinsAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
+{
+	FGameplayAbilityActorInfo* ActorInfo = AbilityActorInfo.Get();
+	check(ActorInfo);
+	check(InOwnerActor);
+
+	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
+
+	if (UAssassinsAnimInstance* AssassinsAnimInst = Cast<UAssassinsAnimInstance>(ActorInfo->GetAnimInstance()))
+	{
+		AssassinsAnimInst->InitializeWithAbilitySystem(this);
+	}
 }
 
 void UAssassinsAbilitySystemComponent::AbilityInputTagPressed(FGameplayTag& InputTag)

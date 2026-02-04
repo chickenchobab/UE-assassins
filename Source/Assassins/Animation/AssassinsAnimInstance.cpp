@@ -4,17 +4,29 @@
 #include "Animation/AssassinsAnimInstance.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "AbilitySystemGlobals.h"
 
 UAssassinsAnimInstance::UAssassinsAnimInstance(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	GroundSpeed = 0.0f;
 }
 
-void UAssassinsAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+void UAssassinsAnimInstance::InitializeWithAbilitySystem(UAbilitySystemComponent* ASC)
 {
-	if (ACharacter* OwningCharacter = Cast<ACharacter>(TryGetPawnOwner()))
+	check(ASC);
+
+	GameplayTagPropertyMap.Initialize(this, ASC);
+}
+
+void UAssassinsAnimInstance::NativeInitializeAnimation()
+{
+	Super::NativeInitializeAnimation();
+
+	if (AActor* OwningActor = GetOwningActor())
 	{
-		GroundSpeed = OwningCharacter->GetVelocity().Size2D();
+		if (UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OwningActor))
+		{
+			InitializeWithAbilitySystem(ASC);
+		}
 	}
 }
