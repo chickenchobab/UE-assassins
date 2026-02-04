@@ -126,7 +126,7 @@ void AAssassinsCharacter::SetGameplayTag(FGameplayTag Tag)
 	}
 }
 
-void AAssassinsCharacter::UnsetGameplayTag(FGameplayTag Tag)
+void AAssassinsCharacter::ClearGameplayTag(FGameplayTag Tag)
 {
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
@@ -312,7 +312,7 @@ void AAssassinsCharacter::OnChannelingTagChanged(const FGameplayTag Tag, int32 N
 void AAssassinsCharacter::OnUntargetableTagChanged(const FGameplayTag Tag, int32 NewCount)
 {
 	if (NewCount > 0)
-	{
+	{ 
 		if (UCapsuleComponent* Capsule = GetCapsuleComponent())
 		{
 			Capsule->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);

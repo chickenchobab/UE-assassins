@@ -8,6 +8,7 @@
 class UAssassinsAbilitySystemComponent;
 class AAssassinsPlayerController;
 class AAssassinsCharacter;
+class UAssassinsAnimInstance;
 
 /**
  * EAssassinsAbilityActivationPolicy
@@ -50,6 +51,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	AAssassinsCharacter* GetAssassinsCharacterFromActorInfo() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	UAssassinsAnimInstance* GetAssassinsAnimInstanceFromActorInfo() const;
+
 	EAssassinsAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
 protected:
@@ -57,7 +61,10 @@ protected:
     //~UGameplayAbility interface
 	virtual void OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
     virtual FGameplayEffectContextHandle MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const override;
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
     //~End of UGameplayAbility interface
+
+	void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
 
     UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
     FGameplayEffectSpecHandle MakeEffectSpecHandle(TSubclassOf<UGameplayEffect> EffectClass);
@@ -71,10 +78,21 @@ protected:
 	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
 	bool IsValidEnemy(AActor* TargetActor) const;
 
+	// Me: Sets or clears an ability-scoped status tag on the avatar actor.
+	// Gameplay effect should be used to add a tag to another actor
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void AddTagToAvatar(FGameplayTag Tag);
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void RemoveTagFromAvatar(FGameplayTag Tag);
+
 protected:
 	
 	// Defines how this ability is meant to activate.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability Activation")
 	EAssassinsAbilityActivationPolicy ActivationPolicy;
 
+private:
+
+	UPROPERTY()
+	FGameplayTagContainer AvatarStatusTags;
 };

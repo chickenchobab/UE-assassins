@@ -8,6 +8,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Teams/AssassinsTeamSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Animation/AssassinsAnimInstance.h"
 
 UAssassinsGameplayAbility::UAssassinsGameplayAbility(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -48,22 +49,20 @@ AAssassinsCharacter* UAssassinsGameplayAbility::GetAssassinsCharacterFromActorIn
     return Cast<AAssassinsCharacter>(GetAvatarActorFromActorInfo());
 }
 
+UAssassinsAnimInstance* UAssassinsGameplayAbility::GetAssassinsAnimInstanceFromActorInfo() const
+{
+    if (CurrentActorInfo)
+    {
+        return Cast<UAssassinsAnimInstance>(CurrentActorInfo->GetAnimInstance());
+    }
+    return nullptr;
+}
+
 void UAssassinsGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
     Super::OnGiveAbility(ActorInfo, Spec);
 
-    // Try activate the ability on spawn.
-    if (ActorInfo && !Spec.IsActive() && (ActivationPolicy == EAssassinsAbilityActivationPolicy::OnSpawn))
-    {
-        UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
-        const AActor* AvatarActor = ActorInfo->AvatarActor.Get();
-
-        // If avatar actor is torn off or about to die, don't try to activate until we get the new one.
-        if (ASC && AvatarActor && (AvatarActor->GetLifeSpan() <= 0.0f))
-        {
-            ASC->TryActivateAbility(Spec.Handle);
-        }
-    }
+    TryActivateAbilityOnSpawn(ActorInfo, Spec);
 }
 
 FGameplayEffectContextHandle UAssassinsGameplayAbility::MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const
@@ -80,6 +79,33 @@ FGameplayEffectContextHandle UAssassinsGameplayAbility::MakeEffectContext(const 
     EffectContext->AddSourceObject(SourceObject);
 
     return ContextHandle;
+}
+
+void UAssassinsGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+    {
+        ASC->RemoveLooseGameplayTags(AvatarStatusTags);
+    }
+    AvatarStatusTags.Reset();
+
+    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UAssassinsGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const
+{
+    // Try activate the ability on spawn.
+    if (ActorInfo && !Spec.IsActive() && (ActivationPolicy == EAssassinsAbilityActivationPolicy::OnSpawn))
+    {
+        UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+        const AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+
+        // If avatar actor is torn off or about to die, don't try to activate until we get the new one.
+        if (ASC && AvatarActor && (AvatarActor->GetLifeSpan() <= 0.0f))
+        {
+            ASC->TryActivateAbility(Spec.Handle);
+        }
+    }
 }
 
 FGameplayEffectSpecHandle UAssassinsGameplayAbility::MakeEffectSpecHandle(TSubclassOf<UGameplayEffect> EffectClass)
@@ -130,3 +156,27 @@ bool UAssassinsGameplayAbility::IsValidEnemy(AActor* TargetActor) const
 
     return false;
 }
+
+void UAssassinsGameplayAbility::AddTagToAvatar(FGameplayTag Tag)
+{
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+    {
+        ASC->AddLooseGameplayTag(Tag);
+        AvatarStatusTags.AddTag(Tag);
+    }
+}
+
+void UAssassinsGameplayAbility::RemoveTagFromAvatar(FGameplayTag Tag)
+{
+    if (!AvatarStatusTags.HasTag(Tag))
+    {
+        return;
+    }
+
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+    {
+        ASC->RemoveLooseGameplayTag(Tag);
+        AvatarStatusTags.RemoveTag(Tag);
+    }
+}
+

@@ -19,6 +19,7 @@
 #include "UI/AssassinsGameViewportClient.h"
 #include "GameModes/AssassinsGameState.h"
 #include "Camera/AssassinsCameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 const FName UAssassinsHeroComponent::NAME_ActorFeatureName("Hero");
@@ -196,6 +197,8 @@ void UAssassinsHeroComponent::BeginPlay()
 
 void UAssassinsHeroComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	CachedPlayerController = nullptr;
+
 	UnregisterInitStateFeature();
 
 	Super::EndPlay(EndPlayReason);
@@ -393,10 +396,15 @@ TSubclassOf<UAssassinsCameraMode> UAssassinsHeroComponent::DetermineCameraMode()
 
 void UAssassinsHeroComponent::HandleCursorTargetSet(AAssassinsCharacter* CursorTarget)
 {
-	const APlayerController* PC = GetController<APlayerController>();
-	check(PC);
+	if (CursorTarget == nullptr)
+	{
+		return;
+	}
 
-	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(PC->GetLocalPlayer());
+	check(CachedPlayerController);
+	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Crosshairs;
+
+	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(CachedPlayerController->GetLocalPlayer());
 	check(LP);
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
@@ -407,21 +415,18 @@ void UAssassinsHeroComponent::HandleCursorTargetSet(AAssassinsCharacter* CursorT
 		Subsystem->AddMappingContext(AttackInputMapping, 1);
 	}
 
-	if (APawn* PlayerPawn = GetPawn<APawn>())
+	if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(GetPawn<APawn>()))
 	{
-		if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(PlayerPawn))
-		{
-			PlayerCharacter->SetAbilityTarget(CursorTarget);
-		}
+		PlayerCharacter->SetAbilityTarget(CursorTarget);
 	}
 }
 
 void UAssassinsHeroComponent::HandleCursorTargetCleared()
 {
-	const APlayerController* PC = GetController<APlayerController>();
-	check(PC);
+	check(CachedPlayerController);
+	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Default;
 
-	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(PC->GetLocalPlayer());
+	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(CachedPlayerController->GetLocalPlayer());
 	check(LP);
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
@@ -432,12 +437,9 @@ void UAssassinsHeroComponent::HandleCursorTargetCleared()
 		Subsystem->RemoveMappingContext(AttackInputMapping);
 	}
 
-	if (APawn* PlayerPawn = GetPawn<APawn>())
+	if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(GetPawn<APawn>()))
 	{
-		if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(PlayerPawn))
-		{
-			PlayerCharacter->ClearAbilityTarget();
-		}
+		PlayerCharacter->ClearAbilityTarget();
 	}
 }
 

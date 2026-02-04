@@ -41,7 +41,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
 	void SetGameplayTag(FGameplayTag Tag);
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
-	void UnsetGameplayTag(FGameplayTag Tag);
+	void ClearGameplayTag(FGameplayTag Tag);
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
 	void AddGameplayTag(FGameplayTag Tag);
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Character|Status")
