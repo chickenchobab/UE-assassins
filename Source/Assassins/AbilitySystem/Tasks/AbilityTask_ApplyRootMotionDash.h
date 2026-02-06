@@ -5,7 +5,7 @@
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotion_Base.h"
 #include "AbilityTask_ApplyRootMotionDash.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDashFinishedDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FAssassinsDashDelegate);
 
 UCLASS()
 class ASSASSINS_API UAbilityTask_ApplyRootMotionDash : public UAbilityTask_ApplyRootMotion_Base
@@ -22,7 +22,10 @@ public:
 	//~End of UGameplayTask interface
 
 	UPROPERTY(BlueprintAssignable)
-	FOnDashFinishedDelegate OnFinished;
+	FAssassinsDashDelegate OnTickTask;
+
+	UPROPERTY(BlueprintAssignable)
+	FAssassinsDashDelegate OnFinished;
 
 protected:
 
@@ -30,8 +33,8 @@ protected:
 	// and dash(es) because regarding gameplay abilities have allowed it
 	void AbortMoveAndDash();
 
-	void SetMovementAndCollision();
-	void RestoreMovementAndCollision();
+	void SetMovementMode();
+	void ResetMovementMode();
 
 	void CheckDashFinish();
 

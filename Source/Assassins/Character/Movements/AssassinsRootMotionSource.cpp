@@ -24,12 +24,8 @@ void FRootMotionSource_MoveToDynamicConstantSpeed::PrepareRootMotion
 
 	const FVector CurrentLocation = Character.GetActorLocation();
 	float Multiplier = (MovementTickTime > UE_SMALL_NUMBER) ? (SimulationTime / MovementTickTime) : 1.f;
-	if (Speed > UE_SMALL_NUMBER)
-	{
-		Multiplier = FMath::Min((TargetLocation - StartLocation).Size2D() / Speed, Multiplier);
-	}
 
-	FVector Force = (TargetLocation - CurrentLocation).GetSafeNormal2D() * Speed * SimulationTime / MovementTickTime;
+	FVector Force = (TargetLocation - CurrentLocation).GetSafeNormal2D() * Speed * Multiplier;
 	FTransform NewTransform(Force);
 
 	RootMotionParams.Set(NewTransform);
@@ -60,12 +56,8 @@ void FRootMotionSource_MoveToConstantSpeed::PrepareRootMotion
 
 	const FVector CurrentLocation = Character.GetActorLocation();
 	float Multiplier = (MovementTickTime > UE_SMALL_NUMBER) ? (SimulationTime / MovementTickTime) : 1.f;
-	if (Speed > UE_SMALL_NUMBER)
-	{
-		Multiplier = FMath::Min((TargetLocation - StartLocation).Size2D() / Speed, Multiplier);
-	}
 
-	FVector Force = (TargetLocation - CurrentLocation).GetSafeNormal2D() * Speed * SimulationTime / MovementTickTime;
+	FVector Force = (TargetLocation - CurrentLocation).GetSafeNormal2D() * Speed * Multiplier;
 	FTransform NewTransform(Force);
 
 	RootMotionParams.Set(NewTransform);

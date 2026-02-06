@@ -22,6 +22,7 @@
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_CHANNELING, "Status.Channeling");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_UNTARGETABLE, "Status.Untargetable");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_INVISIBLE, "Status.Untargetable.Invisible");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_DASHING, "Status.Dashing");
 
 AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UAssassinsCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
@@ -240,9 +241,11 @@ void AAssassinsCharacter::InitializeGameplayTags()
 		ASC->AddLooseGameplayTags(CharacterOwnedTags);
 
 		ASC->RegisterGenericGameplayTagEvent().AddUObject(this, &ThisClass::HandleGenericGameplayTagEvent);
+
 		ASC->RegisterGameplayTagEvent(TAG_STATUS_CHANNELING).AddUObject(this, &ThisClass::OnChannelingTagChanged);
 		ASC->RegisterGameplayTagEvent(TAG_STATUS_UNTARGETABLE).AddUObject(this, &ThisClass::OnUntargetableTagChanged);
 		ASC->RegisterGameplayTagEvent(TAG_STATUS_INVISIBLE).AddUObject(this, &ThisClass::OnInvisibleTagChanged);
+		ASC->RegisterGameplayTagEvent(TAG_STATUS_DASHING).AddUObject(this, &ThisClass::OnDashingTagChanged);
 	}
 }
 
@@ -289,8 +292,6 @@ void AAssassinsCharacter::OnChannelingTagChanged(const FGameplayTag Tag, int32 N
 {
 	if (NewCount > 0)
 	{
-		GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 0.0f);
-
 		if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetController()))
 		{
 			AssassinsPC->PauseMove();
@@ -299,6 +300,7 @@ void AAssassinsCharacter::OnChannelingTagChanged(const FGameplayTag Tag, int32 N
 	}
 	else
 	{
+		// Rotation rate might have been changed by the ability.
 		GetCharacterMovement()->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
 
 		if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetController()))
@@ -344,5 +346,26 @@ void AAssassinsCharacter::OnInvisibleTagChanged(const FGameplayTag Tag, int32 Ne
 		{
 			SetActorHiddenInGame(false);
 		}
+	}
+}
+
+void AAssassinsCharacter::OnDashingTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	if (GetCapsuleComponent() == nullptr)
+	{
+		return;
+	}
+
+	if (NewCount > 0)
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	}
+	else
+	{
+		GetCharacterMovement()->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
+
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	}
 }

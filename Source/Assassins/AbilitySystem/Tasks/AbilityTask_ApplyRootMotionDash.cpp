@@ -19,11 +19,13 @@ UAbilityTask_ApplyRootMotionDash::UAbilityTask_ApplyRootMotionDash(const FObject
 void UAbilityTask_ApplyRootMotionDash::TickTask(float DeltaTime)
 {
 	Super::TickTask(DeltaTime);
+
+	OnTickTask.Broadcast();
 }
 
 void UAbilityTask_ApplyRootMotionDash::OnDestroy(bool AbilityIsEnding)
 {
-	RestoreMovementAndCollision();
+	ResetMovementMode();
 
 	if (AbilitySystemComponent.IsValid())
 	{
@@ -53,42 +55,19 @@ void UAbilityTask_ApplyRootMotionDash::AbortMoveAndDash()
 	}
 }
 
-void UAbilityTask_ApplyRootMotionDash::SetMovementAndCollision()
+void UAbilityTask_ApplyRootMotionDash::SetMovementMode()
 {
 	PreviousMovementMode = MovementComponent->MovementMode;
 	PreviousCustomMode = MovementComponent->CustomMovementMode;
 	MovementComponent->SetMovementMode(EMovementMode::MOVE_Custom, ECustomMovementMode::CMOVE_Dashing);
-
-	if (ACharacter* MyCharacter = Cast<ACharacter>(AbilitySystemComponent->GetAvatarActor()))
-	{
-		StartLocation = MyCharacter->GetActorLocation();
-
-		if (UCapsuleComponent* CapsuleComp = MyCharacter->GetCapsuleComponent())
-		{
-			CapsuleComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
-			CapsuleComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-		}
-	}
 }
 
-void UAbilityTask_ApplyRootMotionDash::RestoreMovementAndCollision()
+void UAbilityTask_ApplyRootMotionDash::ResetMovementMode()
 {
 	if (MovementComponent.IsValid())
 	{
 		MovementComponent->RemoveRootMotionSourceByID(RootMotionSourceID);
 		MovementComponent->SetMovementMode(PreviousMovementMode, PreviousCustomMode);
-	}
-
-	if (AbilitySystemComponent.IsValid())
-	{
-		if (ACharacter* MyCharacter = Cast<ACharacter>(AbilitySystemComponent->GetAvatarActor()))
-		{
-			if (UCapsuleComponent* CapsuleComp = MyCharacter->GetCapsuleComponent())
-			{
-				CapsuleComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-				CapsuleComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-			}
-		}
 	}
 }
 
@@ -97,14 +76,13 @@ void UAbilityTask_ApplyRootMotionDash::CheckDashFinish()
 	AActor* MyActor = GetAvatarActor();
 
 	const float AcceptRadiusSqr = AcceptRadius * AcceptRadius;
-	const bool bReachedDestination = FVector::DistSquared(TargetLocation, MyActor->GetActorLocation() * FVector(1.0f, 1.0f, 0.0f)) <= AcceptRadiusSqr;
-	UE_LOG(LogTemp, Display, TEXT("%s and %s"), *MyActor->GetActorLocation().ToString(), *TargetLocation.ToString());
+	const bool bReachedDestination = FVector::DistSquared2D(TargetLocation, MyActor->GetActorLocation()) <= AcceptRadiusSqr;
 
 	if (bReachedDestination)
 	{
 		// Task has finished
 		bIsFinished = true;
-		MyActor->SetActorLocation(TargetLocation);
+		MyActor->SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, MyActor->GetActorLocation().Z));
 
 		if (!bIsSimulating)
 		{
@@ -176,8 +154,8 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 		MovementComponent = Cast<UAssassinsCharacterMovementComponent>(ASC->AbilityActorInfo->MovementComponent.Get());
 		if (MovementComponent.IsValid())
 		{
-			SetMovementAndCollision();
-
+			SetMovementMode();
+			// Set capsule collision
 			ASC->SetLooseGameplayTagCount(TAG_STATUS_DASHING, 1);
 
 			ForceName = ForceName.IsNone() ? FName("AbilityTaskDashTo") : ForceName;
@@ -286,11 +264,11 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 				StartLocation = MyActor->GetActorLocation();
 
 				const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-				TargetLocation = TargetActor->GetActorLocation() * FVector(1.0f, 1.0f, 0.0f) - (AcceptRadius + TargetRadius) * ToTarget;
+				TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
 			}
 
-			SetMovementAndCollision();
-
+			SetMovementMode();
+			// Set capsule collision
 			ASC->SetLooseGameplayTagCount(TAG_STATUS_DASHING, 1);
 
 			ForceName = ForceName.IsNone() ? FName("AbilityTaskDashToActor") : ForceName;
@@ -320,7 +298,7 @@ bool UAbilityTask_DashToActor::UpdateTargetLocation(float DeltaTime)
 		if (TargetActor && MyActor)
 		{
 			const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-			TargetLocation = TargetActor->GetActorLocation() * FVector(1.0f, 1.0f, 0.0f) - (AcceptRadius + TargetRadius) * ToTarget;
+			TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
 			return true;
 		}
 	}
