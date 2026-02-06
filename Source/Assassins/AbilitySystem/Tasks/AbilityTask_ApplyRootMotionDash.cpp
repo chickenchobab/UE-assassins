@@ -9,7 +9,7 @@
 #include "Components/CapsuleComponent.h"
 #include "NativeGameplayTags.h"
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_DASHING, "Status.Dashing");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_DASHING, "Status.Dashing");
 
 UAbilityTask_ApplyRootMotionDash::UAbilityTask_ApplyRootMotionDash(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -29,7 +29,7 @@ void UAbilityTask_ApplyRootMotionDash::OnDestroy(bool AbilityIsEnding)
 
 	if (AbilitySystemComponent.IsValid())
 	{
-		AbilitySystemComponent->SetLooseGameplayTagCount(TAG_STATUS_DASHING, 0);
+		AbilitySystemComponent->SetLooseGameplayTagCount(TAG_DASHING, 0);
 	}
 
 	Super::OnDestroy(AbilityIsEnding);
@@ -156,7 +156,7 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 		{
 			SetMovementMode();
 			// Set capsule collision
-			ASC->SetLooseGameplayTagCount(TAG_STATUS_DASHING, 1);
+			ASC->SetLooseGameplayTagCount(TAG_DASHING, 1);
 
 			ForceName = ForceName.IsNone() ? FName("AbilityTaskDashTo") : ForceName;
 			TSharedPtr<FRootMotionSource_MoveToConstantSpeed> MoveToForce = MakeShared<FRootMotionSource_MoveToConstantSpeed>();
@@ -269,7 +269,7 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 
 			SetMovementMode();
 			// Set capsule collision
-			ASC->SetLooseGameplayTagCount(TAG_STATUS_DASHING, 1);
+			ASC->SetLooseGameplayTagCount(TAG_DASHING, 1);
 
 			ForceName = ForceName.IsNone() ? FName("AbilityTaskDashToActor") : ForceName;
 			TSharedPtr<FRootMotionSource_MoveToDynamicConstantSpeed> MoveToActorForce = MakeShared<FRootMotionSource_MoveToDynamicConstantSpeed>();
