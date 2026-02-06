@@ -89,6 +89,8 @@ void UAssassinsGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Hand
     }
     AvatarStatusTags.Reset();
 
+    CancelledByTags.Reset();
+
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
@@ -180,3 +182,17 @@ void UAssassinsGameplayAbility::RemoveTagFromAvatar(FGameplayTag Tag)
     }
 }
 
+void UAssassinsGameplayAbility::AddCancelledByTag(FGameplayTag Tag)
+{
+    CancelledByTags.AddTag(Tag);
+}
+
+void UAssassinsGameplayAbility::RemoveCancelledByTag(FGameplayTag Tag)
+{
+    if (!CancelledByTags.HasTag(Tag))
+    {
+        return;
+    }
+
+    CancelledByTags.RemoveTag(Tag);
+}

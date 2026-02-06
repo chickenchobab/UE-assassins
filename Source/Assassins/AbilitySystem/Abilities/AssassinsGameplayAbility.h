@@ -56,6 +56,8 @@ public:
 
 	EAssassinsAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
+	const FGameplayTagContainer& GetCancelledByTags() const { return CancelledByTags; }
+
 protected:
 
     //~UGameplayAbility interface
@@ -85,11 +87,20 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveTagFromAvatar(FGameplayTag Tag);
 
+	// Me: Dynamically makes the ability cancellable by the other abilities, inputs or status.
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void AddCancelledByTag(FGameplayTag Tag);
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void RemoveCancelledByTag(FGameplayTag Tag);
+
 protected:
 	
 	// Defines how this ability is meant to activate.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability Activation")
 	EAssassinsAbilityActivationPolicy ActivationPolicy;
+
+	UPROPERTY()
+	FGameplayTagContainer CancelledByTags;
 
 private:
 

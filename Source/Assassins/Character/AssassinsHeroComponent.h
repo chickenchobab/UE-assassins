@@ -84,7 +84,7 @@ protected:
 private:
 
     bool CanMove();
-    void CancelMoveInterruptedAbilities();
+    void CancelMoveCancelledAbilities();
 
 private:
 	UPROPERTY()
@@ -98,5 +98,5 @@ private:
     FGameplayTagContainer MoveBlockingStatusTags;
 
     UPROPERTY(EditDefaultsOnly)
-    FGameplayTagContainer ClickCanceledAbilityTags;
+    FGameplayTagContainer MoveCancelledAbilityTags;
 };

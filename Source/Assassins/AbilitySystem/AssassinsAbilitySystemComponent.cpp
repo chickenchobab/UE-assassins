@@ -29,6 +29,16 @@ void UAssassinsAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor
 	}
 }
 
+void UAssassinsAbilitySystemComponent::ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags)
+{
+	Super::ApplyAbilityBlockAndCancelTags(AbilityTags, RequestingAbility, bEnableBlockTags, BlockTags, bExecuteCancelTags, CancelTags);
+
+	if (bExecuteCancelTags)
+	{
+		CancelAbilitiesWithCancelledByTag(&AbilityTags, RequestingAbility);
+	}
+}
+
 void UAssassinsAbilitySystemComponent::AbilityInputTagPressed(FGameplayTag& InputTag)
 {
 	if (InputTag.IsValid())
@@ -160,6 +170,28 @@ void UAssassinsAbilitySystemComponent::K2_CancelAbilities(FGameplayTag WithTag, 
 	FGameplayTagContainer WithoutTags(WithoutTag);
 
 	CancelAbilities(&WithTags, &WithoutTags);
+}
+
+void UAssassinsAbilitySystemComponent::CancelAbilitiesWithCancelledByTag(const FGameplayTagContainer* WithTags, UGameplayAbility* Ignore)
+{
+	ABILITYLIST_SCOPE_LOCK();
+
+	for (FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		if (!Spec.IsActive() || Spec.Ability == nullptr)
+		{
+			continue;
+		}
+
+		if (UAssassinsGameplayAbility* AssassinsAbility = Cast<UAssassinsGameplayAbility>(Spec.Ability))
+		{
+			const FGameplayTagContainer& CancelledByTags = AssassinsAbility->GetCancelledByTags();
+			if (CancelledByTags.HasAny(*WithTags))
+			{
+				CancelAbilitySpec(Spec, Ignore);
+			}
+		}
+	}
 }
 
 FActiveGameplayEffectHandle UAssassinsAbilitySystemComponent::AddDynamicTagGameplayEffect(FGameplayTag Tag)

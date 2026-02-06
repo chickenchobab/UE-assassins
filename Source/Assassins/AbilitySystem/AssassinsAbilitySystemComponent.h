@@ -24,6 +24,7 @@ public:
 
 	//~UAbilitySystemComponent interface
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+	virtual void ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) override;
 	//~End of UAbilitySystemComponent interface
 
 	void AbilityInputTagPressed(FGameplayTag& InputTag);
@@ -34,6 +35,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability", DisplayName = "CancelAbilities", meta = (ScriptName = "CancelAbilities"))
 	void K2_CancelAbilities(FGameplayTag WithTag, FGameplayTag WithoutTag);
+
+	void CancelAbilitiesWithCancelledByTag(const FGameplayTagContainer* WithTags, UGameplayAbility* Ignore);
 
 	// Uses a gameplay effect to add the specified dynamic granted tag.
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")

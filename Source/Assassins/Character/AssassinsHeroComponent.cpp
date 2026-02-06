@@ -34,7 +34,7 @@ UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& Objec
     MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Channeling);
 	MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Dashing);
 
-    ClickCanceledAbilityTags.AddTag(AssassinsGameplayTags::Ability_Cancelable_Click);
+    MoveCancelledAbilityTags.AddTag(AssassinsGameplayTags::Ability_Cancelable_Click);
 }
 
 bool UAssassinsHeroComponent::CanChangeInitState(UGameFrameworkComponentManager* Manager, FGameplayTag CurrentState, FGameplayTag DesiredState) const
@@ -281,7 +281,7 @@ void UAssassinsHeroComponent::OnInputStarted()
         return;
     }
 
-    CancelMoveInterruptedAbilities();
+    CancelMoveCancelledAbilities();
 
     if (CachedPlayerController)
     {
@@ -459,7 +459,7 @@ bool UAssassinsHeroComponent::CanMove()
     return false;
 }
 
-void UAssassinsHeroComponent::CancelMoveInterruptedAbilities()
+void UAssassinsHeroComponent::CancelMoveCancelledAbilities()
 {
     if (const APawn* PlayerPawn = GetPawn<APawn>())
     {
@@ -467,7 +467,10 @@ void UAssassinsHeroComponent::CancelMoveInterruptedAbilities()
         {
             if (UAssassinsAbilitySystemComponent* AssassinsASC = PawnExtComp->GetAssassinsAbilitySystemComponent())
             {
-                AssassinsASC->CancelAbilities(&ClickCanceledAbilityTags);
+                AssassinsASC->CancelAbilities(&MoveCancelledAbilityTags);
+
+				const FGameplayTagContainer CancelledByTags = FGameplayTagContainer(AssassinsGameplayTags::InputTag_SetDestination_Click);
+				AssassinsASC->CancelAbilitiesWithCancelledByTag(&CancelledByTags, nullptr);
             }
         }
     }
