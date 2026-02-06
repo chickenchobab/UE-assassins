@@ -334,7 +334,7 @@ void AAssassinsCharacter::OnInvisibleTagChanged(const FGameplayTag Tag, int32 Ne
 	if (NewCount > 0)
 	{
 		OnInvisibilityStarted.Broadcast();
-		if (GetLocalRole() != ROLE_AutonomousProxy)
+		if (GetLocalRole() == ROLE_SimulatedProxy)
 		{
 			SetActorHiddenInGame(true);
 		}
@@ -342,7 +342,7 @@ void AAssassinsCharacter::OnInvisibleTagChanged(const FGameplayTag Tag, int32 Ne
 	else
 	{
 		OnInvisibilityEnded.Broadcast();
-		if (GetLocalRole() != ROLE_AutonomousProxy)
+		if (GetLocalRole() == ROLE_SimulatedProxy)
 		{
 			SetActorHiddenInGame(false);
 		}
