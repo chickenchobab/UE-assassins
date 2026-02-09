@@ -42,6 +42,9 @@ bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeI
     {
         return false;
     }
+
+    // Me: The target's death state is not processed here.
+    // It is expected to be destroyed automatically when an overlap occurs.
     
     bool bValidTarget = true;
 

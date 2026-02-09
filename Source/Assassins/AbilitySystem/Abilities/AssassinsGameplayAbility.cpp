@@ -9,6 +9,9 @@
 #include "Teams/AssassinsTeamSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/AssassinsAnimInstance.h"
+#include "NativeGameplayTags.h"
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_DEATH, "Status.Death");
 
 UAssassinsGameplayAbility::UAssassinsGameplayAbility(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -153,6 +156,10 @@ bool UAssassinsGameplayAbility::IsValidEnemy(AActor* TargetActor) const
 
     if (AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor))
     {
+        if (TargetCharacter->HasGameplayTag(TAG_DEATH))
+        {
+            return false;
+        }
         return TargetCharacter->GetGenericTeamId() != AvatarCharacter->GetGenericTeamId();
     }
 

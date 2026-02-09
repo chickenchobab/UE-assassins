@@ -119,6 +119,18 @@ protected:
 
 	void DestroyDueToDeath();
 
+protected:
+
+	UPROPERTY(EditDefaultsOnly, Category = "Assassins|Character")
+	FGameplayTagContainer CharacterOwnedTags;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Character")
+	TArray<TObjectPtr<UAnimMontage>> DeathMontages;
+
+	//Me: Target of abilities set when the mouse cursor is on it.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = "true"))
+	TWeakObjectPtr<AAssassinsCharacter> AbilityTarget;
+
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Character", Meta = (AllowPrivateAccess = "true"))
@@ -131,14 +143,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UAssassinsCameraComponent* CameraComponent;
 
-	//Me: Target of abilities set when the mouse cursor is on it.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = "true"))
-	TWeakObjectPtr<AAssassinsCharacter> AbilityTarget;
-
 	UPROPERTY()
 	FGenericTeamId MyTeamID;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Assassins|Character", Meta = (AllowPrivateAccess = "true"))
-	FGameplayTagContainer CharacterOwnedTags;
 };
 

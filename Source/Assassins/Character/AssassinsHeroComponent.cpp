@@ -21,6 +21,7 @@
 #include "Camera/AssassinsCameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_DEATH, "Status.Death");
 
 const FName UAssassinsHeroComponent::NAME_ActorFeatureName("Hero");
 const FName UAssassinsHeroComponent::NAME_BindInputsNow("BindInputsNow");
@@ -33,6 +34,7 @@ UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& Objec
 
     MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Channeling);
 	MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Dashing);
+	MoveBlockingStatusTags.AddTag(TAG_STATUS_DEATH);
 
     MoveCancelledAbilityTags.AddTag(AssassinsGameplayTags::Ability_Cancelable_Click);
 }
