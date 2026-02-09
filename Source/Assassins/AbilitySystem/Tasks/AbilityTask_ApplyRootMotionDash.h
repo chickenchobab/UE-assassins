@@ -21,9 +21,14 @@ public:
 	virtual void OnDestroy(bool AbilityIsEnding) override;
 	//~End of UGameplayTask interface
 
+	UFUNCTION(BlueprintPure)
+	FVector GetCurrentTargetLocation() const { return TargetLocation; }
+
 	UPROPERTY(BlueprintAssignable)
 	FAssassinsDashDelegate OnTickTask;
 
+	UPROPERTY(BlueprintAssignable)
+	FAssassinsDashDelegate OnCancelled;
 	UPROPERTY(BlueprintAssignable)
 	FAssassinsDashDelegate OnFinished;
 
@@ -105,7 +110,4 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AActor> TargetActor;
-
-	UPROPERTY()
-	float TargetRadius;
 };

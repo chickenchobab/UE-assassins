@@ -5,8 +5,6 @@
 #include "Character/Movements/AssassinsCharacterMovementComponent.h"
 #include "Character/Movements/AssassinsRootMotionSource.h"
 #include "AbilitySystemComponent.h"
-#include "GameFramework/Character.h"
-#include "Components/CapsuleComponent.h"
 #include "NativeGameplayTags.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_DASHING, "Status.Dashing");
@@ -25,6 +23,11 @@ void UAbilityTask_ApplyRootMotionDash::TickTask(float DeltaTime)
 
 void UAbilityTask_ApplyRootMotionDash::OnDestroy(bool AbilityIsEnding)
 {
+	if (!bIsFinished && ShouldBroadcastAbilityTaskDelegates())
+	{
+		OnCancelled.Broadcast();
+	}
+
 	ResetMovementMode();
 
 	if (AbilitySystemComponent.IsValid())
@@ -182,8 +185,7 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 UAbilityTask_DashToActor::UAbilityTask_DashToActor(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	AcceptRadius = 100.0f;
-	TargetRadius = 0.0f;
+	AcceptRadius = 90.0f;
 }
 
 UAbilityTask_DashToActor* UAbilityTask_DashToActor::DashToActor(UGameplayAbility* OwningAbility, FName TaskInstanceName, AActor* TargetActor, float DashSpeed, float AcceptRadius, ERootMotionFinishVelocityMode VelocityOnFinishMode, FVector SetVelocityOnFinish, float ClampVelocityOnFinish)
@@ -250,21 +252,12 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 		if (MovementComponent.IsValid())
 		{
 			AActor* MyActor = ASC->GetAvatarActor();
-
-			if (ACharacter* TargetCharacter = Cast<ACharacter>(TargetActor))
-			{
-				if (UCapsuleComponent* Capsule = TargetCharacter->GetCapsuleComponent())
-				{
-					TargetRadius = Capsule->GetScaledCapsuleRadius();
-				}
-			}
-
 			if (TargetActor && MyActor)
 			{
 				StartLocation = MyActor->GetActorLocation();
 
 				const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-				TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
+				TargetLocation = TargetActor->GetActorLocation() - AcceptRadius * ToTarget;
 			}
 
 			SetMovementMode();
@@ -298,7 +291,7 @@ bool UAbilityTask_DashToActor::UpdateTargetLocation(float DeltaTime)
 		if (TargetActor && MyActor)
 		{
 			const FVector ToTarget = (TargetActor->GetActorLocation() - MyActor->GetActorLocation()).GetSafeNormal2D();
-			TargetLocation = TargetActor->GetActorLocation() - (AcceptRadius + TargetRadius) * ToTarget;
+			TargetLocation = TargetActor->GetActorLocation() - AcceptRadius * ToTarget;
 			return true;
 		}
 	}
