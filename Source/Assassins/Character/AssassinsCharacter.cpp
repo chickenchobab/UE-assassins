@@ -283,7 +283,7 @@ void AAssassinsCharacter::DestroyDueToDeath()
 	SetActorHiddenInGame(true);
 }
 
-void AAssassinsCharacter::HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
+void AAssassinsCharacter::HandleMoveSpeedChanged(float OldValue, float NewValue)
 {
 	GetCharacterMovement()->MaxWalkSpeed = NewValue;
 }

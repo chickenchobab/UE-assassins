@@ -32,13 +32,14 @@ public:
     ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, MagicDamage);
     ATTRIBUTE_ACCESSORS(UAssassinsCombatSet, TrueDamage);
 
-	mutable FAssassinsAttributeEvent OnMoveSpeedChanged;
+	mutable FAssassinsAttributeChangeSignature OnMoveSpeedChanged;
 
 protected:
 
 	//~UAttributeSet interface
 	virtual bool PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data) override;
-	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 	//~End of UAttributeSet interface
 
 private:

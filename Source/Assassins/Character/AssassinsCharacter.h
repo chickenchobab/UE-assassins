@@ -94,7 +94,7 @@ protected:
 
 	void InitializeGameplayTags();
 
-	virtual void HandleMoveSpeedChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
+	virtual void HandleMoveSpeedChanged(float OldValue, float NewValue);
 
 	////////////////////////////////////////////////////
 	// Functions bound to the status tag count changes

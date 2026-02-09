@@ -36,6 +36,8 @@ struct FGameplayEffectSpec;
  */
 DECLARE_MULTICAST_DELEGATE_SixParams(FAssassinsAttributeEvent, AActor* /*EffectInstigator*/, AActor* /*EffectCauser*/, const FGameplayEffectSpec* /*EffectSpec*/, float /*EffectMagnitude*/, float /*OldValue*/, float /*NewValue*/);
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(FAssassinsAttributeChangeSignature, float, float);
+
 /**
  * Base attribute set class for the project.
  */

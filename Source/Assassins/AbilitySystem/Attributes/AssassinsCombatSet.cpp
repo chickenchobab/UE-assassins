@@ -33,18 +33,20 @@ bool UAssassinsCombatSet::PreGameplayEffectExecute(FGameplayEffectModCallbackDat
 	return true;
 }
 
-void UAssassinsCombatSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+void UAssassinsCombatSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
-	Super::PostGameplayEffectExecute(Data);
+	Super::PreAttributeChange(Attribute, NewValue);
 
-	const FGameplayEffectContextHandle& EffectContext = Data.EffectSpec.GetEffectContext();
-	// Me: What is the original instigator which started the whole chain?
-	AActor* Instigator = EffectContext.GetOriginalInstigator();
-	AActor* Causer = EffectContext.GetEffectCauser();
+	NewValue = FMath::Max(0.0f, NewValue);
+}
 
-	if (GetMoveSpeed() != MoveSpeedBeforeAttributeChanged)
+void UAssassinsCombatSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+
+	if (Attribute == GetMoveSpeedAttribute() && GetMoveSpeed() != MoveSpeedBeforeAttributeChanged)
 	{
-        // Me: Notify character so its movement component can apply the update
-		OnMoveSpeedChanged.Broadcast(Instigator, Causer, &Data.EffectSpec, Data.EvaluatedData.Magnitude, MoveSpeedBeforeAttributeChanged, GetMoveSpeed());
+		// Me: Notify character so its movement component can apply the update
+		OnMoveSpeedChanged.Broadcast(MoveSpeedBeforeAttributeChanged, GetMoveSpeed());
 	}
 }
