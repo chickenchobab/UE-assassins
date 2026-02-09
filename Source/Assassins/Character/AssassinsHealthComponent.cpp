@@ -126,7 +126,6 @@ void UAssassinsHealthComponent::ClearGameplayTags()
 
 void UAssassinsHealthComponent::HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
-	UE_LOG(LogTemp, Display, TEXT("Health changed [%f] -> [%f]"), OldValue, NewValue);
 	OnHealthChanged.Broadcast(this, OldValue, NewValue, DamageInstigator);
 }
 
