@@ -259,7 +259,7 @@ void AAssassinsCharacter::HandleDeathStarted()
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
 	check(Capsule);
 	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
-	Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	Capsule->SetCollisionResponseToChannel(ECC_GameTraceChannel3/*ground*/, ECR_Block);
 
 	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
 	check(MovementComponent);

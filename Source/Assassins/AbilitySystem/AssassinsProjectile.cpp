@@ -14,6 +14,7 @@ AAssassinsProjectile::AAssassinsProjectile()
     CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
     SetRootComponent(CollisionBox);
     CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
     CollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
     CollisionBox->SetGenerateOverlapEvents(true);
     CollisionBox->OnComponentBeginOverlap.AddUniqueDynamic(this, &AAssassinsProjectile::HandleProjectileBeginOverlap);
