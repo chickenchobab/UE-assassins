@@ -56,6 +56,11 @@ public:
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	//~End of IAssassinsTeamAgentInterface interface
 
+	/** Makes AI go toward specified Goal actor(destination will be continuously updated), aborts any active path following */
+	EPathFollowingRequestResult::Type MoveToActor(AActor* Goal, float AcceptRadius);
+	/** Makes AI go toward specified Dest location, aborts any active path following */
+	EPathFollowingRequestResult::Type MoveToLocation(const FVector& Dest, float AcceptanceRadius = -1);
+
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void AbortMove();
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
@@ -79,12 +84,9 @@ protected:
 
 	void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result);
 	
-	//////////////////////////////////////////
-	// AI controller functions for navigation
-	//////////////////////////////////////////
-
-	/** Makes AI go toward specified Goal actor(destination will be continuously updated), aborts any active path following */
-	EPathFollowingRequestResult::Type MoveToActor(AActor* Goal, float AcceptRadius);
+	///////////////////////////////////////////////////////////////
+	// AI controller functions for MoveToActor and MoveToLocation
+	///////////////////////////////////////////////////////////////
 
 	/** Makes AI go toward specified destination */
 	FPathFollowingRequestResult MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath = nullptr);
@@ -111,5 +113,5 @@ private:
 	FMoveCompletedSignature ReceiveMoveCompleted;
 
 	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
-	float CollisionQueryRange = 100.f;
+	float CollisionQueryRange;
 };

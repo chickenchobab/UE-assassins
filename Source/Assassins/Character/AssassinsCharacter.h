@@ -119,6 +119,11 @@ protected:
 
 	void DestroyDueToDeath();
 
+	void ResolvePenetrationAfterDash();
+
+	UFUNCTION()
+	void OnEndPawnOverlapAfterDash(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Assassins|Character")
@@ -145,5 +150,8 @@ private:
 
 	UPROPERTY()
 	FGenericTeamId MyTeamID;
+
+	UPROPERTY()
+	TSet<AActor*> ActorsOverlappedAfterDash;
 };
 

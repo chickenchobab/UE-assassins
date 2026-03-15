@@ -3,15 +3,16 @@
 #include "Player/AssassinsPlayerController.h"
 #include "Player/AssassinsPlayerState.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Character/AssassinsCharacter.h"
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
 #include "AbilitySystem/AssassinsTargetChasingComponent.h"
 #include "AbilitySystemGlobals.h"
-#include "Navigation/CrowdFollowingComponent.h"
 #include "NavigationSystem.h"
 #include "NavFilters/NavigationQueryFilter.h"
+#include "Navigation/CrowdFollowingComponent.h"
 #include "AssassinsLogCategories.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -19,6 +20,8 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 AAssassinsPlayerController::AAssassinsPlayerController()
 {
 	CrowdFollowingComponent = CreateDefaultSubobject<UCrowdFollowingComponent>(TEXT("PathFollowingComponent"));
+
+	CollisionQueryRange = 30.0f;
 
 	TargetChasingComponent = CreateDefaultSubobject<UAssassinsTargetChasingComponent>(TEXT("TargetChasingComponent"));
 }
@@ -84,6 +87,8 @@ void AAssassinsPlayerController::OnUnPossess()
 	{
 		CrowdFollowingComponent->Cleanup();
 	}
+	
+	CrowdFollowingComponent = nullptr;
 
 	Super::OnUnPossess();
 }
@@ -170,7 +175,11 @@ void AAssassinsPlayerController::SetAvoidanceGroup(int32 AvoidanceGroup)
 	if (CrowdFollowingComponent)
 	{
 		CrowdFollowingComponent->SetAvoidanceGroup(1 << AvoidanceGroup);
-		CrowdFollowingComponent->SetGroupsToAvoid(1 << AvoidanceGroup);
+	}
+
+	if (UCharacterMovementComponent* CharacterMovement = Cast<UCharacterMovementComponent>(GetPawn()->GetMovementComponent()))
+	{
+		CharacterMovement->SetAvoidanceGroupMask(1 << AvoidanceGroup);
 	}
 }
 
@@ -182,23 +191,60 @@ void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const F
 	{
 		TargetChasingComponent->HandleChaseCompleted.Broadcast(RequestID, Result.Code);
 	}
+
+	if (UCharacterMovementComponent* CharacterMovement = Cast<UCharacterMovementComponent>(GetPawn()->GetMovementComponent()))
+	{
+		CharacterMovement->bUseRVOAvoidance = true;
+	}
 }
 
 EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor* Goal, float AcceptRadius)
 {
+	// Abort active movement to keep only one request running
 	if (CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
 	{
 		CrowdFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest
 			, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
 	}
 
+	// Disable RVO avoidance to use crowd avoidance.
+	if (UCharacterMovementComponent* CharacterMovement = Cast<UCharacterMovementComponent>(GetPawn()->GetMovementComponent()))
+	{
+		CharacterMovement->bUseRVOAvoidance = false;
+	}
+
 	FAIMoveRequest MoveReq(Goal);
 	MoveReq.SetAcceptanceRadius(AcceptRadius);
-
 	MoveReq.SetUsePathfinding(true);
 	MoveReq.SetAllowPartialPath(true);
 	MoveReq.SetReachTestIncludesAgentRadius(false);
 	MoveReq.SetCanStrafe(false); // Me: No side walk
+
+	return MoveTo(MoveReq);
+}
+
+EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToLocation(const FVector& Dest, float AcceptanceRadius)
+{
+	// Abort active movement to keep only one request running
+	if (CrowdFollowingComponent && CrowdFollowingComponent->GetStatus() != EPathFollowingStatus::Idle)
+	{
+		CrowdFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest
+			, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
+	}
+
+	// Disable RVO avoidance to use crowd avoidance.
+	if (UCharacterMovementComponent* CharacterMovement = Cast<UCharacterMovementComponent>(GetPawn()->GetMovementComponent()))
+	{
+		CharacterMovement->bUseRVOAvoidance = false;
+	}
+
+	FAIMoveRequest MoveReq(Dest);
+	MoveReq.SetUsePathfinding(true);
+	MoveReq.SetAllowPartialPath(true);
+	MoveReq.SetProjectGoalLocation(true);
+	MoveReq.SetAcceptanceRadius(AcceptanceRadius);
+	MoveReq.SetReachTestIncludesAgentRadius(true);
+	MoveReq.SetCanStrafe(false);
 
 	return MoveTo(MoveReq);
 }
@@ -210,16 +256,46 @@ FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequ
 
 	if (!MoveRequest.IsValid())
 	{
+		UE_VLOG(this, LogAssassinsAINavigation, Error, TEXT("MoveTo request failed due to MoveRequest not being valid. Most probably desired goal actor no loger exists. MoveRequest : '%s'"), *MoveRequest.ToString());
 		return ResultData;
 	}
 
 	if (CrowdFollowingComponent == nullptr)
 	{
+		UE_VLOG(this, LogAssassinsAINavigation, Error, TEXT("MoveTo request failed due to missing PathFollowingComponent"));
 		return ResultData;
 	}
 
 	bool bCanRequestMove = true;
-	bool bAlreadyAtGoal = bCanRequestMove && CrowdFollowingComponent->HasReached(MoveRequest);
+	bool bAlreadyAtGoal = false;
+
+	if (!MoveRequest.IsMoveToActorRequest())
+	{
+		if (MoveRequest.GetGoalLocation().ContainsNaN() || FAISystem::IsValidLocation(MoveRequest.GetGoalLocation()) == false)
+		{
+			UE_VLOG(this, LogAssassinsAINavigation, Error, TEXT("AAssassinsPlayerController::MoveTo: Destination is not valid! Goal(%s)"), TEXT_AI_LOCATION(MoveRequest.GetGoalLocation()));
+			bCanRequestMove = false;
+		}
+
+		// Fail if projection to navigation is required but it failed
+		if (bCanRequestMove && MoveRequest.IsProjectingGoal())
+		{
+			UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+			const FNavAgentProperties& AgentProps = GetNavAgentPropertiesRef();
+			FNavLocation ProjectedLocation;
+
+			if (NavSys && !NavSys->ProjectPointToNavigation(MoveRequest.GetGoalLocation(), ProjectedLocation, INVALID_NAVEXTENT, &AgentProps))
+			{
+				UE_VLOG_LOCATION(this, LogAssassinsAINavigation, Error, MoveRequest.GetGoalLocation(), 30.f, FColor::Red, TEXT("AAssassinsPlayerController::MoveTo failed to project destination location to navmesh"));
+				bCanRequestMove = false;
+			}
+
+			MoveRequest.UpdateGoalLocation(ProjectedLocation.Location);
+		}
+
+	}
+	
+	bAlreadyAtGoal = bCanRequestMove && CrowdFollowingComponent->HasReached(MoveRequest);
 
 	if (bAlreadyAtGoal)
 	{
@@ -282,8 +358,7 @@ bool AAssassinsPlayerController::BuildPathfindingQuery(const FAIMoveRequest& Mov
 	bool bResult = false;
 
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	const ANavigationData* NavData = (NavSys == nullptr) ? nullptr : 
-		(MoveRequest.IsUsingPathfinding() ? NavSys->GetNavDataForProps(GetNavAgentPropertiesRef(), GetNavAgentLocation()) : NavSys->GetAbstractNavData());
+	const ANavigationData* NavData = (NavSys == nullptr) ? nullptr : (MoveRequest.IsUsingPathfinding() ? NavSys->GetNavDataForProps(GetNavAgentPropertiesRef(), GetNavAgentLocation()) : NavSys->GetAbstractNavData());
 
 	if (NavData)
 	{
@@ -323,11 +398,11 @@ bool AAssassinsPlayerController::BuildPathfindingQuery(const FAIMoveRequest& Mov
 	{
 		if (NavSys == nullptr)
 		{
-			UE_VLOG(this, LogAssassinsAINavigation, Warning, TEXT("Unable AssassinsPlayerController::BuildPathfindingQuery due to no NavigationSystem present. Note that even pathfinding-less movement requires presence of NavigationSystem."));
+			UE_VLOG(this, LogAssassinsAINavigation, Warning, TEXT("Unable AAssassinsPlayerController::BuildPathfindingQuery due to no NavigationSystem present. Note that even pathfinding-less movement requires presence of NavigationSystem."));
 		}
 		else
 		{
-			UE_VLOG(this, LogAssassinsAINavigation, Warning, TEXT("Unable to find NavigationData instance while calling AssassinsPlayerController::BuildPathfindingQuery"));
+			UE_VLOG(this, LogAssassinsAINavigation, Warning, TEXT("Unable to find NavigationData instance while calling AAssassinsPlayerController::BuildPathfindingQuery"));
 		}
 	}
 
@@ -350,13 +425,11 @@ void AAssassinsPlayerController::FindPathForMoveRequest(const FAIMoveRequest& Mo
 			PathResult.Path->EnableRecalculationOnInvalidation(true);
 			OutPath = PathResult.Path;
 		}
-	}
-	else
-	{
-		UE_VLOG(this, LogAssassinsAINavigation, Error, TEXT("Trying to find path to %s resulted in Error")
-			, MoveRequest.IsMoveToActorRequest() ? *GetNameSafe(MoveRequest.GetGoalActor()) : *MoveRequest.GetGoalLocation().ToString());
-		UE_VLOG_SEGMENT(this, LogAssassinsAINavigation, Error, GetPawn() ? GetPawn()->GetActorLocation() : FAISystem::InvalidLocation
-			, MoveRequest.GetGoalLocation(), FColor::Red, TEXT("Failed move to %s"), *GetNameSafe(MoveRequest.GetGoalActor()));
+		else
+		{
+			UE_VLOG(this, LogAssassinsAINavigation, Error, TEXT("Trying to find path to %s resulted in Error"), MoveRequest.IsMoveToActorRequest() ? *GetNameSafe(MoveRequest.GetGoalActor()) : *MoveRequest.GetGoalLocation().ToString());
+			UE_VLOG_SEGMENT(this, LogAssassinsAINavigation, Error, GetPawn() ? GetPawn()->GetActorLocation() : FAISystem::InvalidLocation, MoveRequest.GetGoalLocation(), FColor::Red, TEXT("Failed move to %s"), *GetNameSafe(MoveRequest.GetGoalActor()));
+		}
 	}
 }
 

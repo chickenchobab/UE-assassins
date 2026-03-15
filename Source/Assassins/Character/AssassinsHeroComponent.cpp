@@ -323,6 +323,7 @@ void UAssassinsHeroComponent::OnSetDestinationTriggered()
 	if (ControlledPawn != nullptr)
 	{
 		FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+		// Me: This case RVO avoidance is used instead of detour(crowd) avoidance of the crowd following component.
 		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
 	}
 }
@@ -337,7 +338,7 @@ void UAssassinsHeroComponent::OnSetDestinationReleased()
 	if (FollowTime <= ShortPressThreshold)
 	{
 		// We move there and spawn some particles
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(CachedPlayerController, CachedDestination);
+		CachedPlayerController->MoveToLocation(CachedDestination);
         if (!CanMove())
         {
             if (CachedPlayerController)

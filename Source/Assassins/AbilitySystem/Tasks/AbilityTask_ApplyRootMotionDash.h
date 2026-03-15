@@ -80,6 +80,8 @@ public:
 protected:
 
 	virtual void SharedInitAndApply() override;
+
+	void AdjustTargetLocation();
 };
 
 UCLASS()

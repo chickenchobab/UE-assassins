@@ -13,7 +13,7 @@ AAssassinsBotController::AAssassinsBotController(const FObjectInitializer& Objec
 
 	TargetChasingComponent = CreateDefaultSubobject<UAssassinsTargetChasingComponent>(TEXT("TargetChasingComponent"));
 
-	CollisionQueryRange = 300.0f;
+	CollisionQueryRange = 600.0f;
 	SeparationWeight = 2.0f;
 }
 

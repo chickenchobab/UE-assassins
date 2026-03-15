@@ -6,6 +6,8 @@
 #include "Character/Movements/AssassinsRootMotionSource.h"
 #include "AbilitySystemComponent.h"
 #include "NativeGameplayTags.h"
+#include "Engine/OverlapResult.h"
+#include "DrawDebugHelpers.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_DASHING, "Status.Dashing");
 
@@ -157,12 +159,14 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 		MovementComponent = Cast<UAssassinsCharacterMovementComponent>(ASC->AbilityActorInfo->MovementComponent.Get());
 		if (MovementComponent.IsValid())
 		{
+			AdjustTargetLocation();
+			
 			SetMovementMode();
 			// Set capsule collision
 			ASC->SetLooseGameplayTagCount(TAG_DASHING, 1);
 
 			ForceName = ForceName.IsNone() ? FName("AbilityTaskDashTo") : ForceName;
-			TSharedPtr<FRootMotionSource_MoveToConstantSpeed> MoveToForce = MakeShared<FRootMotionSource_MoveToConstantSpeed>();
+			TSharedPtr<FRootMotionSource_MoveToDynamicConstantSpeed> MoveToForce = MakeShared<FRootMotionSource_MoveToDynamicConstantSpeed>();
 			MoveToForce->InstanceName = ForceName;
 			MoveToForce->AccumulateMode = ERootMotionAccumulateMode::Override;
 			MoveToForce->Settings.SetFlag(ERootMotionSourceSettingsFlags::UseSensitiveLiftoffCheck);
@@ -174,6 +178,46 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 			MoveToForce->FinishVelocityParams.SetVelocity = FinishSetVelocity;
 			MoveToForce->FinishVelocityParams.ClampVelocity = FinishClampVelocity;
 			RootMotionSourceID = MovementComponent->ApplyRootMotionSource(MoveToForce);
+		}
+	}
+}
+
+void UAbilityTask_DashTo::AdjustTargetLocation()
+{
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+
+	FVector ActorLocation = ASC->GetAvatarActor()->GetActorLocation();
+	FVector TargetLocationParallel = FVector(TargetLocation.X, TargetLocation.Y, ActorLocation.Z);
+	FQuat FromTargetQuat = (ActorLocation - TargetLocationParallel).ToOrientationQuat();
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.bTraceComplex = false;
+	FCollisionResponseParams ResponseParams;
+	ResponseParams.CollisionResponse.SetAllChannels(ECR_Ignore);
+	ResponseParams.CollisionResponse.SetResponse(ECC_WorldStatic, ECR_Block);
+
+	TArray<FOverlapResult> Overlaps;
+	GetWorld()->OverlapMultiByChannel(Overlaps, TargetLocationParallel, FromTargetQuat, ECC_Pawn, FCollisionShape::MakeCapsule(20, 100), FCollisionQueryParams::DefaultQueryParam, ResponseParams);
+	if (Overlaps.IsEmpty())
+	{
+		return;
+	}
+
+	// The number of the world static actor blocking should be one by the map design.
+	if (const AActor* WorldStaticActor = Overlaps.Top().GetActor())
+	{
+		TArray<FHitResult> Hits;
+		GetWorld()->SweepMultiByChannel(Hits, ActorLocation, TargetLocationParallel, FromTargetQuat/*The character should be popped back*/, ECC_Pawn, FCollisionShape::MakeCapsule(42, 100), QueryParams, ResponseParams);
+
+		for (const FHitResult& Result : Hits)
+		{
+			if (Result.GetActor() == WorldStaticActor)
+			{
+				TargetLocation = Result.Location;
+				TargetLocation.Z = 0.0f;
+				UE_LOG(LogTemp, Display, TEXT("the dash should be blocked : [%s]"), *WorldStaticActor->GetName());
+				break;
+			}
 		}
 	}
 }
@@ -270,7 +314,6 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 			MoveToActorForce->AccumulateMode = ERootMotionAccumulateMode::Override;
 			MoveToActorForce->Settings.SetFlag(ERootMotionSourceSettingsFlags::UseSensitiveLiftoffCheck);
 			MoveToActorForce->Priority = 900;
-			MoveToActorForce->InitialTargetLocation = TargetLocation;
 			MoveToActorForce->TargetLocation = TargetLocation;
 			MoveToActorForce->StartLocation = StartLocation;
 			MoveToActorForce->Speed = DashSpeed;

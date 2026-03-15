@@ -18,6 +18,7 @@
 #include "AssassinsLogCategories.h"
 #include "NativeGameplayTags.h"
 #include "Player/AssassinsPlayerController.h"
+#include "Engine/OverlapResult.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_CHANNELING, "Status.Channeling");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_UNTARGETABLE, "Status.Untargetable");
@@ -37,8 +38,7 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 
 	// Configure player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-    GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1 /*targeting trace*/, ECR_Block);
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("AssassinsPawn"));
 
     // Me: Use the capsule component as the sole collision handler; disable mesh collision.
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -53,6 +53,8 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 	GetCharacterMovement()->RotationRate = FRotator(-1.f, -1.f, -1.f);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
+	GetCharacterMovement()->bUseRVOAvoidance = true;
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 50.0f;
 
 	GetCharacterMovement()->MaxAcceleration = 100000.f; // Me: For instant attainment of the specified speed(combat set)
 	GetCharacterMovement()->GetNavMovementProperties()->bUseFixedBrakingDistanceForPaths = true;
@@ -283,6 +285,88 @@ void AAssassinsCharacter::DestroyDueToDeath()
 	SetActorHiddenInGame(true);
 }
 
+void AAssassinsCharacter::ResolvePenetrationAfterDash()
+{
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	check(Capsule);
+
+	Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = false;
+	FCollisionResponseParams ResponseParams;
+	ResponseParams.CollisionResponse.SetAllChannels(ECR_Ignore);
+	ResponseParams.CollisionResponse.SetResponse(ECC_WorldStatic, ECR_Block);
+
+	// Find one world static actor overlapping(the map is not designed to have multiple ones)
+	GetWorld()->OverlapMultiByChannel(Overlaps, Capsule->GetComponentLocation(), Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
+	if (!Overlaps.IsEmpty())
+	{
+		FHitResult Hit;
+		GetWorld()->SweepSingleByChannel(Hit, GetActorLocation(), GetActorLocation() - Capsule->GetScaledCapsuleRadius() * GetActorForwardVector() /*The character should be popped forward here*/, Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
+
+		if (Hit.bStartPenetrating && Hit.GetActor() == Overlaps.Top().GetActor())
+		{
+			const FVector RequestedAdjustment = GetMovementComponent()->GetPenetrationAdjustment(Hit);
+			bool bAdjusted = GetMovementComponent()->ResolvePenetration(RequestedAdjustment, Hit, Capsule->GetComponentQuat());
+			// Teleport if the penetration has not been resolved.
+			if (!bAdjusted)
+			{
+				FVector TeleportLocation = GetActorLocation();
+				if (GetWorld()->FindTeleportSpot(this, TeleportLocation, GetActorRotation()))
+				{
+					SetActorLocation(TeleportLocation);
+				}
+			}
+		}
+	}
+
+	Overlaps.Empty();
+	ResponseParams.CollisionResponse.SetResponse(ECC_WorldStatic, ECR_Ignore);
+	ResponseParams.CollisionResponse.SetResponse(ECC_Pawn, ECR_Overlap);
+	GetWorld()->OverlapMultiByChannel(Overlaps, Capsule->GetComponentLocation(), Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
+	
+	if (Overlaps.IsEmpty())
+	{
+		Capsule->OnComponentEndOverlap.RemoveDynamic(this, &ThisClass::OnEndPawnOverlapAfterDash);
+
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->bUseRVOAvoidance = true;
+		}
+
+		return;
+	}
+
+	Capsule->OnComponentEndOverlap.AddUniqueDynamic(this, &ThisClass::OnEndPawnOverlapAfterDash);
+	for (const FOverlapResult& Result : Overlaps)
+	{
+		ActorsOverlappedAfterDash.Add(Result.GetActor());
+		UE_LOG(LogTemp, Display, TEXT("Found overlapping pawn : [%s]"), *Result.GetActor()->GetName());
+	}
+}
+
+void AAssassinsCharacter::OnEndPawnOverlapAfterDash(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (!ActorsOverlappedAfterDash.Contains(OtherActor))
+	{
+		return;
+	}
+
+	ActorsOverlappedAfterDash.Remove(OtherActor);
+
+	if (ActorsOverlappedAfterDash.IsEmpty())
+	{
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->bUseRVOAvoidance = true;
+		}
+		UE_LOG(LogTemp, Display, TEXT("Every actor overlap after dash has been resolved."));
+	}
+}
+
 void AAssassinsCharacter::HandleMoveSpeedChanged(float OldValue, float NewValue)
 {
 	GetCharacterMovement()->MaxWalkSpeed = NewValue;
@@ -351,21 +435,21 @@ void AAssassinsCharacter::OnInvisibleTagChanged(const FGameplayTag Tag, int32 Ne
 
 void AAssassinsCharacter::OnDashingTagChanged(const FGameplayTag Tag, int32 NewCount)
 {
-	if (GetCapsuleComponent() == nullptr)
-	{
-		return;
-	}
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	UAssassinsCharacterMovementComponent* AssassinsCharacterMovement = Cast<UAssassinsCharacterMovementComponent>(GetCharacterMovement());
+	check(Capsule && AssassinsCharacterMovement);
 
 	if (NewCount > 0)
 	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+		AssassinsCharacterMovement->bIsDashing = 1;
+		AssassinsCharacterMovement->bUseRVOAvoidance = false;
+		Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
 	}
 	else
 	{
-		GetCharacterMovement()->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
+		AssassinsCharacterMovement->bIsDashing = 0;
+		AssassinsCharacterMovement->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
 
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+		ResolvePenetrationAfterDash();
 	}
 }
