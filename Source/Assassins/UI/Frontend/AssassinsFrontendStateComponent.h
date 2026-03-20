@@ -38,7 +38,7 @@ private:
 
 	void FlowStep_WaitForUserInitialization(FControlFlowNodeRef SubFlow);
 	void FlowStep_TryInitializeUser(FControlFlowNodeRef SubFlow);
-	void FlowStrp_TryShowMainScreen(FControlFlowNodeRef SubFlow);
+	void FlowStep_TryShowMainScreen(FControlFlowNodeRef SubFlow);
 	
 	UFUNCTION()
 	void OnUserInitialized(const UCommonUserInfo* UserInfo, bool bSuccess, FText Error, ECommonUserPrivilege RequestedPrivilege, ECommonUserOnlineContext OnlineContext);

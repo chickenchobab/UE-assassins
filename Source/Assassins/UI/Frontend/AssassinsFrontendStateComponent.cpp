@@ -53,7 +53,7 @@ void UAssassinsFrontendStateComponent::OnExperienceLoaded(const UAssassinsExperi
     FControlFlow& Flow = FControlFlowStatics::Create(this, TEXT("FrontendFlow"))
         .QueueStep(TEXT("Wait For User Initialization"), this, &ThisClass::FlowStep_WaitForUserInitialization)
         .QueueStep(TEXT("Try Initialize User"), this, &ThisClass::FlowStep_TryInitializeUser)
-        .QueueStep(TEXT("Try Show Main Screen"), this, &ThisClass::FlowStrp_TryShowMainScreen);
+        .QueueStep(TEXT("Try Show Main Screen"), this, &ThisClass::FlowStep_TryShowMainScreen);
 
     Flow.ExecuteFlow();
     
@@ -80,7 +80,12 @@ void UAssassinsFrontendStateComponent::FlowStep_WaitForUserInitialization(FContr
         UserSubsystem->ResetUserState();
     }
 
-    // Me: TODO Reset sessions
+    // Always reset sessions
+    UCommonSessionSubsystem* SessionSubsystem = GameInstance->GetSubsystem<UCommonSessionSubsystem>();
+    if (ensure(SessionSubsystem))
+    {
+        SessionSubsystem->CleanUpSessions();
+    }
 
     SubFlow->ContinueFlow();
 }
@@ -132,7 +137,7 @@ void UAssassinsFrontendStateComponent::OnUserInitialized(const UCommonUserInfo* 
     }
 }
 
-void UAssassinsFrontendStateComponent::FlowStrp_TryShowMainScreen(FControlFlowNodeRef SubFlow)
+void UAssassinsFrontendStateComponent::FlowStep_TryShowMainScreen(FControlFlowNodeRef SubFlow)
 {
     if (UPrimaryGameLayout* RootLayout = UPrimaryGameLayout::GetPrimaryGameLayoutForPrimaryPlayer(this))
     {
