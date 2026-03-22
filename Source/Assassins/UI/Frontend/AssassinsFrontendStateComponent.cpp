@@ -120,9 +120,11 @@ void UAssassinsFrontendStateComponent::OnUserInitialized(const UCommonUserInfo* 
 {
     FControlFlowNodePtr FlowToContinue = InProgressPressStartScreen;
     UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(this);
+    UCommonUserSubsystem* UserSubsystem = GameInstance->GetSubsystem<UCommonUserSubsystem>();
     
-    if (ensure(FlowToContinue.IsValid()))
+    if (ensure(FlowToContinue.IsValid() && UserSubsystem))
     {
+        UserSubsystem->OnUserInitializeComplete.RemoveDynamic(this, &UAssassinsFrontendStateComponent::OnUserInitialized);
         InProgressPressStartScreen.Reset();
 
         if (bSuccess)
