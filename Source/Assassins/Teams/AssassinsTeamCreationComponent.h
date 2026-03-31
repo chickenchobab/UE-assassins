@@ -8,6 +8,7 @@
 
 class UAssassinsExperienceDefinition;
 class UAssassinsTeamAsset;
+class AAssassinsPlayerState;
 
 UCLASS(Blueprintable)
 class UAssassinsTeamCreationComponent : public UGameStateComponent
@@ -33,11 +34,20 @@ protected:
 
 protected:
 	virtual void ServerCreateTeams();
+	virtual void ServerAssignPlayersToTeams();
+
+	/** Sets the team ID for the given player state. */
+	virtual void ServerChooseTeamForPlayer(AAssassinsPlayerState* PS);
+
 
 private:
 
+	void ServerCreateTeam(int32 TeamId, UAssassinsTeamAsset* TeamAsset, const FTransform& TeamBaseTransform);
+	void OnPlayerInitialized(AGameModeBase* GameMode, AController* NewPlayer);
+
 	void GetTeamBaseTransform(FTransform& BaseTransform, int32 TeamId, const TArray<AActor*>& TeamBases, bool& FoundTeamBase);
 
-	void ServerCreateTeam(int32 TeamId, UAssassinsTeamAsset* TeamAsset, const FTransform& TeamBaseTransform);
+	int32 GetLeastPopulatedTeamID() const;
+
 #endif
 };

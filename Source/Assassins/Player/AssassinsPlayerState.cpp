@@ -14,7 +14,7 @@
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "AssassinsLogCategories.h"
 #include "Components/GameFrameworkComponentManager.h"
-
+#include "Net/UnrealNetwork.h"
 
 const FName AAssassinsPlayerState::NAME_AssassinsAbilityReady("AssassinsAbilityReady");
 
@@ -26,6 +26,10 @@ AAssassinsPlayerState::AAssassinsPlayerState(const FObjectInitializer& ObjectIni
     // These attribute sets will be detected by AbilitySystemComponent::InitializeComponent. Keeping a reference so that the sets don't get garbage collected before that.
     HealthSet = CreateDefaultSubobject<UAssassinsHealthSet>(TEXT("HealthSet"));
     CombatSet = CreateDefaultSubobject<UAssassinsCombatSet>(TEXT("CombatSet"));
+    
+    MyTeamID = FGenericTeamId::NoTeam;
+
+    bChampionSelected = false;
 }
 
 AAssassinsPlayerController* AAssassinsPlayerState::GetAssassinsPlayerController() const
@@ -38,20 +42,55 @@ UAbilitySystemComponent* AAssassinsPlayerState::GetAbilitySystemComponent() cons
     return GetAssassinsAbilitySystemComponent();
 }
 
-void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData)
+void AAssassinsPlayerState::OnChampionSelected(const UAssassinsPawnData* InPawnData)
+{
+    if (APlayerController* PC = GetPlayerController())
+    {
+        if (PC->IsLocalPlayerController())
+        {
+            bChampionSelected = true;
+
+            SetPawnData(InPawnData, false);
+
+            Server_OnChampionSelected(InPawnData);
+        }
+    }
+}
+
+void AAssassinsPlayerState::Server_OnChampionSelected_Implementation(const UAssassinsPawnData* InPawnData)
+{
+    const ENetMode NetMode = GetNetMode();
+    const bool bAlreadySetFlag = (NetMode == ENetMode::NM_Standalone || NetMode == ENetMode::NM_ListenServer);
+
+    if (!bChampionSelected || bAlreadySetFlag)
+    {
+        SetPawnData(InPawnData, false);
+
+        if (AAssassinsGameMode* GameMode = Cast<AAssassinsGameMode>(GetWorld()->GetAuthGameMode()))
+        {
+            // Broadcast that the champion has been selected(not available).
+            GameMode->IncreaseReadyPlayers(InPawnData);
+        }
+    }
+    
+    bChampionSelected = true;
+}
+
+bool AAssassinsPlayerState::Server_OnChampionSelected_Validate(const UAssassinsPawnData* InPawnData)
+{
+    return (InPawnData != nullptr);
+}
+
+void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData, bool bShouldApplyAbilitySets)
 {
     check(InPawnData);
 
-    if (GetLocalRole() != ROLE_Authority)
-    {
-        return;
-    }
-
-    //MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PawnData, this);
-
     PawnData = InPawnData;
 
-    ApplyAbilitySets();
+    if (bShouldApplyAbilitySets)
+    {
+        ApplyAbilitySets();
+    }
 }
 
 void AAssassinsPlayerState::ApplyAbilitySets()
@@ -90,16 +129,53 @@ void AAssassinsPlayerState::PostInitializeComponents()
     //}
 }
 
+void AAssassinsPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    FDoRepLifetimeParams SharedParams;
+    SharedParams.bIsPushBased = true;
+
+    DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, PawnData, SharedParams);
+    DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, MyTeamID, SharedParams);
+}
+
+void AAssassinsPlayerState::ClientInitialize(AController* C)
+{
+    Super::ClientInitialize(C);
+
+    if (UAssassinsPawnExtensionComponent* PawnExtComp = UAssassinsPawnExtensionComponent::FindPawnExtensionComponent(GetPawn()))
+    {
+        PawnExtComp->CheckDefaultInitialization();
+    }
+}
+
 void AAssassinsPlayerState::CopyProperties(APlayerState* PlayerState)
 {
     Super::CopyProperties(PlayerState);
 
+    // Server travel occurs after lobby
     if (AAssassinsPlayerState* AssassinsPS = Cast<AAssassinsPlayerState>(PlayerState))
     {
-        AssassinsPS->SelectedExperience = SelectedExperience;
-        AssassinsPS->MyTeamID = MyTeamID;
-        AssassinsPS->PawnData = PawnData;
+        AssassinsPS->SetPawnData(PawnData, false);
     }
+}
+
+void AAssassinsPlayerState::OnDeactivated()
+{
+    if (bChampionSelected)
+    {
+        bChampionSelected = false;
+
+        // Because this function is called on logout of the player, the game mode
+        // should be notified of the logout
+        if (AAssassinsGameMode* GameMode = Cast<AAssassinsGameMode>(GetWorld()->GetAuthGameMode()))
+        {
+            GameMode->DecreaseReadyPlayers(PawnData);
+        }
+    }
+
+    Super::OnDeactivated();
 }
 
 void AAssassinsPlayerState::SetGenericTeamId(const FGenericTeamId& NewTeamID)
@@ -108,11 +184,6 @@ void AAssassinsPlayerState::SetGenericTeamId(const FGenericTeamId& NewTeamID)
     {
         const FGenericTeamId OldTeamID = MyTeamID;
         MyTeamID = NewTeamID;
-
-        if (AAssassinsPlayerController* AssassinsPC = GetAssassinsPlayerController())
-        {
-            AssassinsPC->SetAvoidanceGroup(GenericTeamIdToInteger(NewTeamID));
-        }
     }
 }
 
@@ -140,5 +211,13 @@ void AAssassinsPlayerState::OnExperienceLoaded(const UAssassinsExperienceDefinit
         {
             UE_LOG(LogAssassins, Error, TEXT("AAssassinsPlayerState::OnExperienceLoaded(): Unable to find PawnData to initialize player state [%s]!"), *GetNameSafe(this));
         }
+    }
+}
+
+void AAssassinsPlayerState::OnRep_MyTeamID(FGenericTeamId OldTeamID)
+{
+    if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetPlayerController()))
+    {
+        AssassinsPC->SetAvoidanceGroup(GenericTeamIdToInteger(MyTeamID));
     }
 }

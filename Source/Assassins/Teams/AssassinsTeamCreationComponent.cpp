@@ -5,8 +5,10 @@
 #include "Teams/AssassinsTeamBaseActor.h"
 #include "Teams/AssassinsTeamInfo.h"
 #include "GameModes/AssassinsExperienceStateComponent.h"
+#include "Player/AssassinsPlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "AssassinsLogCategories.h"
+#include "GameModes/AssassinsGameMode.h"
 
 UAssassinsTeamCreationComponent::UAssassinsTeamCreationComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -30,6 +32,7 @@ void UAssassinsTeamCreationComponent::OnExperienceLoaded(const UAssassinsExperie
 	if (HasAuthority())
 	{
 		ServerCreateTeams();
+		ServerAssignPlayersToTeams();
 	}
 #endif
 }
@@ -51,6 +54,61 @@ void UAssassinsTeamCreationComponent::GetTeamBaseTransform(FTransform& BaseTrans
 	}
 
 	bFoundTeamBase = false;
+}
+
+int32 UAssassinsTeamCreationComponent::GetLeastPopulatedTeamID() const
+{
+	const int32 NumTeams = TeamsToCreate.Num();
+	if (NumTeams > 0)
+	{
+		TMap<int32, int32> TeamMemberCounter;
+		TeamMemberCounter.Reserve(NumTeams);
+		for (const auto& KVP : TeamsToCreate)
+		{
+			const int32 TeamId = KVP.Key;
+			TeamMemberCounter.Add(TeamId, 0);
+		}
+
+		AGameStateBase* GameState = GetGameStateChecked<AGameStateBase>();
+		for (APlayerState* PS : GameState->PlayerArray)
+		{
+			if (AAssassinsPlayerState* AssassinsPS = Cast<AAssassinsPlayerState>(PS))
+			{
+				const int32 PlayerTeamId = GenericTeamIdToInteger(AssassinsPS->GetGenericTeamId());
+
+				if ((PlayerTeamId != INDEX_NONE) && !AssassinsPS->IsInactive())
+				{
+					TeamMemberCounter[PlayerTeamId]++;
+				}
+			}
+		}
+
+		int32 BestTeamId = INDEX_NONE;
+		uint32 BestPlayerCount = GameState->PlayerArray.Num();
+		for (const auto& KVP : TeamMemberCounter)
+		{
+			const int32 TestTeamId = KVP.Key;
+			const uint32 TestTeamPlayerCount = KVP.Value;
+
+			if (TestTeamPlayerCount < BestPlayerCount)
+			{
+				BestTeamId = KVP.Key;
+				BestPlayerCount = KVP.Value;
+			}
+			else if (TestTeamPlayerCount == BestPlayerCount)
+			{
+				if ((TestTeamId < BestTeamId) || (BestTeamId == INDEX_NONE))
+				{
+					BestTeamId = TestTeamId;
+					BestPlayerCount = TestTeamPlayerCount;
+				}
+			}
+		}
+
+		return BestTeamId;
+	}
+
+	return INDEX_NONE;
 }
 
 void UAssassinsTeamCreationComponent::ServerCreateTeams()
@@ -83,6 +141,29 @@ void UAssassinsTeamCreationComponent::ServerCreateTeams()
 	}
 }
 
+void UAssassinsTeamCreationComponent::ServerAssignPlayersToTeams()
+{
+	AGameStateBase* GameState = GetGameStateChecked<AGameStateBase>();
+	for (APlayerState* PS : GameState->PlayerArray)
+	{
+		if (AAssassinsPlayerState* AssassinsPS = Cast<AAssassinsPlayerState>(PS))
+		{
+			ServerChooseTeamForPlayer(AssassinsPS);
+		}
+	}
+
+	// Can listen for new players logging in(especially bots)
+	AAssassinsGameMode* GameMode = GetGameMode<AAssassinsGameMode>();
+	check(GameMode);
+	GameMode->OnGameModePlayerInitialized.AddUObject(this, &ThisClass::OnPlayerInitialized);
+}
+
+void UAssassinsTeamCreationComponent::ServerChooseTeamForPlayer(AAssassinsPlayerState* PS)
+{
+	const int32 TeamId = GetLeastPopulatedTeamID();
+	PS->SetGenericTeamId(IntegerToGenericTeamId(TeamId));
+}
+
 void UAssassinsTeamCreationComponent::ServerCreateTeam(int32 TeamId, UAssassinsTeamAsset* TeamAsset, const FTransform& TeamBaseTransform)
 {
 	FActorSpawnParameters Params;
@@ -92,6 +173,16 @@ void UAssassinsTeamCreationComponent::ServerCreateTeam(int32 TeamId, UAssassinsT
 	Team->SetTeamId(TeamId);
 	Team->SetTeamAsset(TeamAsset);
 	Team->SetTeamBaseTransform(TeamBaseTransform);
+}
+
+void UAssassinsTeamCreationComponent::OnPlayerInitialized(AGameModeBase* GameMode, AController* NewPlayer)
+{
+	check(NewPlayer);
+	check(NewPlayer->PlayerState);
+	if (AAssassinsPlayerState* AssassinsPS = Cast<AAssassinsPlayerState>(NewPlayer->PlayerState))
+	{
+		ServerChooseTeamForPlayer(AssassinsPS);
+	}
 }
 
 #endif

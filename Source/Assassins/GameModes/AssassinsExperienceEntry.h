@@ -19,6 +19,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Experience, meta = (AllowedTypes = "Map"))
 	FPrimaryAssetId MapID;
 
+	/** Transitional lobby map for players to gather before the match starts. */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Experience, meta = (AllowedTypes = "Map"))
+	FPrimaryAssetId LobbyMapID;
+
 	/** The gameplay experience to load */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Experience, meta = (AllowedTypes = "AssassinsExperienceDefinition"))
 	FPrimaryAssetId ExperienceID;
@@ -66,5 +70,5 @@ public:
 public:
 	/** Create a request object that is used to actually start a session with these settings */
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, meta = (WorldContext = "WorldContextObject"))
-	UCommonSession_HostSessionRequest* CreateHostingRequest(const UObject* WorldContextObject) const;
+	UCommonSession_HostSessionRequest* CreateHostingRequest(const UObject* WorldContextObject, bool bNeedsLobby = false) const;
 };

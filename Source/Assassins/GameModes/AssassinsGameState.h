@@ -7,6 +7,7 @@
 
 class UAssassinsExperienceStateComponent;
 class UAssassinsCameraMode;
+class UAssassinsPawnData;
 
 /**
  * 
@@ -19,11 +20,35 @@ class ASSASSINS_API AAssassinsGameState : public AModularGameStateBase
 public:
 	AAssassinsGameState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	//~AActor interface
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	//~End of AActor interface
+
 	TSubclassOf<UAssassinsCameraMode> GetExperienceCameraMode() const;
 
+	void SetInLobby(bool bLobby) { bInLobby = bLobby; }
+	bool IsGameInLobby() const { return bInLobby; }
+	bool IsChampionAvailable(const UAssassinsPawnData* InPawnData) const;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ConstructChampionSelectionInfoFromPlayers();
+
+	void AddSelectedChampion(const UAssassinsPawnData* InPawnData);
+	void RemoveSelectedChampion(const UAssassinsPawnData* InPawnData);
+
+private:
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnChampionSelectionChanged(const FPrimaryAssetId& ChampionAssetId, bool bAdded);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Assassins|GameState")
 	TObjectPtr<UAssassinsExperienceStateComponent> ExperienceComponent;
-	
+
+	UPROPERTY(Replicated)
+	bool bInLobby;
+
+	// Array of references for champion selected in the lobby
+	UPROPERTY()
+	TSet<FPrimaryAssetId> SelectedChampions;
 };

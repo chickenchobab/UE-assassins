@@ -19,6 +19,11 @@
 #include "System/AssassinsAssetManager.h"
 #include "UI/AssassinsHUD.h"
 #include "Bot/AssassinsPlayerBotController.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
+#include "OnlineSubsystemUtils.h"
+#include "System/AssassinsGameInstance.h"
 
 
 AAssassinsGameMode::AAssassinsGameMode()
@@ -29,7 +34,13 @@ AAssassinsGameMode::AAssassinsGameMode()
 	DefaultPawnClass = AAssassinsCharacter::StaticClass();
 	HUDClass = AAssassinsHUD::StaticClass();
 
-	bUseSeamlessTravel = true;
+	bUseSeamlessTravel = false;
+
+	bInLobby = false;
+
+	MaxNumPlayers = 3;
+	NumReadyPlayers = 0;
+	NumBots = 0;
 }
 
 const UAssassinsPawnData* AAssassinsGameMode::GetPawnDataForController(const AController* InController) const
@@ -67,21 +78,91 @@ const UAssassinsPawnData* AAssassinsGameMode::GetPawnDataForController(const ACo
 	return nullptr;
 }
 
+void AAssassinsGameMode::IncreaseReadyPlayers(const UAssassinsPawnData* InPawnData)
+{
+	if (!bInLobby)
+	{
+		return;
+	}
+
+	check(InPawnData);
+
+	if (AAssassinsGameState* AssassinsGameState = GetGameState<AAssassinsGameState>())
+	{
+		AssassinsGameState->AddSelectedChampion(InPawnData);
+	}
+
+	++NumReadyPlayers;
+	if (NumReadyPlayers >= GetNumPlayers())
+	{
+		// Checks session capacity and bot setting below.
+		TryServerTravelToGameMap();
+	}
+}
+
+void AAssassinsGameMode::DecreaseReadyPlayers(const UAssassinsPawnData* InPawnData)
+{
+	if (!bInLobby)
+	{
+		return;
+	}
+
+	check(InPawnData);
+
+	if (AAssassinsGameState* AssassinsGameState = GetGameState<AAssassinsGameState>())
+	{
+		AssassinsGameState->RemoveSelectedChampion(InPawnData);
+	}
+
+	--NumReadyPlayers;
+}
+
 void AAssassinsGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
 
+	bInLobby = UGameplayStatics::HasOption(OptionsString, TEXT("Lobby"));
+	if (!bInLobby)
+	{
+		NumBots = UGameplayStatics::GetIntOption(OptionsString, TEXT("NumBots"), 0);
+	}
+	else
+	{
+		IOnlineSubsystem* const OnlineSub = Online::GetSubsystem(GetWorld());
+		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
+		check(SessionInterface.IsValid());
+
+		if (GetNetMode() != ENetMode::NM_Standalone)
+		{
+			FNamedOnlineSession* Session = SessionInterface->GetNamedSession(NAME_GameSession);
+			check(Session);
+			MaxNumPlayers = Session->SessionSettings.NumPublicConnections;
+		}
+	}
+
 	// Wait for the next frame to give time to initialize startup settings
-	 GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::HandleMatchAssignmentIfNotExpectingOne);
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::HandleMatchAssignmentIfNotExpectingOne);
 }
 
 void AAssassinsGameMode::InitGameState()
 {
 	Super::InitGameState();
 
-	// Listen for the experience load to complete
 	UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
 	check(ExperienceComponent);
+
+	if (AAssassinsGameState* AssassinsGameState = Cast<AAssassinsGameState>(GameState))
+	{
+		//AssassinsGameState->Multicast_SetInLobby(bInLobby);
+		AssassinsGameState->SetInLobby(bInLobby);
+		if (!bInLobby)
+		{
+			// Restore champion selection info lost due to the travel, for bot creation
+			AssassinsGameState->Multicast_ConstructChampionSelectionInfoFromPlayers();
+		}
+	}
+	
+	// Listen for the experience load to complete
 	ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
 }
 
@@ -96,6 +177,8 @@ bool AAssassinsGameMode::UpdatePlayerStartSpot(AController* Player, const FStrin
 void AAssassinsGameMode::GenericPlayerInitialization(AController* NewPlayer)
 {
 	Super::GenericPlayerInitialization(NewPlayer);
+
+	OnGameModePlayerInitialized.Broadcast(this, NewPlayer);
 }
 
 void AAssassinsGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
@@ -123,7 +206,10 @@ AActor* AAssassinsGameMode::ChoosePlayerStart_Implementation(AController* Player
 {
 	if (UAssassinsPlayerSpawnerComponent* PlayerSpawnerComponent = GameState->FindComponentByClass<UAssassinsPlayerSpawnerComponent>())
 	{
-		return PlayerSpawnerComponent->ChoosePlayerStart(Player);
+		if (AActor* PlayerStart = PlayerSpawnerComponent->ChoosePlayerStart(Player))
+		{
+			return PlayerStart;
+		}
 	}
 
 	return Super::ChoosePlayerStart_Implementation(Player);
@@ -303,7 +389,7 @@ void AAssassinsGameMode::HandleMatchAssignmentIfNotExpectingOne()
 
 	UWorld* World = GetWorld();
 
-	if (!ExperienceId.IsValid() && UGameplayStatics::HasOption(OptionsString, TEXT("Experience")))
+	if (!ExperienceId.IsValid() && UGameplayStatics::HasOption(OptionsString, TEXT("Experience")) && !bInLobby)
 	{
 		//Me: Get the name of the experience set by experience entry
 		const FString ExperienceFromOptions = UGameplayStatics::ParseOption(OptionsString, TEXT("Experience"));
@@ -332,8 +418,6 @@ void AAssassinsGameMode::HandleMatchAssignmentIfNotExpectingOne()
 	// Final fallback to the default experience
 	if (!ExperienceId.IsValid())
 	{
-		//TODO: TryDedicatedServerLogin
-
 		//@TODO: Pull this from a config setting or something
 		ExperienceId = FPrimaryAssetId(FPrimaryAssetType("AssassinsExperienceDefinition"), FName("B_AssassinsDefaultExperience"));
 		ExperienceIdSource = TEXT("Default");
@@ -374,4 +458,42 @@ void AAssassinsGameMode::OnExperienceLoaded(const UAssassinsExperienceDefinition
 			}
 		}
 	}
+}
+
+void AAssassinsGameMode::TryServerTravelToGameMap()
+{
+	int32 NumBotsToCreate = 0;
+
+	const FString GameMap = UGameplayStatics::ParseOption(OptionsString, TEXT("Lobby"));
+	FString TravelURL = FString::Printf(TEXT("%s?listen"), *GameMap);
+
+	if (UGameplayStatics::HasOption(OptionsString, TEXT("NumBots")))
+	{
+		NumBotsToCreate = MaxNumPlayers - NumReadyPlayers;
+		if (NumBotsToCreate > 0)
+		{
+			TravelURL.Append(FString::Printf(TEXT("?NumBots=%s"), *FString::FromInt(NumBotsToCreate)));
+		}
+	}
+
+	if (NumBotsToCreate != 0 && NumReadyPlayers < MaxNumPlayers)
+	{
+		return;
+	}
+
+	/*if (GetNetMode() != ENetMode::NM_Standalone)
+	{
+		if (UAssassinsGameInstance* GameInstance = GetGameInstance<UAssassinsGameInstance>())
+		{
+			GameInstance->StartSession();
+		}
+	}*/
+
+	// Reset the last options.
+	FWorldContext& WorldContext = GEngine->GetWorldContextFromWorldChecked(GetWorld());
+	WorldContext.LastURL.RemoveOption(TEXT("Lobby"));
+	WorldContext.LastURL.RemoveOption(TEXT("NumBots"));
+
+	bUseSeamlessTravel = true; // To carry champion info
+	GetWorld()->ServerTravel(TravelURL);
 }

@@ -10,6 +10,7 @@
 class UAssassinsExperienceDefinition;
 class AAIController;
 class AAssassinsCharacterWithAbilities;
+class UAssassinsPawnData;
 
 UENUM(BlueprintType)
 enum class EAssassinsMinionWaveSpawningState : uint8
@@ -35,9 +36,9 @@ protected:
 
 	//~UAssassinsBotCreationComponent interface
 	virtual void ServerCreateBots() override;
+	virtual void SpawnOneBot(const UAssassinsPawnData* PawnData = nullptr) override;
 	//~End of UAssassinsBotCreationComponent interface
 
-	void SpawnOneBot();
 
 	UFUNCTION(BlueprintNativeEvent, Category = Gameplay)
 	void ChangeTeam();

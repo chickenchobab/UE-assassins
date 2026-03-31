@@ -3,16 +3,25 @@
 
 #include "UI/Frontend/AssassinsFrontendStateComponent.h"
 #include "GameModes/AssassinsExperienceStateComponent.h"
+#include "GameModes/AssassinsGameState.h"
 #include "ControlFlowManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "CommonUserSubsystem.h"
 #include "CommonSessionSubsystem.h"
 #include "PrimaryGameLayout.h"
 #include "NativeGameplayTags.h"
+#include "System/AssassinsGameInstance.h"
+#include "Player/AssassinsPlayerState.h"
+#include "Player/AssassinsLocalPlayer.h"
 
 namespace FrontendTags
 {
     UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_UI_LAYER_MENU, "UI.Layer.Menu");
+}
+
+UAssassinsFrontendStateComponent::UAssassinsFrontendStateComponent(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+{
 }
 
 void UAssassinsFrontendStateComponent::BeginPlay()
@@ -23,33 +32,53 @@ void UAssassinsFrontendStateComponent::BeginPlay()
     AGameStateBase* GameState = GetGameStateChecked<AGameStateBase>();
     UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
     check(ExperienceComponent);
-
     // This delegate is on a component with the same lifetime as this one, so no need to unhook it in.
     ExperienceComponent->CallOrRegister_OnExperienceLoaded_HighPriority(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
 }
 
 bool UAssassinsFrontendStateComponent::ShouldShowLoadingScreen(FString& OutReason) const
 {
-    if (bShouldShowLoadingScreen)
+    if (!bShouldShowLoadingScreen)
     {
-        OutReason = TEXT("Frontend Flow Pending...");
+        return false;
+    }
 
-        if (FrontendFlow.IsValid())
-        {
-            const TOptional<FString> StepDebugName = FrontendFlow->GetCurrentStepDebugName();
-            if (StepDebugName.IsSet())
-            {
-                OutReason = StepDebugName.GetValue();
-            }
-        }
-
+    AAssassinsGameState* GameState = GetGameStateChecked<AAssassinsGameState>();
+    if (GameState->IsGameInLobby())
+    {
+        OutReason = TEXT("Champion Selection Loading...");
         return true;
     }
-    return false;
+    
+    OutReason = TEXT("Frontend Flow Pending...");
+    if (FrontendFlow.IsValid())
+    {
+        const TOptional<FString> StepDebugName = FrontendFlow->GetCurrentStepDebugName();
+        if (StepDebugName.IsSet())
+        {
+            OutReason = StepDebugName.GetValue();
+        }
+    }
+
+    return true;
 }
 
 void UAssassinsFrontendStateComponent::OnExperienceLoaded(const UAssassinsExperienceDefinition* Experience)
 {
+    AAssassinsGameState* GameState = GetGameStateChecked<AAssassinsGameState>();
+    if (GameState->IsGameInLobby())
+    {
+        // Bind the function for it to be called after ReceivedPlayer(). (see game UI policy)
+        if (UAssassinsLocalPlayer* LocalPlayer = Cast<UAssassinsLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController()))
+        {
+            LocalPlayer->CallAndRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate::CreateWeakLambda(this, [this](ACharacter*) {
+                TryShowChampionSelectionScreen();
+            }));
+        }
+
+        return; // User has already been initialized.
+    }
+
     FControlFlow& Flow = FControlFlowStatics::Create(this, TEXT("FrontendFlow"))
         .QueueStep(TEXT("Wait For User Initialization"), this, &ThisClass::FlowStep_WaitForUserInitialization)
         .QueueStep(TEXT("Try Initialize User"), this, &ThisClass::FlowStep_TryInitializeUser)
@@ -158,5 +187,29 @@ void UAssassinsFrontendStateComponent::FlowStep_TryShowMainScreen(FControlFlowNo
                 return;
             }
         });
+    }
+}
+
+void UAssassinsFrontendStateComponent::TryShowChampionSelectionScreen()
+{
+    if (UPrimaryGameLayout* RootLayout = UPrimaryGameLayout::GetPrimaryGameLayoutForPrimaryPlayer(this))
+    {
+        constexpr bool bSuspendInputUntilComplete = true;
+        RootLayout->PushWidgetToLayerStackAsync<UCommonActivatableWidget>(
+            FrontendTags::TAG_UI_LAYER_MENU,
+            bSuspendInputUntilComplete,
+            ChampionSelectionScreenClass,
+            [this](EAsyncWidgetLayerState State, UCommonActivatableWidget* Screen) {
+                if (State == EAsyncWidgetLayerState::AfterPush)
+                {
+                    ChampionSelectionScreenWidget = Screen;
+                    bShouldShowLoadingScreen = false;
+                }
+                else if (State == EAsyncWidgetLayerState::Canceled)
+                {
+                    bShouldShowLoadingScreen = false;
+                }
+            }
+        );
     }
 }

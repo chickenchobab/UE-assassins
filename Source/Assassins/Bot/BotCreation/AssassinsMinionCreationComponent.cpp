@@ -112,7 +112,7 @@ void UAssassinsMinionCreationComponent::ServerCreateBots()
 	}
 }
 
-void UAssassinsMinionCreationComponent::SpawnOneBot()
+void UAssassinsMinionCreationComponent::SpawnOneBot(const UAssassinsPawnData* PawnData)
 {
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;

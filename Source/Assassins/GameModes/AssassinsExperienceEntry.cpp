@@ -4,7 +4,7 @@
 #include "GameModes/AssassinsExperienceEntry.h"
 #include "CommonSessionSubsystem.h"
 
-UCommonSession_HostSessionRequest* UAssassinsExperienceEntry::CreateHostingRequest(const UObject* WorldContextObject) const
+UCommonSession_HostSessionRequest* UAssassinsExperienceEntry::CreateHostingRequest(const UObject* WorldContextObject, bool bNeedsLobby) const
 {
     const FString ExperienceName = ExperienceID.PrimaryAssetName.ToString();
     const FString ExperienceEntryName = GetPrimaryAssetId().PrimaryAssetName.ToString();
@@ -28,12 +28,22 @@ UCommonSession_HostSessionRequest* UAssassinsExperienceEntry::CreateHostingReque
         // For online systems that care about presence, only the primary session should have presence enabled
         Result->bUsePresence = !IsRunningDedicatedServer();
     }
-    Result->MapID = MapID;
+
     Result->ModeNameForAdvertisement = ExperienceEntryName;
     Result->ExtraArgs = ExtraArgs;
     // Me: It is applied to OptionString of the game mode
     Result->ExtraArgs.Add(TEXT("Experience"), ExperienceName);
     Result->MaxPlayerCount = MaxPlayerCount;
+    if (bNeedsLobby)
+    {
+        Result->MapID = MapID; // Me: Set temporarily to get map name
+        Result->ExtraArgs.Add(TEXT("Lobby"), Result->GetMapName());
+        Result->MapID = LobbyMapID;
+    }
+    else
+    {
+        Result->MapID = MapID;
+    }
 
     return Result;
 }

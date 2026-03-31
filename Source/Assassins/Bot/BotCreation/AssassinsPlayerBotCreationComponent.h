@@ -18,9 +18,9 @@ protected:
 #if WITH_SERVER_CODE
 	//~UAssassinsBotCreationComponent interface
 	virtual void ServerCreateBots() override;
+	virtual void SpawnOneBot(const UAssassinsPawnData* PawnData) override;
 	//~End of UAssassinsBotCreationComponent interface
 
-	void SpawnOneBot(UAssassinsPawnData* PawnData, int32 TeamId);
 #endif
 
 protected:
@@ -30,4 +30,18 @@ protected:
 
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AAIController>> SpawnedBotList;
+
+private:
+
+	void LoadChampionDataAndSpawnBots();
+
+private:
+
+	UPROPERTY(Transient)
+	TArray<FSoftObjectPath> AssetPaths;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<const UAssassinsPawnData>> ChampionDataList;
+
+	int32 NumBotsToCreate;
 };

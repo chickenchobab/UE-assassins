@@ -33,8 +33,12 @@ class ASSASSINS_API UAssassinsExperienceStateComponent : public UGameStateCompon
 	GENERATED_BODY()
 	
 public:
+
+	UAssassinsExperienceStateComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
 	//~UActorComponent interface
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 	//~End of UActorComponent interface
 
 	//~ILoadingProcessInterface interface
@@ -66,6 +70,9 @@ public:
 	const TSubclassOf<UAssassinsCameraMode> GetCurrentExperienceCameraMode() const;
 
 private:
+	
+	UFUNCTION()
+	void OnRep_CurrentExperience();
 
 	void StartExperienceLoad();
 	void OnExperienceLoadComplete();
@@ -77,7 +84,7 @@ private:
 
 private:
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing=OnRep_CurrentExperience)
 	TObjectPtr<const UAssassinsExperienceDefinition> CurrentExperience;
 
 	EAssassinsExperienceLoadState LoadState = EAssassinsExperienceLoadState::Unloaded;

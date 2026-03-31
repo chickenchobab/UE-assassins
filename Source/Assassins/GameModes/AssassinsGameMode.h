@@ -6,14 +6,25 @@
 #include "AssassinsGameMode.generated.h"
 
 class UAssassinsExperienceDefinition;
+class UAssassinsPawnData;
 
-UCLASS(MinimalAPI, Config = Game)
-class AAssassinsGameMode : public AModularGameModeBase
+/** 
+* Post login event, triggered when a bot joins the game as well as after seamless and non seamless travel
+* This is called after the player has finished initialization
+*/
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAssassinsGameModePlayerInitialized, AGameModeBase*, AController*);
+
+UCLASS(Config = Game)
+class ASSASSINS_API AAssassinsGameMode : public AModularGameModeBase
 {
 	GENERATED_BODY()
 
 public:
 	AAssassinsGameMode();
+
+	void IncreaseReadyPlayers(const UAssassinsPawnData* InPawnData);
+	void DecreaseReadyPlayers(const UAssassinsPawnData* InPawnData);
+	FORCEINLINE int32 GetNumBots() const { return NumBots; }
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Pawn")
 	const UAssassinsPawnData* GetPawnDataForController(const AController* InController) const;
@@ -43,6 +54,10 @@ public:
 	// Agnostic version of PlayerCanRestart that can be used for both player bots and players
 	virtual bool ControllerCanRestart(AController* Controller);
 
+public:
+
+	FOnAssassinsGameModePlayerInitialized OnGameModePlayerInitialized;
+
 protected:
 	bool IsExperienceLoaded() const;
 
@@ -50,6 +65,22 @@ protected:
 	void OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource);
 
 	void OnExperienceLoaded(const UAssassinsExperienceDefinition* CurrentExperience);
+
+	void TryServerTravelToGameMap();
+
+protected:
+	
+	bool bInLobby;
+	int32 NumReadyPlayers;
+	int32 MaxNumPlayers;
+
+	int32 NumBots;
+
+private:
+
+	// Set which is set when it is ready to start game and leave lobby.
+	UPROPERTY()
+	TSet<FPrimaryAssetId> SavedChampionSelectionInfo;
 };
 
 

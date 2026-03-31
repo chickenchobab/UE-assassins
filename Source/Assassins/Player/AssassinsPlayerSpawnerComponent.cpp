@@ -11,11 +11,13 @@
 UAssassinsPlayerSpawnerComponent::UAssassinsPlayerSpawnerComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	SetIsReplicatedByDefault(false);
 	bAutoRegister = true;
 	bAutoActivate = true;
 	bWantsInitializeComponent = true;
 	PrimaryComponentTick.TickGroup = TG_PrePhysics;
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bAllowTickOnDedicatedServer = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
@@ -78,7 +80,10 @@ AActor* UAssassinsPlayerSpawnerComponent::ChoosePlayerStart(AController* Player)
 			}
 		}
 
-		return StarterPoints[FMath::RandRange(0, StarterPoints.Num() - 1)];
+		if (!StarterPoints.IsEmpty())
+		{
+			return StarterPoints[FMath::RandRange(0, StarterPoints.Num() - 1)];
+		}
 	}
 
 	return nullptr;

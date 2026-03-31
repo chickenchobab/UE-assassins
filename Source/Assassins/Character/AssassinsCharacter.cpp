@@ -19,6 +19,7 @@
 #include "NativeGameplayTags.h"
 #include "Player/AssassinsPlayerController.h"
 #include "Engine/OverlapResult.h"
+#include "Net/UnrealNetwork.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_CHANNELING, "Status.Channeling");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_UNTARGETABLE, "Status.Untargetable");
@@ -171,6 +172,13 @@ FGenericTeamId AAssassinsCharacter::GetGenericTeamId() const
 	return MyTeamID;
 }
 
+void AAssassinsCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, MyTeamID);
+}
+
 void AAssassinsCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
@@ -187,17 +195,30 @@ void AAssassinsCharacter::UnPossessed()
 
 void AAssassinsCharacter::NotifyControllerChanged()
 {
-	const FGenericTeamId OldTeamId = GetGenericTeamId();
-
 	Super::NotifyControllerChanged();
 
+	AController* C = GetController();
+	
 	// Update our team ID based on the controller (player state actually)
-	if (HasAuthority() && (GetController() != nullptr))
+	// Me: Team ID must be set in authority and replicated since simulated proxies have no controller.
+	if (HasAuthority())
 	{
-		if (IAssassinsTeamAgentInterface* ControllerWithTeam = Cast<IAssassinsTeamAgentInterface>(GetController()))
+		if (IAssassinsTeamAgentInterface* ControllerWithTeam = Cast<IAssassinsTeamAgentInterface>(C))
 		{
-			MyTeamID = ControllerWithTeam->GetGenericTeamId();
+			FGenericTeamId NewTeamID = ControllerWithTeam->GetGenericTeamId();
+			SetTeamId(NewTeamID);
 		}
+	}
+}
+
+void AAssassinsCharacter::NotifyRestarted()
+{
+	Super::NotifyRestarted();
+
+	if (AAssassinsPlayerController* PC = Cast<AAssassinsPlayerController>(GetController()))
+	{
+		PC->SetPlayerRestarted(true);
+		PC->OnPlayerRestarted.Broadcast(this);
 	}
 }
 
@@ -208,9 +229,26 @@ void AAssassinsCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	PawnExtComponent->SetupPlayerInputComponent();
 }
 
+void AAssassinsCharacter::OnRep_Controller()
+{
+	Super::OnRep_Controller();
+
+	PawnExtComponent->HandleControllerChanged();
+}
+
+void AAssassinsCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	PawnExtComponent->HandlePlayerStateReplicated();
+}
+
 void AAssassinsCharacter::SetTeamId(const FGenericTeamId& NewTeamID)
 {
+	const FGenericTeamId OldTeamID = MyTeamID;
 	MyTeamID = NewTeamID;
+
+	OnRep_MyTeamID(OldTeamID);
 }
 
 void AAssassinsCharacter::OnAbilitySystemInitialized()
@@ -451,5 +489,13 @@ void AAssassinsCharacter::OnDashingTagChanged(const FGameplayTag Tag, int32 NewC
 		AssassinsCharacterMovement->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
 
 		ResolvePenetrationAfterDash();
+	}
+}
+
+void AAssassinsCharacter::OnRep_MyTeamID(FGenericTeamId OldTeamID)
+{
+	if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetController()))
+	{
+		AssassinsPC->SetAvoidanceGroup(GenericTeamIdToInteger(MyTeamID));
 	}
 }

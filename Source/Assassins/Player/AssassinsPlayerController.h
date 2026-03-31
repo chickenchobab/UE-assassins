@@ -24,6 +24,7 @@ namespace EPathFollowingRequestResult { enum Type : int; }
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMoveCompletedSignature, FAIRequestID, RequestID, EPathFollowingResult::Type, Result);
+DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerRestartedDelegate, ACharacter*);
 
 
 UCLASS()
@@ -56,6 +57,9 @@ public:
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	//~End of IAssassinsTeamAgentInterface interface
 
+	FORCEINLINE void SetPlayerRestarted(bool bRestarted) { bPlayerRestarted = bRestarted; }
+	FORCEINLINE bool GetPlayerRestarted() { return bPlayerRestarted; }
+
 	/** Makes AI go toward specified Goal actor(destination will be continuously updated), aborts any active path following */
 	EPathFollowingRequestResult::Type MoveToActor(AActor* Goal, float AcceptRadius);
 	/** Makes AI go toward specified Dest location, aborts any active path following */
@@ -79,6 +83,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ability")
 	TObjectPtr<UAssassinsTargetChasingComponent> TargetChasingComponent;
+
+	FPlayerRestartedDelegate OnPlayerRestarted;
 
 protected:
 
@@ -114,4 +120,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
 	float CollisionQueryRange;
+
+	bool bPlayerRestarted : 1;
 };

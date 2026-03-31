@@ -7,6 +7,7 @@
 
 class UAssassinsExperienceDefinition;
 class AAIController;
+class UAssassinsPawnData;
 
 UCLASS()
 class UAssassinsBotCreationComponent : public UGameStateComponent
@@ -26,6 +27,7 @@ private:
 protected:
 
 	virtual void ServerCreateBots();
+	virtual void SpawnOneBot(const UAssassinsPawnData* PawnData = nullptr) {}
 
 protected:
 

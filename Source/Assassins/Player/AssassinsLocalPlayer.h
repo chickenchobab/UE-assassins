@@ -5,6 +5,8 @@
 #include "CommonLocalPlayer.h"
 #include "AssassinsLocalPlayer.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FLocalCharacterRestartedDelegate, ACharacter*);
+
 /**
  * 
  */
@@ -13,4 +15,7 @@ class ASSASSINS_API UAssassinsLocalPlayer : public UCommonLocalPlayer
 {
 	GENERATED_BODY()
 	
+public:
+
+	void CallAndRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate&& Delegate);
 };

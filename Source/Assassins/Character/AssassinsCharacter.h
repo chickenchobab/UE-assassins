@@ -78,13 +78,19 @@ public:
 	FStatusChangeDelegate OnInvisibilityEnded;
 
 protected:
+
+	//~AActor interface
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	//~End of AActor interface
 	
-	//~APawn interface
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
 	virtual void NotifyControllerChanged() override;
+	virtual void NotifyRestarted() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-	//~End of APawn interface
+
+	virtual void OnRep_Controller() override;
+	virtual void OnRep_PlayerState() override;
 
 	// Bot(AssassinsCharacterWithAbilities) can set its team ID
 	void SetTeamId(const FGenericTeamId& NewTeamID);
@@ -148,10 +154,15 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UAssassinsCameraComponent* CameraComponent;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_MyTeamID)
 	FGenericTeamId MyTeamID;
 
 	UPROPERTY()
 	TSet<AActor*> ActorsOverlappedAfterDash;
+
+private:
+
+	UFUNCTION()
+	void OnRep_MyTeamID(FGenericTeamId OldTeamID);
 };
 

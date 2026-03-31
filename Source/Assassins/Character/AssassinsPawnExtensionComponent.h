@@ -52,6 +52,9 @@ public:
 	/** Should be called by the owning pawn when the pawn's controller changes. */
 	void HandleControllerChanged();
 
+	/** Should be called by the owning pawn when the player state has been replicated. */
+	void HandlePlayerStateReplicated();
+
 	/** Should be called by the owning pawn when the input component is setup. */
 	void SetupPlayerInputComponent();
 
@@ -66,6 +69,10 @@ protected:
 	virtual void OnRegister() override;
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	void OnRep_PawnData();
 
 	/** Delegate fired when our pawn becomes the ability system's avatar actor */
 	FSimpleMulticastDelegate OnAbilitySystemInitialized;
@@ -73,7 +80,7 @@ protected:
 	/** Delegate fired when our pawn is removed as the ability system's avatar actor */
 	FSimpleMulticastDelegate OnAbilitySystemUninitialized;
 
-	UPROPERTY(EditInstanceOnly, Category = "Assassins|Pawn")
+	UPROPERTY(EditInstanceOnly, ReplicatedUsing = OnRep_PawnData, Category = "Assassins|Pawn")
 	TObjectPtr<const UAssassinsPawnData> PawnData;
 
 	UPROPERTY(Transient)

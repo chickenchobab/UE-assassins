@@ -7,7 +7,6 @@
 
 class UAssassinsAbilitySet;
 class UAssassinsInputConfig;
-class UTexture2D;
 
 /**
  * 
@@ -30,13 +29,4 @@ public:
 	// Input configuration used by player controlled pawns to create input mappings and bind input actions.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Input")
 	TObjectPtr<UAssassinsInputConfig> InputConfig;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Pawn")
-	FText Name;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Pawn")
-	FText Description;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Pawn")
-	TObjectPtr<UTexture2D> Icon;
 };

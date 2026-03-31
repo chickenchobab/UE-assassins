@@ -120,12 +120,8 @@ void UAssassinsHeroComponent::HandleChangeInitState(UGameFrameworkComponentManag
 			return;
 		}
 
-		const UAssassinsPawnData* PawnData = nullptr;
-
 		if (UAssassinsPawnExtensionComponent* PawnExtComp = UAssassinsPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
 		{
-			PawnData = PawnExtComp->GetPawnData<UAssassinsPawnData>();
-
 			// The player state holds the persistent data for this player (state that persists across deaths and multiple pawns).
 			// The ability system component and attribute sets live on the player state.
 			PawnExtComp->InitializeAbilitySystem(AssassinsPS->GetAssassinsAbilitySystemComponent(), AssassinsPS);
@@ -385,12 +381,9 @@ TSubclassOf<UAssassinsCameraMode> UAssassinsHeroComponent::DetermineCameraMode()
 {
 	if (UWorld* World = GetWorld())
 	{
-		if (AGameModeBase* GameMode = World->GetAuthGameMode())
+		if (AAssassinsGameState* AssassinsGameState = GetWorld()->GetGameState<AAssassinsGameState>())
 		{
-			if (AAssassinsGameState* AssassinsGameState = GameMode->GetGameState<AAssassinsGameState>())
-			{
-				return AssassinsGameState->GetExperienceCameraMode();
-			}
+			return AssassinsGameState->GetExperienceCameraMode();
 		}
 	}
 

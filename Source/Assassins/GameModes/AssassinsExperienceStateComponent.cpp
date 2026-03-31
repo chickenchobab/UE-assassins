@@ -10,6 +10,13 @@
 #include "GameFeaturesSubsystemSettings.h"
 #include "GameFeaturesSubsystem.h"
 #include "GameFeatureAction.h"
+#include "Net/UnrealNetwork.h"
+
+UAssassinsExperienceStateComponent::UAssassinsExperienceStateComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	SetIsReplicatedByDefault(true);
+}
 
 void UAssassinsExperienceStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -75,6 +82,13 @@ void UAssassinsExperienceStateComponent::EndPlay(const EEndPlayReason::Type EndP
 			OnAllActionsDeactivated();
 		}
 	}
+}
+
+void UAssassinsExperienceStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, CurrentExperience);
 }
 
 bool UAssassinsExperienceStateComponent::ShouldShowLoadingScreen(FString& OutReason) const
@@ -158,6 +172,11 @@ const TSubclassOf<UAssassinsCameraMode> UAssassinsExperienceStateComponent::GetC
 	}
 	
 	return nullptr;
+}
+
+void UAssassinsExperienceStateComponent::OnRep_CurrentExperience()
+{
+	StartExperienceLoad();
 }
 
 void UAssassinsExperienceStateComponent::StartExperienceLoad()

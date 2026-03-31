@@ -12,7 +12,11 @@ UCLASS()
 class ASSASSINS_API UAssassinsGameInstance : public UCommonGameInstance
 {
 	GENERATED_BODY()
-	
+
+public:
+
+	void StartSession();
+
 protected:
 	virtual void Init() override;
 };

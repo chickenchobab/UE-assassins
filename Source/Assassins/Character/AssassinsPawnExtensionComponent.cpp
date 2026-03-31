@@ -9,6 +9,7 @@
 #include "Components/GameFrameworkComponentManager.h"
 #include "AssassinsLogCategories.h"
 #include "Character/AssassinsPawnData.h"
+#include "Net/UnrealNetwork.h"
 
 const FName UAssassinsPawnExtensionComponent::NAME_ActorFeatureName("PawnExtension");
 
@@ -17,6 +18,8 @@ UAssassinsPawnExtensionComponent::UAssassinsPawnExtensionComponent(const FObject
 {
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	PrimaryComponentTick.bCanEverTick = false;
+
+	SetIsReplicatedByDefault(true);
 
 	PawnData = nullptr;
 	AbilitySystemComponent = nullptr;
@@ -112,6 +115,8 @@ void UAssassinsPawnExtensionComponent::SetPawnData(const UAssassinsPawnData* InP
 
 	PawnData = InPawnData;
 
+	Pawn->ForceNetUpdate();
+
 	CheckDefaultInitialization();
 }
 
@@ -147,10 +152,7 @@ void UAssassinsPawnExtensionComponent::InitializeAbilitySystem(UAssassinsAbility
 	}
 
 	AbilitySystemComponent = InASC;
-	// Me: Duplicate ASC initialization?
 	AbilitySystemComponent->InitAbilityActorInfo(InOwnerActor, Pawn);
-
-	// Me: TODO SetTagRelationshipMapping
 
 	OnAbilitySystemInitialized.Broadcast();
 }
@@ -201,6 +203,12 @@ void UAssassinsPawnExtensionComponent::HandleControllerChanged()
 
 		CheckDefaultInitialization();
 	}
+}
+
+void UAssassinsPawnExtensionComponent::HandlePlayerStateReplicated()
+{
+	// Me: This is crucial to initialization of the hero component
+	CheckDefaultInitialization();
 }
 
 void UAssassinsPawnExtensionComponent::SetupPlayerInputComponent()
@@ -256,4 +264,16 @@ void UAssassinsPawnExtensionComponent::EndPlay(const EEndPlayReason::Type EndPla
 	UnregisterInitStateFeature();
 
 	Super::EndPlay(EndPlayReason);
+}
+
+void UAssassinsPawnExtensionComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UAssassinsPawnExtensionComponent, PawnData);
+}
+
+void UAssassinsPawnExtensionComponent::OnRep_PawnData()
+{
+	CheckDefaultInitialization();
 }
