@@ -90,12 +90,15 @@ void AAssassinsPlayerState::SetPawnData(const UAssassinsPawnData* InPawnData, bo
 {
     check(InPawnData);
 
+    MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, PawnData, this);
     PawnData = InPawnData;
 
     if (bShouldApplyAbilitySets)
     {
         ApplyAbilitySets();
     }
+
+    ForceNetUpdate();
 }
 
 void AAssassinsPlayerState::ApplyAbilitySets()
@@ -110,7 +113,7 @@ void AAssassinsPlayerState::ApplyAbilitySets()
                 AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
             }
         }
-
+        
         UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(this, NAME_AssassinsAbilityReady);
     }
 }
@@ -187,7 +190,7 @@ void AAssassinsPlayerState::SetGenericTeamId(const FGenericTeamId& NewTeamID)
 {
     if (HasAuthority())
     {
-        const FGenericTeamId OldTeamID = MyTeamID;
+        MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, MyTeamID, this);
         MyTeamID = NewTeamID;
     }
 }
