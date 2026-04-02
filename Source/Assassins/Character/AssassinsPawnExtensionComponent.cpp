@@ -188,7 +188,7 @@ void UAssassinsPawnExtensionComponent::UninitializeAbilitySystem()
 
 void UAssassinsPawnExtensionComponent::HandleControllerChanged()
 {
-	if (AbilitySystemComponent && (AbilitySystemComponent->GetAvatarActor() == GetPawnChecked<APawn>()))
+	if (AbilitySystemComponent && (AbilitySystemComponent->GetAvatarActor() == GetPawnChecked<APawn>())) 
 	{
 		// Me : when are they different?
 		ensure(AbilitySystemComponent->AbilityActorInfo->OwnerActor == AbilitySystemComponent->GetOwnerActor());
@@ -200,9 +200,9 @@ void UAssassinsPawnExtensionComponent::HandleControllerChanged()
 		{
 			AbilitySystemComponent->RefreshAbilityActorInfo();
 		}
-
-		CheckDefaultInitialization();
 	}
+
+	CheckDefaultInitialization();
 }
 
 void UAssassinsPawnExtensionComponent::HandlePlayerStateReplicated()
