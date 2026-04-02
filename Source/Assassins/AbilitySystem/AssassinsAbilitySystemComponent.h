@@ -33,6 +33,8 @@ public:
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
 
+	void TryActivateAbilitiesOnSpawn();
+
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability", DisplayName = "CancelAbilities", meta = (ScriptName = "CancelAbilities"))
 	void K2_CancelAbilities(FGameplayTag WithTag, FGameplayTag WithoutTag);
 

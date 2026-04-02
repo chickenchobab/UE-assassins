@@ -25,7 +25,7 @@ enum class EAssassinsAbilityActivationPolicy : uint8
 	WhileInputActive,
 
 	// Try to activate the ability when an avatar is assigned.
-	OnSpawn
+	OnSpawn,
 };
 
 /**
@@ -58,6 +58,8 @@ public:
 
 	const FGameplayTagContainer& GetCancelledByTags() const { return CancelledByTags; }
 
+	void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
+
 protected:
 
     //~UGameplayAbility interface
@@ -65,8 +67,6 @@ protected:
     virtual FGameplayEffectContextHandle MakeEffectContext(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
     //~End of UGameplayAbility interface
-
-	void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
 
     UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
     FGameplayEffectSpecHandle MakeEffectSpecHandle(TSubclassOf<UGameplayEffect> EffectClass);
@@ -96,13 +96,13 @@ protected:
 protected:
 	
 	// Defines how this ability is meant to activate.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability Activation")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability")
 	EAssassinsAbilityActivationPolicy ActivationPolicy;
+
+private:
 
 	UPROPERTY()
 	FGameplayTagContainer CancelledByTags;
-
-private:
 
 	UPROPERTY()
 	FGameplayTagContainer AvatarStatusTags;

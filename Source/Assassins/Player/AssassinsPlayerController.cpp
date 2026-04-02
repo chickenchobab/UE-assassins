@@ -101,6 +101,27 @@ void AAssassinsPlayerController::StopMovement()
 	Super::StopMovement();
 }
 
+void AAssassinsPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	// When we're a client connected to a remote server, the player controller may replicate later than the player state and ability system component.
+	// However, TryActivateAbilitiesOnSpawn depends on the player controller being replicated in order to check whether on-spawn abilities should
+	// execute locally. Therefore once the player controller exists and has resolved the player state, try once again to activate on-spawn abilities.
+	// The handling here is only for when the PS ans ASC replicated before the PC and incorrect thought the abilities were not for the local player.
+	if (GetWorld()->IsNetMode(NM_Client))
+	{
+		if (AAssassinsPlayerState* AssassinsPS = GetPlayerState<AAssassinsPlayerState>())
+		{
+			if (UAssassinsAbilitySystemComponent* AssassinsASC = AssassinsPS->GetAssassinsAbilitySystemComponent())
+			{
+				AssassinsASC->RefreshAbilityActorInfo();
+				AssassinsASC->TryActivateAbilitiesOnSpawn();
+			}
+		}
+	}
+}
+
 void AAssassinsPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);

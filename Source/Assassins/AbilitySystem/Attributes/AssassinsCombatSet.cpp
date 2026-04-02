@@ -3,6 +3,7 @@
 
 #include "AbilitySystem/Attributes/AssassinsCombatSet.h"
 #include "GameplayEffectExtension.h"
+#include "Net/UnrealNetwork.h"
 
 UAssassinsCombatSet::UAssassinsCombatSet()
 	: AttackDamage(0.0f)
@@ -49,4 +50,70 @@ void UAssassinsCombatSet::PostAttributeChange(const FGameplayAttribute& Attribut
 		// Me: Notify character so its movement component can apply the update
 		OnMoveSpeedChanged.Broadcast(MoveSpeedBeforeAttributeChanged, GetMoveSpeed());
 	}
+}
+
+void UAssassinsCombatSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, AttackDamage, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, AbilityPower, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, Armor, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, MagicResistance, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, ArmorPenetrationFlat, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, ArmorPenetrationPercent, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, MagicPenetrationFlat, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, MagicPenetrationPercent, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, AttackSpeed, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsCombatSet, MoveSpeed, COND_OwnerOnly, REPNOTIFY_Always);
+}
+
+void UAssassinsCombatSet::OnRep_AttackDamage(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, AttackDamage, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_AbilityPower(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, AbilityPower, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_Armor(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, Armor, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_MagicResistance(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, MagicResistance, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_ArmorPenetrationFlat(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, ArmorPenetrationFlat, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_ArmorPenetrationPercent(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, ArmorPenetrationPercent, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_MagicPenetrationFlat(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, MagicPenetrationFlat, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_MagicPenetrationPercent(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, MagicPenetrationPercent, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_AttackSpeed(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, AttackSpeed, OldValue);
+}
+
+void UAssassinsCombatSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsCombatSet, MoveSpeed, OldValue);
 }

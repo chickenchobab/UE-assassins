@@ -3,8 +3,7 @@
 
 #include "AbilitySystem/Attributes/AssassinsHealthSet.h"
 #include "GameplayEffectExtension.h"
-
-// Me: TODO: Subdivide the damage
+#include "Net/UnrealNetwork.h"
 
 UAssassinsHealthSet::UAssassinsHealthSet()
 	: Health(100.0f)
@@ -14,9 +13,42 @@ UAssassinsHealthSet::UAssassinsHealthSet()
 	HealthBeforeAttributeChange = 0.0f;
 }
 
+void UAssassinsHealthSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsHealthSet, Health, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UAssassinsHealthSet, MaxHealth, COND_None, REPNOTIFY_Always);
+}
+
+void UAssassinsHealthSet::OnRep_Health(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsHealthSet, Health, OldValue);
+	
+	// Call the change callback, but without an instigator
+	// This could be changed to an explicit RPC in the future
+	// These events on the client should not be changing attributes
+
+	const float CurrentHealth = GetHealth();
+	const float EstimateMagnitude = CurrentHealth - OldValue.GetCurrentValue();
+
+	OnHealthChanged.Broadcast(nullptr, nullptr, nullptr, EstimateMagnitude, OldValue.GetCurrentValue(), CurrentHealth);
+
+	if (!bOutOfHealth && CurrentHealth <= 0.0f)
+	{
+		OnOutOfHealth.Broadcast(nullptr, nullptr, nullptr, EstimateMagnitude, OldValue.GetCurrentValue(), CurrentHealth);
+	}
+	
+	bOutOfHealth = (CurrentHealth <= 0.0f);
+}
+
+void UAssassinsHealthSet::OnRep_MaxHealth(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UAssassinsHealthSet, MaxHealth, OldValue);
+}
+
 bool UAssassinsHealthSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData& Data)
 {
-
 	if (!Super::PreGameplayEffectExecute(Data))
 	{
 		return false;

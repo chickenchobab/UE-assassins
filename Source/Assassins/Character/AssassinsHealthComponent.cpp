@@ -6,12 +6,15 @@
 #include "AbilitySystem/Attributes/AssassinsHealthSet.h"
 #include "AssassinsLogCategories.h"
 #include "AssassinsGameplayTags.h"
+#include "Net/UnrealNetwork.h"
 
 UAssassinsHealthComponent::UAssassinsHealthComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
+
+	SetIsReplicatedByDefault(true);
 
 	AbilitySystemComponent = nullptr;
 	HealthSet = nullptr;
@@ -95,7 +98,12 @@ void UAssassinsHealthComponent::StartDeath()
 		AbilitySystemComponent->SetLooseGameplayTagCount(AssassinsGameplayTags::Status_Death_Dying, 1);
 	}
 
+	AActor* Owner = GetOwner();
+	check(Owner);
+
 	OnDeathStarted.Broadcast();
+
+	Owner->ForceNetUpdate();
 }
 
 void UAssassinsHealthComponent::FinishDeath()
@@ -112,7 +120,19 @@ void UAssassinsHealthComponent::FinishDeath()
 		AbilitySystemComponent->SetLooseGameplayTagCount(AssassinsGameplayTags::Status_Death_Dead, 1);
 	}
 
+	AActor* Owner = GetOwner();
+	check(Owner);
+
 	OnDeathFinished.Broadcast();
+
+	Owner->ForceNetUpdate();
+}
+
+void UAssassinsHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UAssassinsHealthComponent, DeathState);
 }
 
 void UAssassinsHealthComponent::ClearGameplayTags()
@@ -150,4 +170,49 @@ void UAssassinsHealthComponent::HandleOutOfHealth(AActor* DamageInstigator, AAct
 		AbilitySystemComponent->HandleGameplayEvent(Payload.EventTag, &Payload);
 	}
 #endif
+}
+
+void UAssassinsHealthComponent::OnRep_DeathState(EAssassinsDeathState OldDeathState)
+{
+	const EAssassinsDeathState NewDeathState = DeathState;
+
+	// Revert the death state for now since we rely on StartDeath and FinishDeath to change it.
+	DeathState = OldDeathState;
+
+	if (OldDeathState > NewDeathState)
+	{
+		// The server is trying to set us back but we've already predicted past the server state.
+		UE_LOG(LogAssassins, Warning, TEXT("AssassinsHealthComponent: Predicted past server death state [%d] -> [%d] for owner [%s]."), (uint8)OldDeathState, (uint8)NewDeathState, *GetNameSafe(GetOwner()));
+		return;
+	}
+
+	if (OldDeathState == EAssassinsDeathState::NotDead)
+	{
+		if (NewDeathState == EAssassinsDeathState::DeathStarted)
+		{
+			StartDeath();
+		}
+		else if (NewDeathState == EAssassinsDeathState::DeathFinished)
+		{
+			StartDeath();
+			FinishDeath();
+		}
+		else
+		{
+			UE_LOG(LogAssassins, Error, TEXT("AssassinsHealthComponent: Invalid death transition [%d] -> [%d] for owner [%s]."), (uint8)OldDeathState, (uint8)NewDeathState, *GetNameSafe(GetOwner()));
+		}
+	}
+	else if (OldDeathState == EAssassinsDeathState::DeathStarted)
+	{
+		if (NewDeathState == EAssassinsDeathState::DeathFinished)
+		{
+			FinishDeath();
+		}
+		else
+		{
+			UE_LOG(LogAssassins, Error, TEXT("AssassinsHealthComponent: Invalid death transition [%d] -> [%d] for owner [%s]."), (uint8)OldDeathState, (uint8)NewDeathState, *GetNameSafe(GetOwner()));
+		}
+	}
+	
+	ensureMsgf((DeathState == NewDeathState), TEXT("AssassinsHealthComponent: Death transition failed [%d] -> [%d] for owner [%s]."), (uint8)OldDeathState, (uint8)NewDeathState, *GetNameSafe(GetOwner()));
 }

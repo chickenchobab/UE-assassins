@@ -22,10 +22,15 @@ AAssassinsPlayerState::AAssassinsPlayerState(const FObjectInitializer& ObjectIni
     : Super(ObjectInitializer)
 {
     AbilitySystemComponent = ObjectInitializer.CreateDefaultSubobject<UAssassinsAbilitySystemComponent>(this, TEXT("AbilitySystemComponent"));
+    AbilitySystemComponent->SetIsReplicated(true);
+    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
     // These attribute sets will be detected by AbilitySystemComponent::InitializeComponent. Keeping a reference so that the sets don't get garbage collected before that.
     HealthSet = CreateDefaultSubobject<UAssassinsHealthSet>(TEXT("HealthSet"));
     CombatSet = CreateDefaultSubobject<UAssassinsCombatSet>(TEXT("CombatSet"));
+
+    // AbilitySystemComponent needs to be updated at a high frequency.
+    SetNetUpdateFrequency(100.0f);
     
     MyTeamID = FGenericTeamId::NoTeam;
 

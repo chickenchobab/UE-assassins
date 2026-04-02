@@ -71,11 +71,16 @@ public:
 
 protected:
 	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void ClearGameplayTags();
 
 	// Me: Functions bound to the delegates of the health set
 	virtual void HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
 	virtual void HandleOutOfHealth(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
+
+	UFUNCTION()
+	void OnRep_DeathState(EAssassinsDeathState OldDeathState);
 
 protected:
 
@@ -87,6 +92,6 @@ protected:
 	UPROPERTY()
 	TObjectPtr<const UAssassinsHealthSet> HealthSet;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_DeathState)
 	EAssassinsDeathState DeathState;
 };

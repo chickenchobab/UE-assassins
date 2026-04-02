@@ -164,6 +164,18 @@ void UAssassinsAbilitySystemComponent::ClearAbilityInput()
 	InputHeldSpecHandles.Reset();
 }
 
+void UAssassinsAbilitySystemComponent::TryActivateAbilitiesOnSpawn()
+{
+	ABILITYLIST_SCOPE_LOCK();
+	for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
+	{
+		if (const UAssassinsGameplayAbility* AssassinsAbilityCDO = Cast<UAssassinsGameplayAbility>(AbilitySpec.Ability))
+		{
+			AssassinsAbilityCDO->TryActivateAbilityOnSpawn(AbilityActorInfo.Get(), AbilitySpec);
+		}
+	}
+}
+
 void UAssassinsAbilitySystemComponent::K2_CancelAbilities(FGameplayTag WithTag, FGameplayTag WithoutTag)
 {
 	FGameplayTagContainer WithTags(WithTag);

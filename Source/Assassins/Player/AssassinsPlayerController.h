@@ -45,6 +45,7 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 	virtual void StopMovement() override;
+	virtual void OnRep_PlayerState() override;
 	//~End of AController interface
 
 	//~APlayerController interface

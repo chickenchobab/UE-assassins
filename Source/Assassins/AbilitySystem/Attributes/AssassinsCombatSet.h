@@ -42,35 +42,35 @@ protected:
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 	//~End of UAttributeSet interface
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 private:
 
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AttackDamage, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData AttackDamage;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AbilityPower, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData AbilityPower;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Armor, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData Armor;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MagicResistance, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MagicResistance;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ArmorPenetrationPercent, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData ArmorPenetrationPercent;
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ArmorPenetrationFlat, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData ArmorPenetrationFlat;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MagicPenetrationPercent, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MagicPenetrationPercent;
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MagicPenetrationFlat, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MagicPenetrationFlat;
 
 	// Me: The number of attack available per second
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AttackSpeed, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData AttackSpeed;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_MoveSpeed, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MoveSpeed;
 
 	float MoveSpeedBeforeAttributeChanged;
@@ -87,4 +87,30 @@ private:
 
     UPROPERTY(BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = true, HideFromModifiers))
     FGameplayAttributeData TrueDamage;
+
+private:
+
+	UFUNCTION()
+	void OnRep_AttackDamage(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_AbilityPower(const FGameplayAttributeData& OldValue);
+
+	UFUNCTION()
+	void OnRep_Armor(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_MagicResistance(const FGameplayAttributeData& OldValue);
+
+	UFUNCTION()
+	void OnRep_ArmorPenetrationFlat(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_ArmorPenetrationPercent(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_MagicPenetrationFlat(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_MagicPenetrationPercent(const FGameplayAttributeData& OldValue);
+
+	UFUNCTION()
+	void OnRep_AttackSpeed(const FGameplayAttributeData& OldValue);
+	UFUNCTION()
+	void OnRep_MoveSpeed(const FGameplayAttributeData& OldValue);
 };
