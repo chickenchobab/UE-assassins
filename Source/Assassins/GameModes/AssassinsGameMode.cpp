@@ -476,11 +476,6 @@ void AAssassinsGameMode::TryServerTravelToGameMap()
 		}
 	}
 
-	if (NumBotsToCreate != 0 && NumReadyPlayers < MaxNumPlayers)
-	{
-		return;
-	}
-
 	/*if (GetNetMode() != ENetMode::NM_Standalone)
 	{
 		if (UAssassinsGameInstance* GameInstance = GetGameInstance<UAssassinsGameInstance>())
