@@ -17,5 +17,5 @@ class ASSASSINS_API UAssassinsLocalPlayer : public UCommonLocalPlayer
 	
 public:
 
-	void CallAndRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate&& Delegate);
+	void CallOrRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate&& Delegate);
 };

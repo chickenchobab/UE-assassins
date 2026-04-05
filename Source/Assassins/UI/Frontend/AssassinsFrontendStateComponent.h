@@ -33,6 +33,8 @@ public:
 	virtual bool ShouldShowLoadingScreen(FString& OutReason) const override;
 	//~End of ILoadingProcessInterface interface
 
+	void CallOrRegister_ShowChampionSelectionScreen();
+
 	UFUNCTION(BlueprintImplementableEvent, Category = ChampionSelection)
 	void UpdateChampionSelectionScreen(const FPrimaryAssetId& ChampionRef, bool bIsChampionEnabled);
 
@@ -55,6 +57,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = UI)
 	TSoftClassPtr<UCommonActivatableWidget> MainScreenClass;
+
+	bool bShouldRegisterShowChampionSelection = true;
+
 	UPROPERTY(EditAnywhere, Category = UI)
 	TSoftClassPtr<UCommonActivatableWidget> ChampionSelectionScreenClass;
 

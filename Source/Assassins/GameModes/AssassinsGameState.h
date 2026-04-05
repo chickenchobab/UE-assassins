@@ -41,11 +41,14 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_OnChampionSelectionChanged(const FPrimaryAssetId& ChampionAssetId, bool bAdded);
 
+	UFUNCTION()
+	void OnRep_bInLobby();
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Assassins|GameState")
 	TObjectPtr<UAssassinsExperienceStateComponent> ExperienceComponent;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_bInLobby)
 	bool bInLobby;
 
 	// Array of references for champion selected in the lobby

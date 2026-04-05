@@ -85,6 +85,18 @@ void AAssassinsGameState::RemoveSelectedChampion(const UAssassinsPawnData* InPaw
 	}
 }
 
+void AAssassinsGameState::OnRep_bInLobby()
+{
+	// Do what the frontend component might have omitted due to the late replication of bInLobby
+	if (ExperienceComponent && ExperienceComponent->IsExperienceLoaded())
+	{
+		if (UAssassinsFrontendStateComponent* FrontendComponent = FindComponentByClass<UAssassinsFrontendStateComponent>())
+		{
+			FrontendComponent->CallOrRegister_ShowChampionSelectionScreen();
+		}
+	}
+}
+
 void AAssassinsGameState::Multicast_OnChampionSelectionChanged_Implementation(const FPrimaryAssetId& ChampionAssetId, bool bSelected)
 {
 	if (bSelected)
@@ -99,6 +111,6 @@ void AAssassinsGameState::Multicast_OnChampionSelectionChanged_Implementation(co
 	if (UAssassinsFrontendStateComponent* FrontendComponent = FindComponentByClass<UAssassinsFrontendStateComponent>())
 	{
 		// Activate or deactivate the champion button.
-		FrontendComponent->UpdateChampionSelectionScreen(ChampionAssetId, bSelected);
+		FrontendComponent->UpdateChampionSelectionScreen(ChampionAssetId, !bSelected);
 	}
 }

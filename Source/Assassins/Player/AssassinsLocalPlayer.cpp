@@ -5,17 +5,28 @@
 #include "Player/AssassinsPlayerController.h"
 #include "Character/AssassinsCharacter.h"
 
-void UAssassinsLocalPlayer::CallAndRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate&& Delegate)
+void UAssassinsLocalPlayer::CallOrRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate&& Delegate)
 {
-	if (AAssassinsPlayerController* PC = Cast<AAssassinsPlayerController>(GetPlayerController(GetWorld())))
+	auto CallAndRegisterDelegate = [Delegate = MoveTemp(Delegate)](APlayerController* PC) mutable {
+		if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(PC))
+		{
+			if (AssassinsPC->GetPlayerRestarted())
+			{
+				Delegate.ExecuteIfBound(AssassinsPC->GetCharacter());
+			}
+			else
+			{
+				AssassinsPC->OnPlayerRestarted.Add(Delegate);
+			}
+		}
+	};
+
+	if (APlayerController* PC = GetPlayerController(GetWorld()))
 	{
-		if (PC->GetPlayerRestarted())
-		{
-			Delegate.Execute(PC->GetCharacter());
-		}
-		else
-		{
-			PC->OnPlayerRestarted.Add(MoveTemp(Delegate));
-		}
+		CallAndRegisterDelegate(PC);
+	}
+	else
+	{
+		OnPlayerControllerChanged().AddLambda(CallAndRegisterDelegate);
 	}
 }

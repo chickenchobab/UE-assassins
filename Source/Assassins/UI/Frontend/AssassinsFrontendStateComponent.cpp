@@ -13,6 +13,7 @@
 #include "System/AssassinsGameInstance.h"
 #include "Player/AssassinsPlayerState.h"
 #include "Player/AssassinsLocalPlayer.h"
+#include "AssassinsLogCategories.h"
 
 namespace FrontendTags
 {
@@ -63,19 +64,27 @@ bool UAssassinsFrontendStateComponent::ShouldShowLoadingScreen(FString& OutReaso
     return true;
 }
 
+void UAssassinsFrontendStateComponent::CallOrRegister_ShowChampionSelectionScreen()
+{
+    if (bShouldRegisterShowChampionSelection)
+    {
+        bShouldRegisterShowChampionSelection = false;
+
+        UAssassinsLocalPlayer* LocalPlayer = Cast<UAssassinsLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+        check(LocalPlayer);
+        LocalPlayer->CallOrRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate::CreateWeakLambda(this, [this](ACharacter*) {
+            TryShowChampionSelectionScreen();
+        }));
+    }
+}
+
 void UAssassinsFrontendStateComponent::OnExperienceLoaded(const UAssassinsExperienceDefinition* Experience)
 {
     AAssassinsGameState* GameState = GetGameStateChecked<AAssassinsGameState>();
     if (GameState->IsGameInLobby())
     {
-        // Bind the function for it to be called after ReceivedPlayer(). (see game UI policy)
-        if (UAssassinsLocalPlayer* LocalPlayer = Cast<UAssassinsLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController()))
-        {
-            LocalPlayer->CallAndRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate::CreateWeakLambda(this, [this](ACharacter*) {
-                TryShowChampionSelectionScreen();
-            }));
-        }
-
+        // Make sure the champion selection screen is shown on the player pawn restarted
+        CallOrRegister_ShowChampionSelectionScreen();
         return; // User has already been initialized.
     }
 
