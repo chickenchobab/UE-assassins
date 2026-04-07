@@ -26,6 +26,7 @@ public:
 
 	//~UCharacterMovementComponent interface
 	virtual void PhysCustom(float deltaTime, int32 Iterations) override;
+	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
 	//~End of UCharacterMovementComponent interface
 
 	void PhysDashing(float deltaTime, int32 Iterations);

@@ -26,6 +26,17 @@ void UAssassinsCharacterMovementComponent::PhysCustom(float deltaTime, int32 Ite
 	}
 }
 
+FNetworkPredictionData_Client* UAssassinsCharacterMovementComponent::GetPredictionData_Client() const
+{
+	if (ClientPredictionData == nullptr)
+	{
+		UAssassinsCharacterMovementComponent* MutableThis = const_cast<UAssassinsCharacterMovementComponent*>(this);
+		MutableThis->ClientPredictionData = new FNetworkPredictionData_Client_AssassinsCharacter(*this);
+	}
+
+	return ClientPredictionData;
+}
+
 void UAssassinsCharacterMovementComponent::PhysDashing(float deltaTime, int32 Iterations)
 {
 	if (deltaTime < MIN_TICK_TIME)
