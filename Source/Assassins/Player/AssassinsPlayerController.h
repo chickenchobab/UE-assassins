@@ -14,9 +14,10 @@
 class UInputAction;
 class UAssassinsAbilitySystemComponent;
 class UAssassinsTargetChasingComponent;
-class UCrowdFollowingComponent;
+class UPathFollowingComponent;
 struct FPathFollowingResult;
 struct FPathFollowingRequestResult;
+struct FMoveRequestForReachTest;
 
 namespace EPathFollowingResult { enum Type : int; }
 namespace EPathFollowingRequestResult { enum Type : int; }
@@ -25,7 +26,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMoveCompletedSignature, FAIRequestID, RequestID, EPathFollowingResult::Type, Result);
 DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerRestartedDelegate, ACharacter*);
-
 
 UCLASS()
 class AAssassinsPlayerController : public ACommonPlayerController, public IAssassinsTeamAgentInterface
@@ -67,8 +67,6 @@ public:
 	EPathFollowingRequestResult::Type MoveToLocation(const FVector& Dest, float AcceptanceRadius = -1);
 
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
-    void AbortMove();
-    UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void PauseMove();
 	UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
 	void ResumeMove();
@@ -77,6 +75,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "AI|Navigation")
 	bool HasMovePaused() const;
+
+	bool HasMoveReached(const FMoveRequestForReachTest& RequestForReachTest);
+	void NotifyMoveSuccess();
 
 	void SetAvoidanceGroup(int32 AvoidanceGroup);
 
@@ -90,6 +91,9 @@ public:
 protected:
 
 	void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result);
+
+	FAIMoveRequest FromReachTestRequest(const FMoveRequestForReachTest& ReachTestRequest);
+	FMoveRequestForReachTest ToReachTestRequest(const FAIMoveRequest& Request);
 	
 	///////////////////////////////////////////////////////////////
 	// AI controller functions for MoveToActor and MoveToLocation
@@ -111,16 +115,17 @@ protected:
 	FAIRequestID RequestMove(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr Path);
 
 private:
+
+	void SetMoveRequestOfCMC(FMoveRequestForReachTest ReachTestRequest, bool bShouldInitialize = true);
+
+private:
 	/** Component used for moving along a path. */
 	UPROPERTY(VisibleDefaultsOnly, Category = "AI|Navigation")
-	TObjectPtr<UCrowdFollowingComponent> CrowdFollowingComponent;
+	TObjectPtr<UPathFollowingComponent> PathFollowingComponent;
 
 	/** Blueprint notification that we've completed the current movement request */
 	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "MoveCompleted"))
 	FMoveCompletedSignature ReceiveMoveCompleted;
-
-	UPROPERTY(EditDefaultsOnly, Category = "DetourCrowdAvoidance")
-	float CollisionQueryRange;
 
 	bool bPlayerRestarted : 1;
 };

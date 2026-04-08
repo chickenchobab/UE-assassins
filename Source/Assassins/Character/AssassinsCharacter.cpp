@@ -60,6 +60,7 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 	GetCharacterMovement()->MaxAcceleration = 100000.f; // Me: For instant attainment of the specified speed(combat set)
 	GetCharacterMovement()->GetNavMovementProperties()->bUseFixedBrakingDistanceForPaths = true;
 	GetCharacterMovement()->GetNavMovementProperties()->FixedPathBrakingDistance = 0; // Me: For instant stop after navigation
+	GetCharacterMovement()->GetNavMovementProperties()->bUseAccelerationForPaths = true;
 
 	// Create a camera...
 	CameraComponent = CreateDefaultSubobject<UAssassinsCameraComponent>(TEXT("CameraComponent"));
