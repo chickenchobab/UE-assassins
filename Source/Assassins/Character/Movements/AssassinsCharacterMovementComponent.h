@@ -85,8 +85,9 @@ public:
 
 struct FAssassinsCharacterNetworkMoveData : public FCharacterNetworkMoveData
 {
-public:
+	typedef FCharacterNetworkMoveData Super;
 
+public:
 	FAssassinsCharacterNetworkMoveData();
 
 	virtual void ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType) override;
@@ -104,6 +105,17 @@ public:
 private:
 
 	FAssassinsCharacterNetworkMoveData AssassinsMoveData[3];
+};
+
+struct FAssassinsCharacterMoveResponseDataContainer : public FCharacterMoveResponseDataContainer
+{
+	typedef FCharacterMoveResponseDataContainer Super;
+
+public:
+	FAssassinsCharacterMoveResponseDataContainer();
+
+	virtual void ServerFillResponseData(const UCharacterMovementComponent& CharacterMovement, const FClientAdjustment& PendingAdjustment) override;
+	virtual bool Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap) override;
 };
 
 UENUM(BlueprintType)
@@ -129,6 +141,7 @@ public:
 	virtual void MoveAutonomous(float ClientTimeStamp, float DeltaTime, uint8 CompressedFlags, const FVector& NewAccel) override;
 	virtual void PhysCustom(float deltaTime, int32 Iterations) override;
 	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
+	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
 	//~End of UCharacterMovementComponent interface
 
 	// Path following component in the client calls the function
@@ -147,4 +160,5 @@ private:
 	float TimeStampForMoveRequestDone;
 
 	FAssassinsCharacterNetworkMoveDataContainer AssassinsNetworkMoveDataContainer;
+	FAssassinsCharacterMoveResponseDataContainer AssassinsMoveResponseDataContainer;
 };

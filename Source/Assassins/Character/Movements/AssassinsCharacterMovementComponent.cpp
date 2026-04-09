@@ -13,7 +13,7 @@ FMoveRequestForReachTest::FMoveRequestForReachTest()
 	RequestTimeStamp = 0.0f;
 
 	bMoveToActor = false;
-	GoalActor = nullptr;
+	GoalActor = nullptr; 
 }
 
 bool FMoveRequestForReachTest::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
@@ -61,15 +61,13 @@ UAssassinsCharacterMovementComponent::UAssassinsCharacterMovementComponent(const
 	TimeStampForMoveRequestDone = 0.0f;
 
 	SetNetworkMoveDataContainer(AssassinsNetworkMoveDataContainer);
+	SetMoveResponseDataContainer(AssassinsMoveResponseDataContainer);
 }
 
 void UAssassinsCharacterMovementComponent::MoveAutonomous(float ClientTimeStamp, float DeltaTime, uint8 CompressedFlags, const FVector& NewAccel)
 {
 	AActor* MyOwner = GetOwner();
 	check(MyOwner);
-
-	NetworkMaxSmoothUpdateDistance = 512.0f;
-	NetworkNoSmoothUpdateDistance = 640.0f;
 
 	const bool bIsServerForAutonomousProxy = MyOwner->HasAuthority() && MyOwner->GetRemoteRole() == ROLE_AutonomousProxy;
 	if (!bIsServerForAutonomousProxy)
@@ -95,9 +93,6 @@ void UAssassinsCharacterMovementComponent::MoveAutonomous(float ClientTimeStamp,
 
 		AssassinsPC->NotifyMoveSuccess();
 		UE_LOG(LogAssassins, Display, TEXT("Request at [%f] has been already done so zeros the velocity and the acceleration"), TimeStampForMoveRequestDone);
-
-		NetworkMaxSmoothUpdateDistance = 256.0f;
-		NetworkNoSmoothUpdateDistance = 384.0f;
 
 		Velocity = FVector::ZeroVector;
 		Super::MoveAutonomous(ClientTimeStamp, DeltaTime, CompressedFlags, FVector::ZeroVector);
@@ -133,6 +128,13 @@ FNetworkPredictionData_Client* UAssassinsCharacterMovementComponent::GetPredicti
 	return ClientPredictionData;
 }
 
+void UAssassinsCharacterMovementComponent::ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse)
+{
+	const FAssassinsCharacterMoveResponseDataContainer& AssassinsMoveResponse = static_cast<const FAssassinsCharacterMoveResponseDataContainer&>(MoveResponse);
+
+	Super::ClientHandleMoveResponse(MoveResponse);
+}
+
 void UAssassinsCharacterMovementComponent::SetMoveRequest(const FMoveRequestForReachTest& ReachTestRequest)
 {
 	MoveRequest = ReachTestRequest;
@@ -162,6 +164,10 @@ void UAssassinsCharacterMovementComponent::PhysDashing(float deltaTime, int32 It
 		Velocity = (UpdatedComponent->GetComponentLocation() - OldLocation) / deltaTime;
 	}
 }
+
+///////////////////////////////////////////////////////////////////
+// Saved move
+///////////////////////////////////////////////////////////////////
 
 FSavedMove_AssassinsCharacter::FSavedMove_AssassinsCharacter()
 {
@@ -229,13 +235,17 @@ FSavedMovePtr FNetworkPredictionData_Client_AssassinsCharacter::AllocateNewMove(
 	return FSavedMovePtr(new FSavedMove_AssassinsCharacter());
 }
 
+/////////////////////////////////////////////////////////////////////////
+/// Data transferred between server and client
+/////////////////////////////////////////////////////////////////////////
+
 FAssassinsCharacterNetworkMoveData::FAssassinsCharacterNetworkMoveData()
 {
 }
 
 void FAssassinsCharacterNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType)
 {
-	FCharacterNetworkMoveData::ClientFillNetworkMoveData(ClientMove, MoveType);
+	Super::ClientFillNetworkMoveData(ClientMove, MoveType);
 
 	const FSavedMove_AssassinsCharacter& SavedMove = static_cast<const FSavedMove_AssassinsCharacter&>(ClientMove);
 
@@ -246,7 +256,7 @@ bool FAssassinsCharacterNetworkMoveData::Serialize(UCharacterMovementComponent& 
 {
 	bool bLocalSuccess = true;
 
-	if (FCharacterNetworkMoveData::Serialize(CharacterMovement, Ar, PackageMap, MoveType)) // 244
+	if (Super::Serialize(CharacterMovement, Ar, PackageMap, MoveType))
 	{
 		MoveRequest.NetSerialize(Ar, PackageMap, bLocalSuccess);
 	}
@@ -259,4 +269,18 @@ FAssassinsCharacterNetworkMoveDataContainer::FAssassinsCharacterNetworkMoveDataC
 	NewMoveData = &AssassinsMoveData[0];
 	PendingMoveData = &AssassinsMoveData[1];
 	OldMoveData = &AssassinsMoveData[2];
+}
+
+FAssassinsCharacterMoveResponseDataContainer::FAssassinsCharacterMoveResponseDataContainer()
+{
+}
+
+void FAssassinsCharacterMoveResponseDataContainer::ServerFillResponseData(const UCharacterMovementComponent& CharacterMovement, const FClientAdjustment& PendingAdjustment)
+{
+	Super::ServerFillResponseData(CharacterMovement, PendingAdjustment);
+}
+
+bool FAssassinsCharacterMoveResponseDataContainer::Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap)
+{
+	return Super::Serialize(CharacterMovement, Ar, PackageMap);
 }
