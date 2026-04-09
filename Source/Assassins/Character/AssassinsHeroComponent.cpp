@@ -14,7 +14,6 @@
 #include "InputMappingContext.h"
 #include "Input/AssassinsInputComponent.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
-#include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "NiagaraFunctionLibrary.h"
 #include "UI/AssassinsGameViewportClient.h"
 #include "GameModes/AssassinsGameState.h"
@@ -330,19 +329,17 @@ void UAssassinsHeroComponent::OnSetDestinationReleased()
     // dummy input action is added to override the action bound to this function whenever 
     // imput mapping contexts are switched due to the cursor.
 
-	// If it was a short press
+	// If it was a short press, we move there and spawn some particles
 	if (FollowTime <= ShortPressThreshold)
 	{
-		// We move there and spawn some particles
 		CachedPlayerController->MoveToLocation(CachedDestination);
+
         if (!CanMove())
         {
-            if (CachedPlayerController)
-            {
-                // Me: Reserve movement 
-                CachedPlayerController->PauseMove();
-            }
+			// Me: Reserve movement 
+			CachedPlayerController->PauseMove();
         }
+
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CachedDestination, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
 	}
 
@@ -390,12 +387,14 @@ TSubclassOf<UAssassinsCameraMode> UAssassinsHeroComponent::DetermineCameraMode()
 	return nullptr;
 }
 
-void UAssassinsHeroComponent::HandleCursorTargetSet(AAssassinsCharacter* CursorTarget)
+void UAssassinsHeroComponent::HandleCursorTargetSet(AActor* TargetActor)
 {
-	if (CursorTarget == nullptr)
+	if (TargetActor == nullptr)
 	{
 		return;
 	}
+
+	CursorTarget = TargetActor;
 
 	check(CachedPlayerController);
 	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Crosshairs;
@@ -410,15 +409,12 @@ void UAssassinsHeroComponent::HandleCursorTargetSet(AAssassinsCharacter* CursorT
 	{
 		Subsystem->AddMappingContext(AttackInputMapping, 1);
 	}
-
-	if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(GetPawn<APawn>()))
-	{
-		PlayerCharacter->SetAbilityTarget(CursorTarget);
-	}
 }
 
 void UAssassinsHeroComponent::HandleCursorTargetCleared()
 {
+	CursorTarget = nullptr;
+
 	check(CachedPlayerController);
 	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Default;
 
@@ -431,11 +427,6 @@ void UAssassinsHeroComponent::HandleCursorTargetCleared()
 	if (AttackInputMapping)
 	{
 		Subsystem->RemoveMappingContext(AttackInputMapping);
-	}
-
-	if (AAssassinsCharacter* PlayerCharacter = Cast<AAssassinsCharacter>(GetPawn<APawn>()))
-	{
-		PlayerCharacter->ClearAbilityTarget();
 	}
 }
 

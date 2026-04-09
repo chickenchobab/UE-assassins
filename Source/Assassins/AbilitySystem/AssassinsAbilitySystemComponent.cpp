@@ -8,11 +8,20 @@
 #include "System/AssassinsGameData.h"
 #include "AssassinsGameplayTags.h"
 #include "Animation/AssassinsAnimInstance.h"
+#include "Character/AssassinsHeroComponent.h"
+#include "Net/UnrealNetwork.h"
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_EVENT_ABILITYINPUT, "Event.AbilityInput");
 
 UAssassinsAbilitySystemComponent::UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	CurrentEventTag = TAG_EVENT_ABILITYINPUT;
+}
 
+void UAssassinsAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
 }
 
 void UAssassinsAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
@@ -37,6 +46,20 @@ void UAssassinsAbilitySystemComponent::ApplyAbilityBlockAndCancelTags(const FGam
 	{
 		CancelAbilitiesWithCancelledByTag(&AbilityTags, RequestingAbility);
 	}
+}
+
+int32 UAssassinsAbilitySystemComponent::HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload)
+{
+	const FGameplayTag Tag = CurrentEventTag;
+	CurrentEventTag = EventTag;
+
+	// CurrentEventTag is used by the activated ability to know whether
+	// it is triggered by input or not
+	int32 ReturnValue = Super::HandleGameplayEvent(EventTag, Payload);
+
+	CurrentEventTag = Tag;
+
+	return ReturnValue;
 }
 
 void UAssassinsAbilitySystemComponent::AbilityInputTagPressed(FGameplayTag& InputTag)
@@ -125,10 +148,30 @@ void UAssassinsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool
 	// Try to activate all the abilities that from presses and holds.
 	// We do it all at once so that held inputs don't activate the ability
 	// and then also send a input event to the ability because of the press.
-	//
+	// Set cursor info to the hit results of event data for
+	// the replicated abilities in the server to have the same cursor info.
+
+	FGameplayEventData EventData;
+	EventData.ContextHandle = MakeEffectContext();
+	FHitResult GroundHit;
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (PC->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, GroundHit))
+		{
+			EventData.ContextHandle.AddHitResult(GroundHit);
+		}
+	}
+	EventData.Target = GetCursorTargetFromHeroComponent();
+
 	for (const FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitiesToActivate)
 	{
-		TryActivateAbility(AbilitySpecHandle);
+		TriggerAbilityFromGameplayEvent(
+			AbilitySpecHandle,
+			AbilityActorInfo.Get(),
+			TAG_EVENT_ABILITYINPUT,
+			&EventData,
+			*this
+		);
 	}
 
 	//
@@ -162,6 +205,35 @@ void UAssassinsAbilitySystemComponent::ClearAbilityInput()
 	InputPressedSpecHandles.Reset();
 	InputReleasedSpecHandles.Reset();
 	InputHeldSpecHandles.Reset();
+}
+
+bool UAssassinsAbilitySystemComponent::IsCurrentEventAbilityInput() const
+{
+	return CurrentEventTag == TAG_EVENT_ABILITYINPUT;
+}
+
+AActor* UAssassinsAbilitySystemComponent::GetCursorTargetFromHeroComponent() const
+{
+	// This function is not for an ability activation time(the initial cursor position is handled to the ability spec), 
+	// but for dynamic cursor logic in runtime, like triggering another ability that requires new cursor position or interacting with some objects. 
+
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		if (!PC->IsLocalController())
+		{
+			return nullptr;
+		}
+	}
+
+	if (AActor* MyAvatarActor = GetAvatarActor())
+	{
+		if (UAssassinsHeroComponent* HeroComponent = MyAvatarActor->FindComponentByClass<UAssassinsHeroComponent>())
+		{
+			return HeroComponent->GetCursorTarget();
+		}
+	}
+
+	return nullptr;
 }
 
 void UAssassinsAbilitySystemComponent::TryActivateAbilitiesOnSpawn()

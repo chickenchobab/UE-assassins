@@ -15,7 +15,7 @@ enum class ECardinalDirection : uint8
 	Right
 };
 
-DECLARE_DELEGATE_OneParam(FAssassinsOnCursorTargetSet, AAssassinsCharacter*);
+DECLARE_DELEGATE_OneParam(FAssassinsOnCursorTargetSet, AActor*);
 DECLARE_DELEGATE(FAssassinsOnCursorTargetCleared);
 DECLARE_MULTICAST_DELEGATE_OneParam(FAssassinsOnCursorAtViewportEdge, ECardinalDirection);
 

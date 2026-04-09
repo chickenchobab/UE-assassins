@@ -3,7 +3,9 @@
 
 #include "AbilitySystem/Abilities/AssassinsGameplayAbility.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "AbilitySystem/AssassinsTargetChasingComponent.h"
 #include "Character/AssassinsCharacter.h"
+#include "Character/AssassinsHeroComponent.h"
 #include "Player/AssassinsPlayerController.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Teams/AssassinsTeamSubsystem.h"
@@ -95,6 +97,31 @@ void UAssassinsGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Hand
     CancelledByTags.Reset();
 
     Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+UAssassinsTargetChasingComponent* UAssassinsGameplayAbility::GetTargetChasingComponentFromController() const
+{
+    if (AController* C = GetControllerFromActorInfo())
+    {
+        return C->FindComponentByClass<UAssassinsTargetChasingComponent>();
+    }
+
+    return nullptr;
+}
+
+AActor* UAssassinsGameplayAbility::GetCurrentCursorTarget() const
+{
+    if (UAssassinsAbilitySystemComponent* ASC = GetAssassinsAbilitySystemComponentFromActorInfo())
+    {
+        return ASC->GetCursorTargetFromHeroComponent();
+    }
+
+    return nullptr;
+}
+
+bool UAssassinsGameplayAbility::IsInputTriggered() const
+{
+    return GetAssassinsAbilitySystemComponentFromActorInfo()->IsCurrentEventAbilityInput();
 }
 
 void UAssassinsGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const

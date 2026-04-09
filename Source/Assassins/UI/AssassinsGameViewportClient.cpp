@@ -17,16 +17,9 @@ void UAssassinsGameViewportClient::MouseMove(FViewport* InViewport, int32 X, int
 		bHitSuccessful = PC->GetHitResultUnderCursor(ECollisionChannel::ECC_GameTraceChannel1 /*targeting trace*/, true, Hit);
 	}
 
-	AAssassinsCharacter* CursorTarget = nullptr;
-
 	if (bHitSuccessful)
 	{
-		CursorTarget = Cast<AAssassinsCharacter>(Hit.GetActor());
-	}
-
-	if (CursorTarget)
-	{
-		OnCursorTargetSet.ExecuteIfBound(CursorTarget);
+		OnCursorTargetSet.ExecuteIfBound(Hit.GetActor());
 	}
 	else
 	{

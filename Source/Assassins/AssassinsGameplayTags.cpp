@@ -9,6 +9,7 @@ namespace AssassinsGameplayTags
 
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_SetDestination_Click, "InputTag.SetDestination.Click");
 
+	UE_DEFINE_GAMEPLAY_TAG(Event_AbilityInput, "Event.AbilityInput");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Death, "Event.Death");
 
     UE_DEFINE_GAMEPLAY_TAG(Status_Channeling, "Status.Channeling");
@@ -26,5 +27,4 @@ namespace AssassinsGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(UI_Layer_GameMenu, "UI.Layer.GameMenu", "Menus specifically related to gameplay, like maybe an in game inventory UI");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(UI_Layer_Menu, "UI.Layer.Menu", "Thing like the settings screen");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(UI_Layer_Modal, "UI.Layer.Modal", "Confirmation dialogs. error dialogs");
-
 };

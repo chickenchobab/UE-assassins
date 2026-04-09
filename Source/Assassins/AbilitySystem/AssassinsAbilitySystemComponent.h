@@ -7,8 +7,9 @@
 
 #include "AssassinsAbilitySystemComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBeginStatusDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEndStatusDelegate, bool, bResumePaused);
+class UAssassinsHeroComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTargetChasingCompleted);
 
 /**
  * 
@@ -22,9 +23,12 @@ public:
 
 	UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer);
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	//~UAbilitySystemComponent interface
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 	virtual void ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) override;
+	virtual int32 HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload) override;
 	//~End of UAbilitySystemComponent interface
 
 	void AbilityInputTagPressed(FGameplayTag& InputTag);
@@ -32,6 +36,10 @@ public:
 
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
+
+	bool IsCurrentEventAbilityInput() const;
+
+	AActor* GetCursorTargetFromHeroComponent() const;
 
 	void TryActivateAbilitiesOnSpawn();
 
@@ -48,14 +56,10 @@ public:
 	void RemoveDynamicTagGameplayEffect(FGameplayTag Tag);
 
 public:
-
-    // Me: Delegates for status changes, which are called in anim notifies
-
-    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Assassins|Status")
-    FOnBeginStatusDelegate OnBeginChanneling;
-    UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Assassins|Status")
-    FOnEndStatusDelegate OnEndChanneling;
-
+	
+	UPROPERTY(BlueprintAssignable, Category = "Assassins|Ability")
+	FOnTargetChasingCompleted OnTargetChasingCompleted;
+		 
 protected:
 
 	virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
@@ -71,4 +75,9 @@ protected:
 
 	// Handles to abilities that have their input held.
 	TArray<FGameplayAbilitySpecHandle> InputHeldSpecHandles;
+
+private:
+
+	UPROPERTY(Transient)
+	FGameplayTag CurrentEventTag;
 };

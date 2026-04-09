@@ -58,6 +58,15 @@ public:
 
 	const FGameplayTagContainer& GetCancelledByTags() const { return CancelledByTags; }
 
+	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
+	UAssassinsTargetChasingComponent* GetTargetChasingComponentFromController() const;
+
+	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
+	AActor* GetCurrentCursorTarget() const;
+
+	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
+	bool IsInputTriggered() const;
+
 	void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
 
 protected:

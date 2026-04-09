@@ -57,10 +57,6 @@ public:
 	/** Returns TopDownCameraComponent subobject **/
 	FORCEINLINE class UAssassinsCameraComponent* GetAssassinsCameraComponent() const { return CameraComponent; }
 
-	FORCEINLINE AAssassinsCharacter* GetAbilityTarget() const { return (AbilityTarget.IsValid() ? AbilityTarget.Get() : nullptr); }
-	FORCEINLINE void SetAbilityTarget(AAssassinsCharacter* Target) { AbilityTarget = Target; }
-	FORCEINLINE void ClearAbilityTarget() { AbilityTarget = nullptr; }
-
 public:
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -137,10 +133,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Character")
 	TArray<TObjectPtr<UAnimMontage>> DeathMontages;
-
-	//Me: Target of abilities set when the mouse cursor is on it.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Combat", Meta = (AllowPrivateAccess = "true"))
-	TWeakObjectPtr<AAssassinsCharacter> AbilityTarget;
 
 private:
 	

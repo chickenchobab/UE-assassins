@@ -40,6 +40,8 @@ public:
 	virtual void CheckDefaultInitialization() override;
 	//~ End IGameFrameworkInitStateInterface interface
 
+	FORCEINLINE AActor* GetCursorTarget() const { return CursorTarget.IsValid() ? CursorTarget.Get() : nullptr; }
+
 public:
 	/** Time Threshold to know if it was a short press */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -69,7 +71,7 @@ protected:
 	TSubclassOf<UAssassinsCameraMode> DetermineCameraMode() const;
 
 	//Me: Handle cursor position changes w.r.t ability target
-	void HandleCursorTargetSet(AAssassinsCharacter* CursorTarget);
+	void HandleCursorTargetSet(AActor* TargetActor);
 	void HandleCursorTargetCleared();
 
 protected:
@@ -99,4 +101,7 @@ private:
 
     UPROPERTY(EditDefaultsOnly)
     FGameplayTagContainer MoveCancelledAbilityTags;
+
+	UPROPERTY()
+	TWeakObjectPtr<AActor> CursorTarget;
 };
