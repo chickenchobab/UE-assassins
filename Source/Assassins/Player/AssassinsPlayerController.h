@@ -17,7 +17,6 @@ class UAssassinsTargetChasingComponent;
 class UPathFollowingComponent;
 struct FPathFollowingResult;
 struct FPathFollowingRequestResult;
-struct FMoveRequestForReachTest;
 
 namespace EPathFollowingResult { enum Type : int; }
 namespace EPathFollowingRequestResult { enum Type : int; }
@@ -61,6 +60,19 @@ public:
 	FORCEINLINE void SetPlayerRestarted(bool bRestarted) { bPlayerRestarted = bRestarted; }
 	FORCEINLINE bool GetPlayerRestarted() { return bPlayerRestarted; }
 
+	UFUNCTION(Server, Reliable)
+	void Server_MoveToActor(AActor* Goal, float AcceptRadius);
+	UFUNCTION(Server, Reliable)
+	void Server_MoveToLocation(const FVector& Dest, float AcceptanceRadius = -1);
+
+	UFUNCTION(Server, Reliable)
+	void Server_PauseMove();
+	UFUNCTION(Server, Reliable)
+	void Server_ResumeMove();
+
+	UFUNCTION(Server, Reliable)
+	void Server_StopMovement();
+
 	/** Makes AI go toward specified Goal actor(destination will be continuously updated), aborts any active path following */
 	EPathFollowingRequestResult::Type MoveToActor(AActor* Goal, float AcceptRadius);
 	/** Makes AI go toward specified Dest location, aborts any active path following */
@@ -70,13 +82,13 @@ public:
     void PauseMove();
 	UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
 	void ResumeMove();
+
     UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
     void ResetMoveState();
 
 	UFUNCTION(BlueprintPure, Category = "AI|Navigation")
 	bool HasMovePaused() const;
 
-	bool HasMoveReached(const FMoveRequestForReachTest& RequestForReachTest);
 	void NotifyMoveSuccess();
 
 	void SetAvoidanceGroup(int32 AvoidanceGroup);
@@ -91,9 +103,6 @@ public:
 protected:
 
 	void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result);
-
-	FAIMoveRequest FromReachTestRequest(const FMoveRequestForReachTest& ReachTestRequest);
-	FMoveRequestForReachTest ToReachTestRequest(const FAIMoveRequest& Request);
 	
 	///////////////////////////////////////////////////////////////
 	// AI controller functions for MoveToActor and MoveToLocation
@@ -113,10 +122,6 @@ protected:
 
 	/** Passes move request and path object to path following */
 	FAIRequestID RequestMove(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr Path);
-
-private:
-
-	void SetMoveRequestOfCMC(FMoveRequestForReachTest ReachTestRequest, bool bShouldInitialize = true);
 
 private:
 	/** Component used for moving along a path. */

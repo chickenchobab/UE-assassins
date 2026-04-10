@@ -28,7 +28,11 @@ const FName UAssassinsHeroComponent::NAME_BindInputsNow("BindInputsNow");
 UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	CachedDestination = FVector::ZeroVector;
+	NewDestination = FVector::ZeroVector;
+	RequestedDestination = FVector::ZeroVector;
+	DistinctInputThreshold = 3.0f;
+	bHasDistinctDestination = false;
+	bShouldStopMovement = false;
 	FollowTime = 0.f;
 
     MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Channeling);
@@ -280,32 +284,39 @@ void UAssassinsHeroComponent::OnInputStarted()
 
     CancelMoveCancelledAbilities();
 
-    if (CachedPlayerController)
-    {
-        CachedPlayerController->ResetMoveState();
-        CachedPlayerController->StopMovement();
-    }
+	bShouldStopMovement = true;
 }
 
 // Triggered every frame when the input is held down
 void UAssassinsHeroComponent::OnSetDestinationTriggered()
 {
+	check(CachedPlayerController);
+
 	// We flag that the input is being pressed
 	FollowTime += GetWorld()->GetDeltaSeconds();
 
 	// We look for the location in the world where the player has pressed the input
 	FHitResult Hit;
-	bool bHitSuccessful = false;
+	bool bHitSuccessful = CachedPlayerController->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
 
-	if (CachedPlayerController)
-	{
-		bHitSuccessful = CachedPlayerController->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, Hit);
-	}
-
-	// If we hit a surface, cache the location
 	if (bHitSuccessful)
 	{
-		CachedDestination = Hit.Location;
+		NewDestination = Hit.Location;
+		if (bShouldStopMovement)
+		{
+			// Distinct destination found so stop the existing movement
+			// Requested destination is set to zero whenever the followtime is shorter than the threshold on input released.
+			if (FVector::DistSquared2D(NewDestination, RequestedDestination) >= DistinctInputThreshold * DistinctInputThreshold)
+			{
+				CachedPlayerController->StopMovement();
+				if (!HasAuthority())
+				{
+					CachedPlayerController->Server_StopMovement();
+				}
+				bHasDistinctDestination = true;
+			}
+			bShouldStopMovement = false;
+		}
 	}
 
     if (!CanMove())
@@ -317,7 +328,7 @@ void UAssassinsHeroComponent::OnSetDestinationTriggered()
 	APawn* ControlledPawn = GetPawn<APawn>();
 	if (ControlledPawn != nullptr)
 	{
-		FVector WorldDirection = (CachedDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
+		FVector WorldDirection = (NewDestination - ControlledPawn->GetActorLocation()).GetSafeNormal();
 		// Me: This case RVO avoidance is used instead of detour(crowd) avoidance of the crowd following component.
 		ControlledPawn->AddMovementInput(WorldDirection, 1.0, false);
 	}
@@ -330,17 +341,34 @@ void UAssassinsHeroComponent::OnSetDestinationReleased()
     // imput mapping contexts are switched due to the cursor.
 
 	// If it was a short press, we move there and spawn some particles
-	if (FollowTime <= ShortPressThreshold)
+	if (CachedPlayerController && FollowTime <= ShortPressThreshold)
 	{
-		CachedPlayerController->MoveToLocation(CachedDestination);
+		if (bHasDistinctDestination)
+		{
+			CachedPlayerController->MoveToLocation(NewDestination);
+			if (!HasAuthority())
+			{
+				CachedPlayerController->Server_MoveToLocation(NewDestination);
+			}
+			
+			RequestedDestination = NewDestination;
+			bHasDistinctDestination = false;
 
-        if (!CanMove())
-        {
-			// Me: Reserve movement 
-			CachedPlayerController->PauseMove();
-        }
-
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, CachedDestination, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
+			if (!CanMove()) // Reserve movement
+			{
+				CachedPlayerController->PauseMove();
+				if (!HasAuthority())
+				{
+					CachedPlayerController->Server_PauseMove();
+				}
+			}
+		}
+		
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FXCursor, NewDestination, FRotator::ZeroRotator, FVector(1.f, 1.f, 1.f), true, true, ENCPoolMethod::None, true);
+	}
+	else
+	{
+		RequestedDestination = FVector::ZeroVector;
 	}
 
 	FollowTime = 0.f;

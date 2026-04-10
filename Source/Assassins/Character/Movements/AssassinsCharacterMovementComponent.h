@@ -5,53 +5,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AssassinsCharacterMovementComponent.generated.h"
 
-USTRUCT()
-struct FMoveRequestForReachTest
-{
-	GENERATED_BODY()
-
-	FMoveRequestForReachTest();
-
-	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess);
-
-	void Init(float TimeStamp);
-	bool IsValid() { return bIsValid; }
-
-	UPROPERTY()
-	bool bIsValid;
-
-	UPROPERTY()
-	float RequestTimeStamp;
-
-	UPROPERTY()
-	bool bMoveToActor;
-
-	UPROPERTY()
-	AActor* GoalActor;
-
-	UPROPERTY()
-	FVector GoalLocation;
-
-	UPROPERTY()
-	float AcceptanceRadius;
-
-	UPROPERTY(Transient)
-	bool bReachTestIncludesAgentRadius;
-
-	UPROPERTY(Transient)
-	bool bReachTestIncludesGoalRadius;
-};
-
-template<>
-struct TStructOpsTypeTraits<FMoveRequestForReachTest> : public TStructOpsTypeTraitsBase2<FMoveRequestForReachTest>
-{
-	enum
-	{
-		WithNetSerializer = true,
-		WithNetSharedSerialization = false // Because the struct is for server RPC.
-	};
-};
-
 class FSavedMove_AssassinsCharacter : public FSavedMove_Character
 {
 public:
@@ -68,8 +21,6 @@ public:
 	//~End of FSavedMove_Character interface
 
 	uint8 bIsDashing : 1;
-
-	FMoveRequestForReachTest MoveRequest;
 };
 
 class FNetworkPredictionData_Client_AssassinsCharacter : public FNetworkPredictionData_Client_Character
@@ -92,8 +43,6 @@ public:
 
 	virtual void ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType) override;
 	virtual bool Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType) override;
-
-	FMoveRequestForReachTest MoveRequest;
 };
 
 struct FAssassinsCharacterNetworkMoveDataContainer : public FCharacterNetworkMoveDataContainer
@@ -144,21 +93,13 @@ public:
 	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
 	//~End of UCharacterMovementComponent interface
 
-	// Path following component in the client calls the function
-	void SetMoveRequest(const FMoveRequestForReachTest& ReachTestRequest);
-
 public:
 
 	void PhysDashing(float deltaTime, int32 Iterations);
 
 	uint8 bIsDashing : 1;
 
-	FMoveRequestForReachTest MoveRequest;
-
 private:
-
-	float TimeStampForMoveRequestDone;
-
 	FAssassinsCharacterNetworkMoveDataContainer AssassinsNetworkMoveDataContainer;
 	FAssassinsCharacterMoveResponseDataContainer AssassinsMoveResponseDataContainer;
 };

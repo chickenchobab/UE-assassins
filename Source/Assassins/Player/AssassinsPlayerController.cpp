@@ -92,8 +92,6 @@ void AAssassinsPlayerController::StopMovement()
 {
 	ResetMoveState();
 
-	SetMoveRequestOfCMC(FMoveRequestForReachTest(), false);
-
 	// AbortMove is called
 	Super::StopMovement();
 }
@@ -180,16 +178,6 @@ bool AAssassinsPlayerController::HasMovePaused() const
     return (PathFollowingComponent && PathFollowingComponent->GetStatus() == EPathFollowingStatus::Paused);
 }
 
-bool AAssassinsPlayerController::HasMoveReached(const FMoveRequestForReachTest& RequestForReachTest)
-{
-	if (PathFollowingComponent)
-	{
-		return PathFollowingComponent->HasReached(FromReachTestRequest(RequestForReachTest));
-	}
-
-	return true;
-}
-
 void AAssassinsPlayerController::SetAvoidanceGroup(int32 AvoidanceGroup)
 {
 	if (APawn* PlayerPawn = GetPawn())
@@ -211,52 +199,6 @@ void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const F
 	}
 
 	UE_LOG(LogTemp, Display, TEXT("Move finished: %s"), *UEnum::GetValueAsString(Result.Code));
-	SetMoveRequestOfCMC(FMoveRequestForReachTest(), false);
-}
-
-FAIMoveRequest AAssassinsPlayerController::FromReachTestRequest(const FMoveRequestForReachTest& ReachTestRequest)
-{
-	FAIMoveRequest MoveReq;
-
-	if (ReachTestRequest.bMoveToActor)
-	{
-		MoveReq.SetGoalActor(ReachTestRequest.GoalActor);
-	}
-	else
-	{
-		MoveReq.SetGoalLocation(ReachTestRequest.GoalLocation);
-	}
-
-	MoveReq.SetAcceptanceRadius(ReachTestRequest.AcceptanceRadius);
-	MoveReq.SetReachTestIncludesAgentRadius(ReachTestRequest.bReachTestIncludesAgentRadius);
-	MoveReq.SetReachTestIncludesGoalRadius(ReachTestRequest.bReachTestIncludesGoalRadius);
-
-	return MoveReq;
-}
-
-FMoveRequestForReachTest AAssassinsPlayerController::ToReachTestRequest(const FAIMoveRequest& Request)
-{
-	FMoveRequestForReachTest ReachTestRequest;
-	if (!Request.IsValid())
-	{
-		return ReachTestRequest;
-	}
-
-	ReachTestRequest.bMoveToActor = Request.IsMoveToActorRequest();
-	if (ReachTestRequest.bMoveToActor)
-	{
-		ReachTestRequest.GoalActor = Request.GetGoalActor();
-	}
-	else
-	{
-		ReachTestRequest.GoalLocation = Request.GetGoalLocation();
-	}
-
-	ReachTestRequest.AcceptanceRadius = Request.GetAcceptanceRadius();
-	ReachTestRequest.bReachTestIncludesAgentRadius = Request.IsReachTestIncludingAgentRadius();
-	ReachTestRequest.bReachTestIncludesGoalRadius = Request.IsReachTestIncludingGoalRadius();
-
-	return ReachTestRequest;
 }
 
 EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor* Goal, float AcceptRadius)
@@ -266,8 +208,6 @@ EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToActor(AActor
 	{
 		PathFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest
 			, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
-
-		SetMoveRequestOfCMC(FMoveRequestForReachTest(), false);
 	}
 
 	FAIMoveRequest MoveReq(Goal);
@@ -287,8 +227,6 @@ EPathFollowingRequestResult::Type AAssassinsPlayerController::MoveToLocation(con
 	{
 		PathFollowingComponent->AbortMove(*this, FPathFollowingResultFlags::ForcedScript | FPathFollowingResultFlags::NewRequest
 			, FAIRequestID::CurrentRequest, EPathFollowingVelocityMode::Keep);
-
-		SetMoveRequestOfCMC(FMoveRequestForReachTest(), false);
 	}
 
 	FAIMoveRequest MoveReq(Dest);
@@ -384,8 +322,6 @@ FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequ
 				MergePaths(PathFollowingComponent->GetPath(), Path);
 			}
 
-			FMoveRequestForReachTest ReachTestRequest = ToReachTestRequest(MoveRequest);
-
 			const FAIRequestID RequestID = Path.IsValid() ? RequestMove(MoveRequest, Path) : FAIRequestID::InvalidRequest;
 			if (RequestID.IsValid())
 			{
@@ -396,8 +332,6 @@ FPathFollowingRequestResult AAssassinsPlayerController::MoveTo(const FAIMoveRequ
 				{
 					*OutPath = Path;
 				}
-
-				SetMoveRequestOfCMC(ReachTestRequest);
 			}
 		}
 	}
@@ -542,23 +476,27 @@ void AAssassinsPlayerController::NotifyMoveSuccess()
 	}
 }
 
-void AAssassinsPlayerController::SetMoveRequestOfCMC(FMoveRequestForReachTest ReachTestRequest, bool bShouldInitialize)
+void AAssassinsPlayerController::Server_MoveToActor_Implementation(AActor* Goal, float AcceptRadius)
 {
-	if (GetNetMode() != NM_Client)
-	{
-		return;
-	}
+	MoveToActor(Goal, AcceptRadius);
+}
 
-	if (bShouldInitialize)
-	{
-		ReachTestRequest.Init(GetWorld()->GetTimeSeconds());
-	}
+void AAssassinsPlayerController::Server_MoveToLocation_Implementation(const FVector& Dest, float AcceptanceRadius)
+{
+	MoveToLocation(Dest, AcceptanceRadius);
+}
 
-	if (ACharacter* MyCharacter = GetCharacter())
-	{
-		if (UAssassinsCharacterMovementComponent* AssassinsCMC = Cast<UAssassinsCharacterMovementComponent>(MyCharacter->GetCharacterMovement()))
-		{
-			AssassinsCMC->SetMoveRequest(ReachTestRequest);
-		}
-	}
+void AAssassinsPlayerController::Server_PauseMove_Implementation()
+{
+	PauseMove();
+}
+
+void AAssassinsPlayerController::Server_ResumeMove_Implementation()
+{
+	ResumeMove();
+}
+
+void AAssassinsPlayerController::Server_StopMovement_Implementation()
+{
+	StopMovement();
 }

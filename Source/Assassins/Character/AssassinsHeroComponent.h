@@ -92,7 +92,14 @@ private:
 	UPROPERTY()
 	TObjectPtr<AAssassinsPlayerController> CachedPlayerController;
 
-	FVector CachedDestination;
+	FVector NewDestination;
+	FVector RequestedDestination;
+
+	float DistinctInputThreshold;
+	bool bHasDistinctDestination;
+
+	bool bShouldStopMovement;
+	
 
 	float FollowTime; // For how long it has been pressed
 

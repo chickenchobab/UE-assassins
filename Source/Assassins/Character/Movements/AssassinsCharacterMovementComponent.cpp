@@ -7,58 +7,10 @@
 #include "Net/UnrealNetwork.h"
 #include "AssassinsLogCategories.h"
 
-FMoveRequestForReachTest::FMoveRequestForReachTest()
-{
-	bIsValid = false;
-	RequestTimeStamp = 0.0f;
-
-	bMoveToActor = false;
-	GoalActor = nullptr; 
-}
-
-bool FMoveRequestForReachTest::NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
-{
-	Ar << bIsValid;
-	if (!bIsValid)
-	{
-		return true;
-	}
-	Ar << RequestTimeStamp;
-
-	Ar << bMoveToActor;
-	if (bMoveToActor)
-	{
-		if (GoalActor)
-		{
-			UObject* GoalActorObject = GoalActor;
-			Map->SerializeObject(Ar, AActor::StaticClass(), GoalActorObject);
-		}
-	}
-	else
-	{
-		Ar << GoalLocation;
-	}
-
-	Ar << AcceptanceRadius;
-	Ar << bReachTestIncludesAgentRadius;
-	Ar << bReachTestIncludesGoalRadius;
-
-	return true;
-}
-
-void FMoveRequestForReachTest::Init(float TimeStamp)
-{
-	RequestTimeStamp = TimeStamp;
-
-	bIsValid = true;
-}
-
 UAssassinsCharacterMovementComponent::UAssassinsCharacterMovementComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	bIsDashing = 0;
-
-	TimeStampForMoveRequestDone = 0.0f;
 
 	SetNetworkMoveDataContainer(AssassinsNetworkMoveDataContainer);
 	SetMoveResponseDataContainer(AssassinsMoveResponseDataContainer);
@@ -66,40 +18,6 @@ UAssassinsCharacterMovementComponent::UAssassinsCharacterMovementComponent(const
 
 void UAssassinsCharacterMovementComponent::MoveAutonomous(float ClientTimeStamp, float DeltaTime, uint8 CompressedFlags, const FVector& NewAccel)
 {
-	AActor* MyOwner = GetOwner();
-	check(MyOwner);
-
-	const bool bIsServerForAutonomousProxy = MyOwner->HasAuthority() && MyOwner->GetRemoteRole() == ROLE_AutonomousProxy;
-	if (!bIsServerForAutonomousProxy)
-	{
-		Super::MoveAutonomous(ClientTimeStamp, DeltaTime, CompressedFlags, NewAccel);
-		return;
-	}
-
-	FAssassinsCharacterNetworkMoveData* MoveData = static_cast<FAssassinsCharacterNetworkMoveData*>(GetCurrentNetworkMoveData());
-	FMoveRequestForReachTest ReachTestRequest = MoveData ? MoveData->MoveRequest : FMoveRequestForReachTest();
-	if (!ReachTestRequest.IsValid())
-	{
-		Super::MoveAutonomous(ClientTimeStamp, DeltaTime, CompressedFlags, NewAccel);
-		return;
-	}
-
-	AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetController());
-	check(AssassinsPC);
-
-	if (ReachTestRequest.RequestTimeStamp <= TimeStampForMoveRequestDone || AssassinsPC->HasMoveReached(ReachTestRequest))
-	{
-		TimeStampForMoveRequestDone = FMath::Max(TimeStampForMoveRequestDone, ReachTestRequest.RequestTimeStamp);
-
-		AssassinsPC->NotifyMoveSuccess();
-		UE_LOG(LogAssassins, Display, TEXT("Request at [%f] has been already done so zeros the velocity and the acceleration"), TimeStampForMoveRequestDone);
-
-		Velocity = FVector::ZeroVector;
-		Super::MoveAutonomous(ClientTimeStamp, DeltaTime, CompressedFlags, FVector::ZeroVector);
-
-		return;
-	}
-
 	Super::MoveAutonomous(ClientTimeStamp, DeltaTime, CompressedFlags, NewAccel);
 }
 
@@ -133,11 +51,6 @@ void UAssassinsCharacterMovementComponent::ClientHandleMoveResponse(const FChara
 	const FAssassinsCharacterMoveResponseDataContainer& AssassinsMoveResponse = static_cast<const FAssassinsCharacterMoveResponseDataContainer&>(MoveResponse);
 
 	Super::ClientHandleMoveResponse(MoveResponse);
-}
-
-void UAssassinsCharacterMovementComponent::SetMoveRequest(const FMoveRequestForReachTest& ReachTestRequest)
-{
-	MoveRequest = ReachTestRequest;
 }
 
 void UAssassinsCharacterMovementComponent::PhysDashing(float deltaTime, int32 Iterations)
@@ -179,8 +92,6 @@ void FSavedMove_AssassinsCharacter::Clear()
 	Super::Clear();
 
 	bIsDashing = 0;
-
-	MoveRequest = FMoveRequestForReachTest();
 }
 
 void FSavedMove_AssassinsCharacter::SetMoveFor(ACharacter* C, float InDeltaTime, FVector const& NewAccel, FNetworkPredictionData_Client_Character& ClientData)
@@ -190,8 +101,6 @@ void FSavedMove_AssassinsCharacter::SetMoveFor(ACharacter* C, float InDeltaTime,
 	if (const UAssassinsCharacterMovementComponent* AssassinsCharacterMovement = Cast<UAssassinsCharacterMovementComponent>(C->GetCharacterMovement()))
 	{
 		bIsDashing = AssassinsCharacterMovement->bIsDashing;
-
-		MoveRequest = AssassinsCharacterMovement->MoveRequest;
 	}
 }
 
@@ -219,15 +128,12 @@ void FSavedMove_AssassinsCharacter::PrepMoveFor(ACharacter* C)
 	if (UAssassinsCharacterMovementComponent* AssassinsCharacterMovement = Cast<UAssassinsCharacterMovementComponent>(C->GetCharacterMovement()))
 	{
 		AssassinsCharacterMovement->bIsDashing = bIsDashing;
-
-		AssassinsCharacterMovement->MoveRequest = MoveRequest;
 	}
 }
 
 FNetworkPredictionData_Client_AssassinsCharacter::FNetworkPredictionData_Client_AssassinsCharacter(const UCharacterMovementComponent& ClientMovement)
 	: Super(ClientMovement)
 {
-
 }
 
 FSavedMovePtr FNetworkPredictionData_Client_AssassinsCharacter::AllocateNewMove()
@@ -248,20 +154,11 @@ void FAssassinsCharacterNetworkMoveData::ClientFillNetworkMoveData(const FSavedM
 	Super::ClientFillNetworkMoveData(ClientMove, MoveType);
 
 	const FSavedMove_AssassinsCharacter& SavedMove = static_cast<const FSavedMove_AssassinsCharacter&>(ClientMove);
-
-	MoveRequest = SavedMove.MoveRequest;
 }
 
 bool FAssassinsCharacterNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType)
 {
-	bool bLocalSuccess = true;
-
-	if (Super::Serialize(CharacterMovement, Ar, PackageMap, MoveType))
-	{
-		MoveRequest.NetSerialize(Ar, PackageMap, bLocalSuccess);
-	}
-
-	return !Ar.IsError();
+	return Super::Serialize(CharacterMovement, Ar, PackageMap, MoveType);
 }
 
 FAssassinsCharacterNetworkMoveDataContainer::FAssassinsCharacterNetworkMoveDataContainer()

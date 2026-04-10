@@ -60,7 +60,8 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 	GetCharacterMovement()->MaxAcceleration = 100000.f; // Me: For instant attainment of the specified speed(combat set)
 	GetCharacterMovement()->GetNavMovementProperties()->bUseFixedBrakingDistanceForPaths = true;
 	GetCharacterMovement()->GetNavMovementProperties()->FixedPathBrakingDistance = 0; // Me: For instant stop after navigation
-	GetCharacterMovement()->GetNavMovementProperties()->bUseAccelerationForPaths = true;
+
+	GetCharacterMovement()->GetNavMovementProperties()->bUseAccelerationForPaths = false;
 
 	// Create a camera...
 	CameraComponent = CreateDefaultSubobject<UAssassinsCameraComponent>(TEXT("CameraComponent"));
@@ -68,6 +69,8 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	SetNetUpdateFrequency(200.0f);
 }
 
 UAssassinsAbilitySystemComponent* AAssassinsCharacter::GetAssassinsAbilitySystemComponent() const
