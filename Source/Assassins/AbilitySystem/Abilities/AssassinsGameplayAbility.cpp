@@ -230,3 +230,55 @@ void UAssassinsGameplayAbility::RemoveCancelledByTag(FGameplayTag Tag)
 
     CancelledByTags.RemoveTag(Tag);
 }
+void UAssassinsGameplayAbility::ServerSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent)
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+    check(ASC);
+
+    // TODO scoped window
+
+    EAbilityGenericReplicatedEvent::Type EventType = static_cast<EAbilityGenericReplicatedEvent::Type>(
+        static_cast<uint8>(EAbilityGenericReplicatedEvent::GameCustom1) + static_cast<uint8>(CustomEvent)
+        );
+
+    ASC->ServerSetReplicatedEvent(EventType, GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo().GetActivationPredictionKey(), ASC->ScopedPredictionKey);
+}
+
+void UAssassinsGameplayAbility::ClientSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent)
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+    check(ASC);
+
+    EAbilityGenericReplicatedEvent::Type EventType = static_cast<EAbilityGenericReplicatedEvent::Type>(
+        static_cast<uint8>(EAbilityGenericReplicatedEvent::GameCustom1) + static_cast<uint8>(CustomEvent)
+        );
+
+    ASC->ClientSetReplicatedEvent(EventType, GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo().GetActivationPredictionKey());
+}
+
+void UAssassinsGameplayAbility::CallOrAddReplicatedDelegate(EAbilityCustomReplicatedEvent CustomEvent, FAbilityReplicatedDelegate ReplicatedDelegate, bool bClearTargetData)
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+    check(ASC);
+
+    EAbilityGenericReplicatedEvent::Type EventType = static_cast<EAbilityGenericReplicatedEvent::Type>(
+        static_cast<uint8>(EAbilityGenericReplicatedEvent::GameCustom1) + static_cast<uint8>(CustomEvent)
+        );
+
+    ASC->CallOrAddReplicatedDelegate(
+        EventType,
+        GetCurrentAbilitySpecHandle(), 
+        GetCurrentActivationInfo().GetActivationPredictionKey(), 
+        FSimpleMulticastDelegate::FDelegate::CreateLambda([this, ReplicatedDelegate, bClearTargetData]() {
+            if (bClearTargetData)
+            {
+                if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+                {
+                    ASC->ClearAbilityReplicatedDataCache(GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo());
+                }
+            }
+
+            ReplicatedDelegate.ExecuteIfBound(); 
+        })
+    );
+}

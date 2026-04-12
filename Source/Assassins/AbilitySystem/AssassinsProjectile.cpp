@@ -10,6 +10,9 @@
 AAssassinsProjectile::AAssassinsProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+    bReplicates = true;
+    SetReplicateMovement(true);
     
     CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
     SetRootComponent(CollisionBox);

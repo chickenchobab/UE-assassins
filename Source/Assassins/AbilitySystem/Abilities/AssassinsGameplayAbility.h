@@ -10,6 +10,20 @@ class AAssassinsPlayerController;
 class AAssassinsCharacter;
 class UAssassinsAnimInstance;
 
+DECLARE_DYNAMIC_DELEGATE(FAbilityReplicatedDelegate);
+DECLARE_DYNAMIC_DELEGATE(FInPredictionWindowDelegate);
+
+UENUM(BlueprintType)
+enum class EAbilityCustomReplicatedEvent : uint8
+{
+	GameCustom1,
+	GameCustom2,
+	GameCustom3,
+	GameCustom4,
+	GameCustom5,
+	GameCustom6
+};
+
 /**
  * EAssassinsAbilityActivationPolicy
  * 
@@ -101,6 +115,15 @@ protected:
 	void AddCancelledByTag(FGameplayTag Tag);
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveCancelledByTag(FGameplayTag Tag);
+
+
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void ServerSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent);
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void ClientSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent);
+
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability|RPC")
+	void CallOrAddReplicatedDelegate(EAbilityCustomReplicatedEvent CustomEvent, FAbilityReplicatedDelegate ReplicatedDelegate, bool bUnbindCalledDelegate = true);
 
 protected:
 	
