@@ -6,10 +6,10 @@
 #include "AbilitySystem/AssassinsTargetChasingComponent.h"
 #include "Character/AssassinsCharacter.h"
 #include "Character/AssassinsHeroComponent.h"
+#include "Character/Movements/AssassinsCharacterMovementComponent.h"
 #include "Player/AssassinsPlayerController.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Teams/AssassinsTeamSubsystem.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/AssassinsAnimInstance.h"
 #include "NativeGameplayTags.h"
 
@@ -230,6 +230,18 @@ void UAssassinsGameplayAbility::RemoveCancelledByTag(FGameplayTag Tag)
 
     CancelledByTags.RemoveTag(Tag);
 }
+
+void UAssassinsGameplayAbility::SetAvatarLocationAndRotation(const FVector& GoalLocation, const FRotator& GoalRotation)
+{
+    ACharacter* AvatarCharacter = Cast<ACharacter>(GetAvatarActorFromActorInfo());
+    check(AvatarCharacter);
+
+    if (UAssassinsCharacterMovementComponent* AssassinsCMC = Cast<UAssassinsCharacterMovementComponent>(AvatarCharacter->GetCharacterMovement()))
+    {
+        AssassinsCMC->TeleportCharacter(GoalLocation, GoalRotation);
+    }
+}
+
 void UAssassinsGameplayAbility::ServerSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent)
 {
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();

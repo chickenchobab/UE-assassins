@@ -116,6 +116,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveCancelledByTag(FGameplayTag Tag);
 
+	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
+	void SetAvatarLocationAndRotation(const FVector& GoalLocation, const FRotator& GoalRotation);
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void ServerSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent);

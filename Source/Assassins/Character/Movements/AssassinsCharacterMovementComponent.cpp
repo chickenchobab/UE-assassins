@@ -12,6 +12,8 @@ UAssassinsCharacterMovementComponent::UAssassinsCharacterMovementComponent(const
 {
 	bIsDashing = 0;
 
+	MaxTimeStampToSkipAdjustPosition = 0.0f;
+
 	SetNetworkMoveDataContainer(AssassinsNetworkMoveDataContainer);
 	SetMoveResponseDataContainer(AssassinsMoveResponseDataContainer);
 }
@@ -53,6 +55,25 @@ void UAssassinsCharacterMovementComponent::ClientHandleMoveResponse(const FChara
 	Super::ClientHandleMoveResponse(MoveResponse);
 }
 
+void UAssassinsCharacterMovementComponent::ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase, FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation)
+{
+	// For client prediction of the teleport, skip adjusting position from the moment.
+	if (TimeStamp < MaxTimeStampToSkipAdjustPosition)
+	{
+		//  Received Location is relative to dynamic base
+		if (bBaseRelativePosition)
+		{
+			MovementBaseUtility::TransformLocationToLocal(NewBase, NewBaseBoneName, UpdatedComponent->GetComponentLocation(), NewLoc);
+		}
+		else
+		{
+			NewLoc = FRepMovement::RebaseOntoZeroOrigin(UpdatedComponent->GetComponentLocation(), this);
+		}
+	}
+
+	Super::ClientAdjustPosition_Implementation(TimeStamp, NewLoc, NewVel, NewBase, NewBaseBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode, OptionalRotation);
+}
+
 void UAssassinsCharacterMovementComponent::PhysDashing(float deltaTime, int32 Iterations)
 {
 	if (deltaTime < MIN_TICK_TIME)
@@ -76,6 +97,49 @@ void UAssassinsCharacterMovementComponent::PhysDashing(float deltaTime, int32 It
 	{
 		Velocity = (UpdatedComponent->GetComponentLocation() - OldLocation) / deltaTime;
 	}
+}
+
+void UAssassinsCharacterMovementComponent::TeleportCharacter(FVector GoalLocation, FRotator GoalRotation)
+{
+	FVector Adjusted;
+	if (GetWorld()->EncroachingBlockingGeometry(CharacterOwner, GoalLocation, GoalRotation, &Adjusted))
+	{
+		GoalLocation = Adjusted;
+	}
+
+	if (CharacterOwner)
+	{
+		CharacterOwner->SetActorLocationAndRotation(GoalLocation, GoalRotation, false, nullptr, ETeleportType::ResetPhysics);
+
+		if (!CharacterOwner->HasAuthority())
+		{
+			MaxTimeStampToSkipAdjustPosition = GetWorld()->GetTimeSeconds();
+
+			Server_Teleport(GoalLocation, GoalRotation);
+		}
+	}
+}
+
+void UAssassinsCharacterMovementComponent::Server_Teleport_Implementation(FVector GoalLocation, FRotator GoalRotation)
+{
+	if (CharacterOwner)
+	{
+		CharacterOwner->SetActorLocationAndRotation(GoalLocation, GoalRotation, false, nullptr, ETeleportType::ResetPhysics);
+	}
+
+	Client_TeleportAcked();
+}
+
+bool UAssassinsCharacterMovementComponent::Server_Teleport_Validate(FVector GoalLocation, FRotator GoalRotation)
+{
+	UWorld* World = GetWorld();
+	check(World);
+
+	return !World->EncroachingBlockingGeometry(CharacterOwner, GoalLocation, GoalRotation);
+}
+
+void UAssassinsCharacterMovementComponent::Client_TeleportAcked_Implementation()
+{
 }
 
 ///////////////////////////////////////////////////////////////////

@@ -91,15 +91,25 @@ public:
 	virtual void PhysCustom(float deltaTime, int32 Iterations) override;
 	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
 	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
+	virtual void ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase, FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation = TOptional<FRotator>()) override;
 	//~End of UCharacterMovementComponent interface
 
 public:
 
 	void PhysDashing(float deltaTime, int32 Iterations);
 
+	void TeleportCharacter(FVector GoalLocation, FRotator GoalRotation);
+
 	uint8 bIsDashing : 1;
 
 private:
 	FAssassinsCharacterNetworkMoveDataContainer AssassinsNetworkMoveDataContainer;
 	FAssassinsCharacterMoveResponseDataContainer AssassinsMoveResponseDataContainer;
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Teleport(FVector GoalLocation, FRotator GoalRotation);
+	UFUNCTION(Client, Reliable)
+	void Client_TeleportAcked();
+
+	float MaxTimeStampToSkipAdjustPosition;
 };
