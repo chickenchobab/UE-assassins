@@ -460,17 +460,18 @@ void AAssassinsCharacter::OnInvisibleTagChanged(const FGameplayTag Tag, int32 Ne
 	if (NewCount > 0)
 	{
 		OnInvisibilityStarted.Broadcast();
-		if (GetLocalRole() == ROLE_SimulatedProxy)
+		if (!IsLocallyControlled())
 		{
-			SetActorHiddenInGame(true);
+			GetRootComponent()->SetVisibility(false, true);
 		}
 	}
 	else
 	{
 		OnInvisibilityEnded.Broadcast();
-		if (GetLocalRole() == ROLE_SimulatedProxy)
+		if (!IsLocallyControlled())
 		{
-			SetActorHiddenInGame(false);
+			GetRootComponent()->SetVisibility(true, true);
+			GetRootComponent()->SetVisibility(false, false);
 		}
 	}
 }
