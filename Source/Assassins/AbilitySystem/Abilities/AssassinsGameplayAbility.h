@@ -32,14 +32,14 @@ enum class EAbilityCustomReplicatedEvent : uint8
 UENUM(BlueprintType)
 enum class EAssassinsAbilityActivationPolicy : uint8
 {
-	// Try to activate the ability when the input is triggered.
+	// Try to activate the ability when the input is triggered(It can also be activated by gameplay event).
 	OnInputTriggered,
 
 	// Continually try to activate the ability while the input is active.
 	WhileInputActive,
 
 	// Try to activate the ability when an avatar is assigned.
-	OnSpawn,
+	OnSpawn
 };
 
 /**
@@ -109,6 +109,9 @@ protected:
 	void AddTagToAvatar(FGameplayTag Tag);
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveTagFromAvatar(FGameplayTag Tag);
+
+	UFUNCTION(BlueprintPure, Category = "Assassins|Ability", meta = (DisplayName = "GetAssetTags"))
+	const FGameplayTagContainer& K2_GetAssetTags() const;
 
 	// Me: Dynamically makes the ability cancellable by the other abilities, inputs or status.
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")

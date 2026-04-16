@@ -216,6 +216,12 @@ void UAssassinsGameplayAbility::RemoveTagFromAvatar(FGameplayTag Tag)
     }
 }
 
+const FGameplayTagContainer& UAssassinsGameplayAbility::K2_GetAssetTags() const
+{
+    // Used to identify the inheritance hierarchy between abilities.
+    return GetAssetTags();
+}
+
 void UAssassinsGameplayAbility::AddCancelledByTag(FGameplayTag Tag)
 {
     CancelledByTags.AddTag(Tag);
