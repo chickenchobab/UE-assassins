@@ -9,6 +9,8 @@
 AAssassinsPlayerBotController::AAssassinsPlayerBotController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	bWantsPlayerState = true;
+	bStopAILogicOnUnposses = false;
 }
 
 void AAssassinsPlayerBotController::SetGenericTeamId(const FGenericTeamId& NewTeamID)
