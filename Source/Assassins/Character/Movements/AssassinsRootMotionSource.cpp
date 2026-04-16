@@ -33,6 +33,12 @@ void FRootMotionSource_MoveToDynamicConstantSpeed::PrepareRootMotion
 	SetTime(GetTime() + SimulationTime);
 }
 
+FRootMotionSource* FRootMotionSource_MoveToDynamicConstantSpeed::Clone() const
+{
+	FRootMotionSource_MoveToDynamicConstantSpeed* CopyPtr = new FRootMotionSource_MoveToDynamicConstantSpeed(*this);
+	return CopyPtr;
+}
+
 FString FRootMotionSource_MoveToDynamicConstantSpeed::ToSimpleString() const
 {
 	return FString::Printf(TEXT("[ID:%u]FRootMotionSource_MoveToDynamicConstantSpeed %s"), LocalID, *InstanceName.GetPlainNameString());

@@ -29,6 +29,7 @@ struct FRootMotionSource_MoveToDynamicConstantSpeed : public FRootMotionSource
 		const ACharacter& Character,
 		const UCharacterMovementComponent& MoveComponent
 	) override;
+	ASSASSINS_API virtual FRootMotionSource* Clone() const override;
 	ASSASSINS_API virtual FString ToSimpleString() const override;
 	//~End of FRootMotionSource interface
 };
