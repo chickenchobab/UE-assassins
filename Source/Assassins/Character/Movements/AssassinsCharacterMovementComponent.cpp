@@ -12,7 +12,9 @@ UAssassinsCharacterMovementComponent::UAssassinsCharacterMovementComponent(const
 {
 	bIsDashing = 0;
 
-	MaxTimeStampToSkipAdjustPosition = 0.0f;
+	bWantsToTeleport = 0;
+	TeleportLocation = FVector::ZeroVector;
+	TeleportRotation = FRotator::ZeroRotator;
 
 	SetNetworkMoveDataContainer(AssassinsNetworkMoveDataContainer);
 	SetMoveResponseDataContainer(AssassinsMoveResponseDataContainer);
@@ -37,6 +39,16 @@ void UAssassinsCharacterMovementComponent::PhysCustom(float deltaTime, int32 Ite
 	}
 }
 
+void UAssassinsCharacterMovementComponent::OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity)
+{
+	if (bWantsToTeleport)
+	{
+		UpdatedComponent->SetWorldLocationAndRotation(TeleportLocation, TeleportRotation, false, nullptr, ETeleportType::ResetPhysics);
+
+		bWantsToTeleport = false;
+	}
+}
+
 FNetworkPredictionData_Client* UAssassinsCharacterMovementComponent::GetPredictionData_Client() const
 {
 	if (ClientPredictionData == nullptr)
@@ -48,6 +60,25 @@ FNetworkPredictionData_Client* UAssassinsCharacterMovementComponent::GetPredicti
 	return ClientPredictionData;
 }
 
+void UAssassinsCharacterMovementComponent::ServerMove_HandleMoveData(const FCharacterNetworkMoveDataContainer& MoveDataContainer)
+{
+	Super::ServerMove_HandleMoveData(MoveDataContainer);
+}
+
+void UAssassinsCharacterMovementComponent::ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData)
+{
+	const FAssassinsCharacterNetworkMoveData& MyMoveData = static_cast<const FAssassinsCharacterNetworkMoveData&>(MoveData);
+
+	bWantsToTeleport = MyMoveData.bWantsToTeleport;
+	if (bWantsToTeleport)
+	{
+		TeleportLocation = MyMoveData.TeleportLocation;
+		TeleportRotation = MyMoveData.TeleportRotation;
+	}
+
+	Super::ServerMove_PerformMovement(MoveData);
+}
+
 void UAssassinsCharacterMovementComponent::ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse)
 {
 	const FAssassinsCharacterMoveResponseDataContainer& AssassinsMoveResponse = static_cast<const FAssassinsCharacterMoveResponseDataContainer&>(MoveResponse);
@@ -57,20 +88,6 @@ void UAssassinsCharacterMovementComponent::ClientHandleMoveResponse(const FChara
 
 void UAssassinsCharacterMovementComponent::ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase, FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation)
 {
-	// For client prediction of the teleport, skip adjusting position from the moment.
-	if (TimeStamp < MaxTimeStampToSkipAdjustPosition)
-	{
-		//  Received Location is relative to dynamic base
-		if (bBaseRelativePosition)
-		{
-			MovementBaseUtility::TransformLocationToLocal(NewBase, NewBaseBoneName, UpdatedComponent->GetComponentLocation(), NewLoc);
-		}
-		else
-		{
-			NewLoc = FRepMovement::RebaseOntoZeroOrigin(UpdatedComponent->GetComponentLocation(), this);
-		}
-	}
-
 	Super::ClientAdjustPosition_Implementation(TimeStamp, NewLoc, NewVel, NewBase, NewBaseBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode, OptionalRotation);
 }
 
@@ -107,39 +124,20 @@ void UAssassinsCharacterMovementComponent::TeleportCharacter(FVector GoalLocatio
 		GoalLocation = Adjusted;
 	}
 
-	if (CharacterOwner)
+	if (GoalLocation == FVector(0.f))
 	{
-		CharacterOwner->SetActorLocationAndRotation(GoalLocation, GoalRotation, false, nullptr, ETeleportType::ResetPhysics);
-
-		if (!CharacterOwner->HasAuthority())
-		{
-			MaxTimeStampToSkipAdjustPosition = GetWorld()->GetTimeSeconds();
-
-			Server_Teleport(GoalLocation, GoalRotation);
-		}
-	}
-}
-
-void UAssassinsCharacterMovementComponent::Server_Teleport_Implementation(FVector GoalLocation, FRotator GoalRotation)
-{
-	if (CharacterOwner)
-	{
-		CharacterOwner->SetActorLocationAndRotation(GoalLocation, GoalRotation, false, nullptr, ETeleportType::ResetPhysics);
+		return;
 	}
 
-	Client_TeleportAcked();
-}
+	if (CharacterOwner->HasAuthority())
+	{
+		CharacterOwner->SetActorLocationAndRotation(GoalLocation, GoalRotation, false, nullptr, ETeleportType::ResetPhysics);
+		return;
+	}
 
-bool UAssassinsCharacterMovementComponent::Server_Teleport_Validate(FVector GoalLocation, FRotator GoalRotation)
-{
-	UWorld* World = GetWorld();
-	check(World);
-
-	return !World->EncroachingBlockingGeometry(CharacterOwner, GoalLocation, GoalRotation);
-}
-
-void UAssassinsCharacterMovementComponent::Client_TeleportAcked_Implementation()
-{
+	bWantsToTeleport = true;
+	TeleportLocation = GoalLocation;
+	TeleportRotation = GoalRotation;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -149,6 +147,10 @@ void UAssassinsCharacterMovementComponent::Client_TeleportAcked_Implementation()
 FSavedMove_AssassinsCharacter::FSavedMove_AssassinsCharacter()
 {
 	bIsDashing = 0;
+
+	bWantsToTeleport = 0;
+	TeleportLocation = FVector::ZeroVector;
+	TeleportRotation = FRotator::ZeroRotator;
 }
 
 void FSavedMove_AssassinsCharacter::Clear()
@@ -156,28 +158,43 @@ void FSavedMove_AssassinsCharacter::Clear()
 	Super::Clear();
 
 	bIsDashing = 0;
+
+	bWantsToTeleport = 0;
+	TeleportLocation = FVector::ZeroVector;
+	TeleportRotation = FRotator::ZeroRotator;
 }
 
 void FSavedMove_AssassinsCharacter::SetMoveFor(ACharacter* C, float InDeltaTime, FVector const& NewAccel, FNetworkPredictionData_Client_Character& ClientData)
 {
 	Super::SetMoveFor(C, InDeltaTime, NewAccel, ClientData);
 
-	if (const UAssassinsCharacterMovementComponent* AssassinsCharacterMovement = Cast<UAssassinsCharacterMovementComponent>(C->GetCharacterMovement()))
+	if (const UAssassinsCharacterMovementComponent* AssassinsCMC = Cast<UAssassinsCharacterMovementComponent>(C->GetCharacterMovement()))
 	{
-		bIsDashing = AssassinsCharacterMovement->bIsDashing;
+		bIsDashing = AssassinsCMC->bIsDashing;
+
+		bWantsToTeleport = AssassinsCMC->bWantsToTeleport;
+		if (bWantsToTeleport)
+		{
+			TeleportLocation = AssassinsCMC->TeleportLocation;
+			TeleportRotation = AssassinsCMC->TeleportRotation;
+		}
 	}
 }
 
 bool FSavedMove_AssassinsCharacter::CanCombineWith(const FSavedMovePtr& NewMove, ACharacter* InCharacter, float MaxDelta) const
 {
 	const FSavedMove_AssassinsCharacter* NewMoveCast = static_cast<FSavedMove_AssassinsCharacter*>(NewMove.Get());
-
 	if (NewMoveCast == nullptr)
 	{
 		return false;
 	}
 
 	if (bIsDashing != NewMoveCast->bIsDashing)
+	{
+		return false;
+	}
+
+	if (bWantsToTeleport || NewMoveCast->bWantsToTeleport)
 	{
 		return false;
 	}
@@ -189,9 +206,16 @@ void FSavedMove_AssassinsCharacter::PrepMoveFor(ACharacter* C)
 {
 	Super::PrepMoveFor(C);
 	
-	if (UAssassinsCharacterMovementComponent* AssassinsCharacterMovement = Cast<UAssassinsCharacterMovementComponent>(C->GetCharacterMovement()))
+	if (UAssassinsCharacterMovementComponent* AssassinsCMC = Cast<UAssassinsCharacterMovementComponent>(C->GetCharacterMovement()))
 	{
-		AssassinsCharacterMovement->bIsDashing = bIsDashing;
+		AssassinsCMC->bIsDashing = bIsDashing;
+
+		AssassinsCMC->bWantsToTeleport = bWantsToTeleport;
+		if (AssassinsCMC->bWantsToTeleport)
+		{
+			AssassinsCMC->TeleportLocation = TeleportLocation;
+			AssassinsCMC->TeleportRotation = TeleportRotation;
+		}
 	}
 }
 
@@ -211,6 +235,9 @@ FSavedMovePtr FNetworkPredictionData_Client_AssassinsCharacter::AllocateNewMove(
 
 FAssassinsCharacterNetworkMoveData::FAssassinsCharacterNetworkMoveData()
 {
+	bWantsToTeleport = 0;
+	TeleportLocation = FVector::ZeroVector;
+	TeleportRotation = FRotator::ZeroRotator;
 }
 
 void FAssassinsCharacterNetworkMoveData::ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType)
@@ -218,11 +245,32 @@ void FAssassinsCharacterNetworkMoveData::ClientFillNetworkMoveData(const FSavedM
 	Super::ClientFillNetworkMoveData(ClientMove, MoveType);
 
 	const FSavedMove_AssassinsCharacter& SavedMove = static_cast<const FSavedMove_AssassinsCharacter&>(ClientMove);
+
+	bWantsToTeleport = SavedMove.bWantsToTeleport;
+	if (bWantsToTeleport)
+	{
+		TeleportLocation = SavedMove.TeleportLocation;
+		TeleportRotation = SavedMove.TeleportRotation;
+	}
 }
 
 bool FAssassinsCharacterNetworkMoveData::Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType)
 {
-	return Super::Serialize(CharacterMovement, Ar, PackageMap, MoveType);
+	if (Super::Serialize(CharacterMovement, Ar, PackageMap, MoveType))
+	{
+		bool bLocalSuccess = true;
+
+		Ar << bWantsToTeleport;
+		if (bWantsToTeleport)
+		{
+			TeleportLocation.NetSerialize(Ar, PackageMap, bLocalSuccess);
+			TeleportRotation.NetSerialize(Ar, PackageMap, bLocalSuccess);
+		}
+
+		return !Ar.IsError();
+	}
+
+	return false;
 }
 
 FAssassinsCharacterNetworkMoveDataContainer::FAssassinsCharacterNetworkMoveDataContainer()

@@ -21,6 +21,10 @@ public:
 	//~End of FSavedMove_Character interface
 
 	uint8 bIsDashing : 1;
+
+	uint8 bWantsToTeleport : 1;
+	FVector TeleportLocation;
+	FRotator TeleportRotation;
 };
 
 class FNetworkPredictionData_Client_AssassinsCharacter : public FNetworkPredictionData_Client_Character
@@ -43,6 +47,10 @@ public:
 
 	virtual void ClientFillNetworkMoveData(const FSavedMove_Character& ClientMove, ENetworkMoveType MoveType) override;
 	virtual bool Serialize(UCharacterMovementComponent& CharacterMovement, FArchive& Ar, UPackageMap* PackageMap, ENetworkMoveType MoveType) override;
+
+	bool bWantsToTeleport;
+	FVector TeleportLocation;
+	FRotator TeleportRotation;
 };
 
 struct FAssassinsCharacterNetworkMoveDataContainer : public FCharacterNetworkMoveDataContainer
@@ -89,7 +97,10 @@ public:
 	//~UCharacterMovementComponent interface
 	virtual void MoveAutonomous(float ClientTimeStamp, float DeltaTime, uint8 CompressedFlags, const FVector& NewAccel) override;
 	virtual void PhysCustom(float deltaTime, int32 Iterations) override;
+	virtual void OnMovementUpdated(float DeltaSeconds, const FVector& OldLocation, const FVector& OldVelocity) override;
 	virtual FNetworkPredictionData_Client* GetPredictionData_Client() const override;
+	virtual void ServerMove_HandleMoveData(const FCharacterNetworkMoveDataContainer& MoveDataContainer) override;
+	virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
 	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
 	virtual void ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase, FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation = TOptional<FRotator>()) override;
 	//~End of UCharacterMovementComponent interface
@@ -102,14 +113,11 @@ public:
 
 	uint8 bIsDashing : 1;
 
+	uint8 bWantsToTeleport : 1;
+	FVector TeleportLocation;
+	FRotator TeleportRotation;
+
 private:
 	FAssassinsCharacterNetworkMoveDataContainer AssassinsNetworkMoveDataContainer;
 	FAssassinsCharacterMoveResponseDataContainer AssassinsMoveResponseDataContainer;
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_Teleport(FVector GoalLocation, FRotator GoalRotation);
-	UFUNCTION(Client, Reliable)
-	void Client_TeleportAcked();
-
-	float MaxTimeStampToSkipAdjustPosition;
 };
