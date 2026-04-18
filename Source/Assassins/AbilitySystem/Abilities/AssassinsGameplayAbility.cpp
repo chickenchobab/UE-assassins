@@ -167,7 +167,7 @@ FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecTo
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
     check(TargetASC);
 
-    return ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
+    return ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC, ASC->ScopedPredictionKey);
 }
 
 float UAssassinsGameplayAbility::EvaluateCurveTableRowByAbilityLevel(UCurveTable* CurveTable, FName RowName, const FString& ContextString) const
