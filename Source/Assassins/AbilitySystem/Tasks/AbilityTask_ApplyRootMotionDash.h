@@ -21,6 +21,8 @@ public:
 	virtual void OnDestroy(bool AbilityIsEnding) override;
 	//~End of UGameplayTask interface
 
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+
 	UFUNCTION(BlueprintPure)
 	FVector GetCurrentTargetLocation() const { return TargetLocation; }
 
@@ -45,19 +47,19 @@ protected:
 
 protected:
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	FVector StartLocation;
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	FVector TargetLocation;
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	float DashSpeed;
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	float AcceptRadius;
 
-	EMovementMode PreviousMovementMode;
+	TEnumAsByte<EMovementMode> PreviousMovementMode;
 	uint8 PreviousCustomMode;
 };
 
@@ -100,6 +102,8 @@ public:
 	virtual void TickTask(float DeltaTime) override;
 	//~End of UGameplayTask interface
 
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+
 protected:
 
 	virtual void SharedInitAndApply() override;
@@ -110,6 +114,6 @@ protected:
 
 protected:
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	TObjectPtr<AActor> TargetActor;
 };

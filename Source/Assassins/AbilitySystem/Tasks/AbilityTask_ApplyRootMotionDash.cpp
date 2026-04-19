@@ -7,6 +7,7 @@
 #include "AbilitySystemComponent.h"
 #include "NativeGameplayTags.h"
 #include "Engine/OverlapResult.h"
+#include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_DASHING, "Status.Dashing");
@@ -38,6 +39,18 @@ void UAbilityTask_ApplyRootMotionDash::OnDestroy(bool AbilityIsEnding)
 	}
 
 	Super::OnDestroy(AbilityIsEnding);
+}
+
+void UAbilityTask_ApplyRootMotionDash::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, StartLocation);
+	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, TargetLocation);
+	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, DashSpeed);
+	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, AcceptRadius);
+	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, PreviousMovementMode);
+	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, PreviousCustomMode);
 }
 
 void UAbilityTask_ApplyRootMotionDash::AbortMoveAndDash()
@@ -91,6 +104,7 @@ void UAbilityTask_ApplyRootMotionDash::CheckDashFinish()
 
 		if (!bIsSimulating)
 		{
+			MyActor->ForceNetUpdate();
 			if (ShouldBroadcastAbilityTaskDelegates())
 			{
 				OnFinished.Broadcast();
@@ -281,6 +295,13 @@ void UAbilityTask_DashToActor::TickTask(float DeltaTime)
 		bIsFinished = true;
 		EndTask();
 	}
+}
+
+void UAbilityTask_DashToActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UAbilityTask_DashToActor, TargetActor);
 }
 
 void UAbilityTask_DashToActor::SharedInitAndApply()
