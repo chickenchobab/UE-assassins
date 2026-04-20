@@ -37,6 +37,7 @@ UAssassinsHeroComponent::UAssassinsHeroComponent(const FObjectInitializer& Objec
 
     MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Channeling);
 	MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Dashing);
+	MoveBlockingStatusTags.AddTag(AssassinsGameplayTags::Status_Rooted);
 	MoveBlockingStatusTags.AddTag(TAG_STATUS_DEATH);
 
     MoveCancelledAbilityTags.AddTag(AssassinsGameplayTags::Ability_Cancelable_Click);

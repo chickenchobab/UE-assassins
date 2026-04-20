@@ -113,6 +113,8 @@ protected:
 	void OnInvisibleTagChanged(const FGameplayTag Tag, int32 NewCount);
 	UFUNCTION()
 	void OnDashingTagChanged(const FGameplayTag Tag, int32 NewCount);
+	UFUNCTION()
+	void OnRootedTagChanged(const FGameplayTag Tag, int32 NewCount);
 
 	UFUNCTION()
 	virtual void HandleDeathStarted();

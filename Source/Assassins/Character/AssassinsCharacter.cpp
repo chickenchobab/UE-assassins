@@ -21,10 +21,14 @@
 #include "Engine/OverlapResult.h"
 #include "Net/UnrealNetwork.h"
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_CHANNELING, "Status.Channeling");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_UNTARGETABLE, "Status.Untargetable");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_INVISIBLE, "Status.Untargetable.Invisible");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_DASHING, "Status.Dashing");
+namespace CharacterStatus
+{
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_CHANNELING, "Status.Channeling");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_UNTARGETABLE, "Status.Untargetable");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_INVISIBLE, "Status.Untargetable.Invisible");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_DASHING, "Status.Dashing");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_ROOTED, "Status.Rooted");
+};
 
 AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UAssassinsCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
@@ -286,10 +290,11 @@ void AAssassinsCharacter::InitializeGameplayTags()
 
 		ASC->RegisterGenericGameplayTagEvent().AddUObject(this, &ThisClass::HandleGenericGameplayTagEvent);
 
-		ASC->RegisterGameplayTagEvent(TAG_STATUS_CHANNELING).AddUObject(this, &ThisClass::OnChannelingTagChanged);
-		ASC->RegisterGameplayTagEvent(TAG_STATUS_UNTARGETABLE).AddUObject(this, &ThisClass::OnUntargetableTagChanged);
-		ASC->RegisterGameplayTagEvent(TAG_STATUS_INVISIBLE).AddUObject(this, &ThisClass::OnInvisibleTagChanged);
-		ASC->RegisterGameplayTagEvent(TAG_STATUS_DASHING).AddUObject(this, &ThisClass::OnDashingTagChanged);
+		ASC->RegisterGameplayTagEvent(CharacterStatus::TAG_STATUS_CHANNELING).AddUObject(this, &ThisClass::OnChannelingTagChanged);
+		ASC->RegisterGameplayTagEvent(CharacterStatus::TAG_STATUS_UNTARGETABLE).AddUObject(this, &ThisClass::OnUntargetableTagChanged);
+		ASC->RegisterGameplayTagEvent(CharacterStatus::TAG_STATUS_INVISIBLE).AddUObject(this, &ThisClass::OnInvisibleTagChanged);
+		ASC->RegisterGameplayTagEvent(CharacterStatus::TAG_STATUS_DASHING).AddUObject(this, &ThisClass::OnDashingTagChanged);
+		ASC->RegisterGameplayTagEvent(CharacterStatus::TAG_STATUS_ROOTED).AddUObject(this, &ThisClass::OnRootedTagChanged);
 	}
 }
 
@@ -494,6 +499,33 @@ void AAssassinsCharacter::OnDashingTagChanged(const FGameplayTag Tag, int32 NewC
 		AssassinsCharacterMovement->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
 
 		ResolvePenetrationAfterDash();
+	}
+}
+
+void AAssassinsCharacter::OnRootedTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	if (NewCount > 0)
+	{
+		if (GetController())
+		{
+			GetController()->SetIgnoreMoveInput(true);
+		}
+
+		UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+		check(MovementComponent);
+		MovementComponent->StopMovementImmediately();
+		MovementComponent->DisableMovement();
+	}
+	else
+	{
+		if (GetController())
+		{
+			GetController()->SetIgnoreMoveInput(false);
+		}
+
+		UAssassinsCharacterMovementComponent* AssassinsCMC = Cast<UAssassinsCharacterMovementComponent>(GetCharacterMovement());
+		check(AssassinsCMC);
+		AssassinsCMC->EnableMovement();
 	}
 }
 

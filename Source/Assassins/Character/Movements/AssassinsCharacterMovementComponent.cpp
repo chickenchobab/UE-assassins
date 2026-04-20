@@ -91,6 +91,27 @@ void UAssassinsCharacterMovementComponent::ClientAdjustPosition_Implementation(f
 	Super::ClientAdjustPosition_Implementation(TimeStamp, NewLoc, NewVel, NewBase, NewBaseBoneName, bHasBase, bBaseRelativePosition, ServerMovementMode, OptionalRotation);
 }
 
+void UAssassinsCharacterMovementComponent::DisableMovement()
+{
+	CachedMovementMode = MovementMode;
+	CachedCustomMovementMode = CustomMovementMode;
+
+	Super::DisableMovement();
+}
+
+void UAssassinsCharacterMovementComponent::EnableMovement()
+{
+	if (CharacterOwner)
+	{
+		SetMovementMode(CachedMovementMode);
+	}
+	else
+	{
+		MovementMode = CachedMovementMode;
+		CustomMovementMode = CachedCustomMovementMode;
+	}
+}
+
 void UAssassinsCharacterMovementComponent::PhysDashing(float deltaTime, int32 Iterations)
 {
 	if (deltaTime < MIN_TICK_TIME)

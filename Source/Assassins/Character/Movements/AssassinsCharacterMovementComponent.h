@@ -103,7 +103,10 @@ public:
 	virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
 	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
 	virtual void ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase, FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation = TOptional<FRotator>()) override;
+	virtual void DisableMovement() override;
 	//~End of UCharacterMovementComponent interface
+
+	virtual void EnableMovement();
 
 public:
 
@@ -120,4 +123,9 @@ public:
 private:
 	FAssassinsCharacterNetworkMoveDataContainer AssassinsNetworkMoveDataContainer;
 	FAssassinsCharacterMoveResponseDataContainer AssassinsMoveResponseDataContainer;
+
+	// Movement modes cached by DisableMovement() and restored by EnabledMovement()
+	UPROPERTY()
+	TEnumAsByte<EMovementMode> CachedMovementMode;
+	uint8 CachedCustomMovementMode;
 };
