@@ -87,11 +87,6 @@ void AAssassinsGameMode::IncreaseReadyPlayers(const UAssassinsPawnData* InPawnDa
 
 	check(InPawnData);
 
-	if (AAssassinsGameState* AssassinsGameState = GetGameState<AAssassinsGameState>())
-	{
-		AssassinsGameState->AddSelectedChampion(InPawnData);
-	}
-
 	++NumReadyPlayers;
 	if (NumReadyPlayers >= GetNumPlayers())
 	{
@@ -108,11 +103,6 @@ void AAssassinsGameMode::DecreaseReadyPlayers(const UAssassinsPawnData* InPawnDa
 	}
 
 	check(InPawnData);
-
-	if (AAssassinsGameState* AssassinsGameState = GetGameState<AAssassinsGameState>())
-	{
-		AssassinsGameState->RemoveSelectedChampion(InPawnData);
-	}
 
 	--NumReadyPlayers;
 }
@@ -153,13 +143,7 @@ void AAssassinsGameMode::InitGameState()
 
 	if (AAssassinsGameState* AssassinsGameState = Cast<AAssassinsGameState>(GameState))
 	{
-		//AssassinsGameState->Multicast_SetInLobby(bInLobby);
 		AssassinsGameState->SetInLobby(bInLobby);
-		if (!bInLobby)
-		{
-			// Restore champion selection info lost due to the travel, for bot creation
-			AssassinsGameState->Multicast_ConstructChampionSelectionInfoFromPlayers();
-		}
 	}
 	
 	// Listen for the experience load to complete

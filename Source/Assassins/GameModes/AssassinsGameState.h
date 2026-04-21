@@ -28,18 +28,8 @@ public:
 
 	void SetInLobby(bool bLobby) { bInLobby = bLobby; }
 	bool IsGameInLobby() const { return bInLobby; }
-	bool IsChampionAvailable(const UAssassinsPawnData* InPawnData) const;
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_ConstructChampionSelectionInfoFromPlayers();
-
-	void AddSelectedChampion(const UAssassinsPawnData* InPawnData);
-	void RemoveSelectedChampion(const UAssassinsPawnData* InPawnData);
 
 private:
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnChampionSelectionChanged(const FPrimaryAssetId& ChampionAssetId, bool bAdded);
 
 	UFUNCTION()
 	void OnRep_bInLobby();
@@ -50,8 +40,4 @@ private:
 
 	UPROPERTY(ReplicatedUsing=OnRep_bInLobby)
 	bool bInLobby;
-
-	// Array of references for champion selected in the lobby
-	UPROPERTY()
-	TSet<FPrimaryAssetId> SelectedChampions;
 };

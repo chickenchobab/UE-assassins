@@ -35,9 +35,6 @@ public:
 
 	void CallOrRegister_ShowChampionSelectionScreen();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = ChampionSelection)
-	void UpdateChampionSelectionScreen(const FPrimaryAssetId& ChampionRef, bool bIsChampionEnabled);
-
 private:
 
 	void OnExperienceLoaded(const UAssassinsExperienceDefinition* Experience);

@@ -63,9 +63,6 @@ void UAssassinsPlayerBotCreationComponent::SpawnOneBot(const UAssassinsPawnData*
 			}
 		}
 
-		AAssassinsGameState* GameState = GetGameStateChecked<AAssassinsGameState>();
-		GameState->AddSelectedChampion(PawnData);
-
 		SpawnedBotList.Add(NewController);
 	}
 }
@@ -103,17 +100,28 @@ void UAssassinsPlayerBotCreationComponent::LoadChampionDataAndSpawnBots()
 				}
 			}
 
-			AAssassinsGameState* GameState = GetGameStateChecked<AAssassinsGameState>();
+			TSet<int32> SpawnedChampion;
 			for (int32 CurrentBot = 0; CurrentBot < NumBotsToCreate; ++CurrentBot)
 			{
-				for (const UAssassinsPawnData* PawnData : ChampionDataList)
+				bool bHasSpawned = false;
+
+				for (int32 CurrentChampion = 0; CurrentChampion < ChampionDataList.Num(); ++CurrentChampion)
 				{
-					if (GameState->IsChampionAvailable(PawnData))
+					if (!SpawnedChampion.Contains(CurrentChampion))
 					{
-						SpawnOneBot(PawnData);
+						SpawnOneBot(ChampionDataList[CurrentChampion]);
+						SpawnedChampion.Add(CurrentChampion);
+						bHasSpawned = true;
 						break;
 					}
 				}
+
+				if (!bHasSpawned)
+				{
+					const UAssassinsPawnData* RandomChampion = ChampionDataList[FMath::RandRange(0, ChampionDataList.Num())];
+					SpawnOneBot(RandomChampion);
+				}
+				
 			}
 		})
 	);

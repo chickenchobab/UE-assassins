@@ -36,55 +36,6 @@ TSubclassOf<UAssassinsCameraMode> AAssassinsGameState::GetExperienceCameraMode()
 	return nullptr;
 }
 
-bool AAssassinsGameState::IsChampionAvailable(const UAssassinsPawnData* InPawnData) const
-{
-	return InPawnData == nullptr ? false : !SelectedChampions.Contains(InPawnData->GetPrimaryAssetId());
-}
-
-void AAssassinsGameState::Multicast_ConstructChampionSelectionInfoFromPlayers_Implementation()
-{
-	for (APlayerState* PS : PlayerArray)
-	{
-		if (PS->IsInactive()) 
-		{
-			continue;
-		}
-
-		if (AAssassinsPlayerState* AssassinsPS = Cast<AAssassinsPlayerState>(PS))
-		{
-			if (const UAssassinsPawnData* ChampionData = AssassinsPS->GetPawnData<UAssassinsPawnData>())
-			{
-				SelectedChampions.Add(ChampionData->GetPrimaryAssetId());
-			}
-		}
-	}
-}
-
-void AAssassinsGameState::AddSelectedChampion(const UAssassinsPawnData* InPawnData)
-{
-	const UPrimaryDataAsset* PawnDataAsset = Cast<UPrimaryDataAsset>(InPawnData);
-	check(PawnDataAsset);
-
-	SelectedChampions.Add(PawnDataAsset->GetPrimaryAssetId());
-
-	Multicast_OnChampionSelectionChanged(PawnDataAsset->GetPrimaryAssetId(), true);
-}
-
-void AAssassinsGameState::RemoveSelectedChampion(const UAssassinsPawnData* InPawnData)
-{
-	const UPrimaryDataAsset* PawnDataAsset = Cast<UPrimaryDataAsset>(InPawnData);
-	check(PawnDataAsset);
-
-	const FPrimaryAssetId PawnAssetId = PawnDataAsset->GetPrimaryAssetId();
-
-	if (SelectedChampions.Contains(PawnAssetId))
-	{
-		SelectedChampions.Remove(PawnAssetId);
-
-		Multicast_OnChampionSelectionChanged(PawnAssetId, false);
-	}
-}
-
 void AAssassinsGameState::OnRep_bInLobby()
 {
 	// Do what the frontend component might have omitted due to the late replication of bInLobby
@@ -94,23 +45,5 @@ void AAssassinsGameState::OnRep_bInLobby()
 		{
 			FrontendComponent->CallOrRegister_ShowChampionSelectionScreen();
 		}
-	}
-}
-
-void AAssassinsGameState::Multicast_OnChampionSelectionChanged_Implementation(const FPrimaryAssetId& ChampionAssetId, bool bSelected)
-{
-	if (bSelected)
-	{
-		SelectedChampions.Add(ChampionAssetId);
-	}
-	else
-	{
-		SelectedChampions.Remove(ChampionAssetId);
-	}
-
-	if (UAssassinsFrontendStateComponent* FrontendComponent = FindComponentByClass<UAssassinsFrontendStateComponent>())
-	{
-		// Activate or deactivate the champion button.
-		FrontendComponent->UpdateChampionSelectionScreen(ChampionAssetId, !bSelected);
 	}
 }
