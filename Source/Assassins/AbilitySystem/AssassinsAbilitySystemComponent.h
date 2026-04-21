@@ -55,6 +55,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveDynamicTagGameplayEffect(FGameplayTag Tag);
 
+	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
+	FGameplayEffectContextHandle GetContextFromGameplayEffectSpec(const FGameplayEffectSpec& Spec) const;
+
 public:
 	
 	UPROPERTY(BlueprintAssignable, Category = "Assassins|Ability")

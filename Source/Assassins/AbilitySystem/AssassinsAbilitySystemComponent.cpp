@@ -316,6 +316,11 @@ void UAssassinsAbilitySystemComponent::RemoveDynamicTagGameplayEffect(FGameplayT
 	RemoveActiveEffects(Query);
 }
 
+FGameplayEffectContextHandle UAssassinsAbilitySystemComponent::GetContextFromGameplayEffectSpec(const FGameplayEffectSpec& Spec) const
+{
+	return Spec.GetContext();
+}
+
 void UAssassinsAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)
 {
 	Super::AbilitySpecInputPressed(Spec);
