@@ -9,6 +9,7 @@ UAssassinsGameplayAbility_Death::UAssassinsGameplayAbility_Death(const FObjectIn
 	: Super(ObjectInitializer)
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerInitiated;
 
 	bCancelAllAbilities = true;
 

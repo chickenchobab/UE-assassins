@@ -460,13 +460,13 @@ void AAssassinsGameMode::TryServerTravelToGameMap()
 		}
 	}
 
-	/*if (GetNetMode() != ENetMode::NM_Standalone)
+	if (GetNetMode() != ENetMode::NM_Standalone)
 	{
 		if (UAssassinsGameInstance* GameInstance = GetGameInstance<UAssassinsGameInstance>())
 		{
 			GameInstance->StartSession();
 		}
-	}*/
+	}
 
 	// Reset the last options.
 	FWorldContext& WorldContext = GEngine->GetWorldContextFromWorldChecked(GetWorld());

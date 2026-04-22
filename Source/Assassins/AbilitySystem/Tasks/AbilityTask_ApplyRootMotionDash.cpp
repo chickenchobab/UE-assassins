@@ -49,8 +49,12 @@ void UAbilityTask_ApplyRootMotionDash::GetLifetimeReplicatedProps(TArray<FLifeti
 	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, TargetLocation);
 	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, DashSpeed);
 	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, AcceptRadius);
-	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, PreviousMovementMode);
-	DOREPLIFETIME(UAbilityTask_ApplyRootMotionDash, PreviousCustomMode);
+}
+
+void UAbilityTask_ApplyRootMotionDash::PreDestroyFromReplication()
+{
+	bIsFinished = true;
+	EndTask();
 }
 
 void UAbilityTask_ApplyRootMotionDash::AbortMoveAndDash()

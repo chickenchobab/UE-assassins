@@ -70,10 +70,10 @@ void UAssassinsFrontendStateComponent::CallOrRegister_ShowChampionSelectionScree
     {
         bShouldRegisterShowChampionSelection = false;
 
-        UAssassinsLocalPlayer* LocalPlayer = Cast<UAssassinsLocalPlayer>(GetWorld()->GetFirstLocalPlayerFromController());
+        UAssassinsLocalPlayer* LocalPlayer = Cast<UAssassinsLocalPlayer>(GetGameInstance<UGameInstance>()->GetLocalPlayerByIndex(0));
         check(LocalPlayer);
-        LocalPlayer->CallOrRegister_OnLocalPlayerRestarted(FLocalCharacterRestartedDelegate::FDelegate::CreateWeakLambda(this, [this](ACharacter*) {
-            TryShowChampionSelectionScreen();
+        LocalPlayer->CallAndRegister_OnPlayerControllerSet(UCommonLocalPlayer::FPlayerControllerSetDelegate::FDelegate::CreateWeakLambda(this, [this](UCommonLocalPlayer*, APlayerController*) {
+            GetWorldTimerManager().SetTimerForNextTick(this, &UAssassinsFrontendStateComponent::TryShowChampionSelectionScreen);
         }));
     }
 }

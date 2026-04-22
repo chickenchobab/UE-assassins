@@ -23,6 +23,8 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
+	virtual void PreDestroyFromReplication() override;
+
 	UFUNCTION(BlueprintPure)
 	FVector GetCurrentTargetLocation() const { return TargetLocation; }
 
