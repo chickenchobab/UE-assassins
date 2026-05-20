@@ -5,8 +5,6 @@
 #include "CommonLocalPlayer.h"
 #include "AssassinsLocalPlayer.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FLocalCharacterRestartedDelegate, ACharacter*);
-
 /**
  * 
  */

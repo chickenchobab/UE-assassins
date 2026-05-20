@@ -9,7 +9,6 @@ UAssassinsTargetChasingComponent::UAssassinsTargetChasingComponent()
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 
 	bKeepChase = false;
-	bKeepChaseBefore = false;
 	CachedTarget = nullptr;
 	CachedAcceptRadius = 0.0f;
 }
@@ -19,12 +18,10 @@ void UAssassinsTargetChasingComponent::TickComponent(float DeltaTime, ELevelTick
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// If bKeepChase was just set to false, allow movement for one additional tick.
-	if ((bKeepChaseBefore || bKeepChase) && CachedTarget.IsValid())
+	if (bKeepChase && CachedTarget.IsValid())
 	{
 		ChaseTargetDelegate.ExecuteIfBound(CachedTarget.Get(), CachedAcceptRadius);
 	}
-
-	bKeepChaseBefore = bKeepChase;
 }
 
 void UAssassinsTargetChasingComponent::ChaseTarget(AActor* Target, float AcceptRadius)
@@ -49,7 +46,6 @@ void UAssassinsTargetChasingComponent::SetTargetState(AActor* Target, float Acce
 void UAssassinsTargetChasingComponent::ResetTargetState()
 {
 	bKeepChase = false;
-	bKeepChaseBefore = false;
 
 	HandleChaseCompleted.Clear();
 

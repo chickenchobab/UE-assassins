@@ -125,16 +125,6 @@ void AAssassinsPlayerState::PostInitializeComponents()
     check(AbilitySystemComponent);
  
     AbilitySystemComponent->InitAbilityActorInfo(this, GetPawn());
-
-    //UWorld* World = GetWorld();
-    //if (World && World->IsGameWorld() && World->GetNetMode() != NM_Client)
-    //{
-    //    AGameStateBase* GameState = World->GetGameState();
-    //    check(GameState);
-    //    UAssassinsExperienceStateComponent* ExperienceComponent = GameState->FindComponentByClass<UAssassinsExperienceStateComponent>();
-    //    check(ExperienceComponent);
-    //    ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnAssassinsExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
-    //}
 }
 
 void AAssassinsPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

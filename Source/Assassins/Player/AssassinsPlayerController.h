@@ -37,6 +37,7 @@ public:
 	UAssassinsAbilitySystemComponent* GetAssassinsAbilitySystemComponent() const;
 
 	//~Actor interface
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 	//~End of Actor interface
 

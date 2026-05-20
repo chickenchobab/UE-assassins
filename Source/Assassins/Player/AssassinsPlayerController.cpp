@@ -31,6 +31,22 @@ UAssassinsAbilitySystemComponent* AAssassinsPlayerController::GetAssassinsAbilit
 	return AssassinsPS ? AssassinsPS->GetAssassinsAbilitySystemComponent() : nullptr;
 }
 
+void AAssassinsPlayerController::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if (AAssassinsPlayerState* AssassinsPS = GetPlayerState<AAssassinsPlayerState>())
+	{
+		if (UAssassinsAbilitySystemComponent* AssassinsASC = AssassinsPS->GetAssassinsAbilitySystemComponent())
+		{
+			if (TargetChasingComponent)
+			{
+				TargetChasingComponent->PrimaryComponentTick.AddPrerequisite(AssassinsASC, AssassinsASC->PrimaryComponentTick);
+			}
+		}
+	}
+}
+
 void AAssassinsPlayerController::BeginPlay()
 {
 	Super::BeginPlay();

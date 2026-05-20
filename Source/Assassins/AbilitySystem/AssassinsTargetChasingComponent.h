@@ -57,8 +57,5 @@ public:
 
 private:
 
-	// Set by someone outside the component
 	bool bKeepChase;
-	// Give it a one tick chance to receive move complete.
-	bool bKeepChaseBefore;
 };
