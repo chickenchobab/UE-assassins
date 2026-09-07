@@ -5,7 +5,10 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Character/AssassinsCharacter.h"
+#include "Teams/AssassinsTeamAgentInterface.h"
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AssassinsGameplayTags.h"
 
 AAssassinsProjectile::AAssassinsProjectile()
 {
@@ -19,6 +22,7 @@ AAssassinsProjectile::AAssassinsProjectile()
     CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
     CollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+    CollisionBox->SetCollisionResponseToChannel(ECC_GameTraceChannel4/*structure*/, ECR_Overlap);
     CollisionBox->SetGenerateOverlapEvents(true);
     CollisionBox->OnComponentBeginOverlap.AddUniqueDynamic(this, &AAssassinsProjectile::HandleProjectileBeginOverlap);
 
@@ -36,30 +40,38 @@ AAssassinsProjectile::AAssassinsProjectile()
     StartLocation = FVector::Zero();
 }
 
-bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeInstigator, bool bShouldBeEnemy) const
+bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeInstigator, bool bShouldBeEnemy, bool bCanTargetStructure) const
 {
     AAssassinsCharacter* InstigatorCharacter = Cast<AAssassinsCharacter>(GetInstigator());
     check(InstigatorCharacter);
 
-    AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor);
-    if (TargetCharacter == nullptr)
+    const IAssassinsTeamAgentInterface* TargetTeamAgent = Cast<IAssassinsTeamAgentInterface>(TargetActor);
+    if (TargetTeamAgent == nullptr)
     {
         return false;
     }
 
-    // Me: The target's death state is not processed here.
-    // It is expected to be destroyed automatically when an overlap occurs.
-    
+    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
+    if (TargetASC == nullptr)
+    {
+        return false;
+    }
+
     bool bValidTarget = true;
 
     if (bShouldNotBeInstigator)
     {
-        bValidTarget &= (TargetCharacter != InstigatorCharacter);
+        bValidTarget &= (TargetActor != InstigatorCharacter);
     }
 
     if (bShouldBeEnemy)
     {
-        bValidTarget &= (TargetCharacter->GetGenericTeamId() != InstigatorCharacter->GetGenericTeamId());
+        bValidTarget &= (TargetTeamAgent->GetGenericTeamId() != InstigatorCharacter->GetGenericTeamId());
+    }
+
+    if (!bCanTargetStructure)
+    {
+        bValidTarget &= !TargetASC->HasMatchingGameplayTag(AssassinsGameplayTags::Structure);
     }
 
     return bValidTarget;
@@ -167,14 +179,11 @@ void AAssassinsProjectile::ApplyGameplayEffectSpecToTargetActor(const FGameplayE
     AAssassinsCharacter* InstigatorCharacter = Cast<AAssassinsCharacter>(GetInstigator());
     check(InstigatorCharacter);
 
-    if (AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor))
+    UAbilitySystemComponent* SourceASC = InstigatorCharacter->GetAbilitySystemComponent();
+    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
+
+    if (SourceASC && TargetASC && SpecHandle.Data.IsValid())
     {
-        if (UAbilitySystemComponent* ASC = InstigatorCharacter->GetAbilitySystemComponent())
-        {
-            if (SpecHandle.Data.IsValid())
-            {
-                ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetCharacter->GetAbilitySystemComponent());
-            }
-        }
+        SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
     }
 }

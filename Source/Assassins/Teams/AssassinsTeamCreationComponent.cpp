@@ -47,7 +47,7 @@ void UAssassinsTeamCreationComponent::GetTeamBaseTransform(FTransform& BaseTrans
 		{
 			if (TeamBaseActor->TeamId == TeamId)
 			{
-				BaseTransform = TeamBaseActor->GetActorTransform();
+				BaseTransform = TeamBaseActor->GetMinionSpawnTransform();
 				return;
 			}
 		}
@@ -133,7 +133,17 @@ void UAssassinsTeamCreationComponent::ServerCreateTeams()
 
 		if (!bFoundBase)
 		{
-			UE_LOG(LogAssassinsTeams, Error, TEXT("There is no valid team base of the team[%d] on the map [%s]"), TeamId, *GetNameSafe(GetWorld()->PersistentLevel));
+			// Me: List what is actually placed so that a team base left with an unset team ID is obvious from the log.
+			FString PlacedBases;
+			for (const AActor* TeamBase : TeamBases)
+			{
+				if (const AAssassinsTeamBaseActor* TeamBaseActor = Cast<AAssassinsTeamBaseActor>(TeamBase))
+				{
+					PlacedBases += FString::Printf(TEXT("\n\t%s (TeamId = %d)"), *GetNameSafe(TeamBaseActor), TeamBaseActor->TeamId);
+				}
+			}
+
+			UE_LOG(LogAssassinsTeams, Error, TEXT("There is no valid team base of the team[%d] on the map [%s]. Team bases placed:%s"), TeamId, *GetNameSafe(GetWorld()->PersistentLevel), *PlacedBases);
 			return;
 		}
 

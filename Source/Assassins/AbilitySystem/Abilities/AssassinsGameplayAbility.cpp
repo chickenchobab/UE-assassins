@@ -9,8 +9,10 @@
 #include "Character/Movements/AssassinsCharacterMovementComponent.h"
 #include "Player/AssassinsPlayerController.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "Teams/AssassinsTeamAgentInterface.h"
 #include "Teams/AssassinsTeamSubsystem.h"
 #include "Animation/AssassinsAnimInstance.h"
+#include "AssassinsGameplayTags.h"
 #include "NativeGameplayTags.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_DEATH, "Status.Death");
@@ -21,6 +23,8 @@ UAssassinsGameplayAbility::UAssassinsGameplayAbility(const FObjectInitializer& O
     InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 
     ActivationPolicy = EAssassinsAbilityActivationPolicy::OnInputTriggered;
+
+    bCanTargetStructure = false;
 }
 
 UAssassinsAbilitySystemComponent* UAssassinsGameplayAbility::GetAssassinsAbilitySystemComponentFromActorInfo() const
@@ -187,19 +191,31 @@ float UAssassinsGameplayAbility::EvaluateCurveTableRowByAbilityLevel(UCurveTable
 
 bool UAssassinsGameplayAbility::IsValidEnemy(AActor* TargetActor) const
 {
-    AAssassinsCharacter* AvatarCharacter = GetAssassinsCharacterFromActorInfo();
-    check(AvatarCharacter);
-
-    if (AAssassinsCharacter* TargetCharacter = Cast<AAssassinsCharacter>(TargetActor))
+    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
+    if (TargetASC == nullptr)
     {
-        if (TargetCharacter->HasGameplayTag(TAG_DEATH))
-        {
-            return false;
-        }
-        return TargetCharacter->GetGenericTeamId() != AvatarCharacter->GetGenericTeamId();
+        return false;
     }
 
-    return false;
+    if (TargetASC->HasMatchingGameplayTag(TAG_DEATH))
+    {
+        return false;
+    }
+
+    // Me: Basic attacks opt in to hitting structures, every other ability leaves the flag off.
+    if (!bCanTargetStructure && TargetASC->HasMatchingGameplayTag(AssassinsGameplayTags::Structure))
+    {
+        return false;
+    }
+
+    const IAssassinsTeamAgentInterface* TargetTeamAgent = Cast<IAssassinsTeamAgentInterface>(TargetActor);
+    const IAssassinsTeamAgentInterface* AvatarTeamAgent = Cast<IAssassinsTeamAgentInterface>(GetAvatarActorFromActorInfo());
+    if ((TargetTeamAgent == nullptr) || (AvatarTeamAgent == nullptr))
+    {
+        return false;
+    }
+
+    return TargetTeamAgent->GetGenericTeamId() != AvatarTeamAgent->GetGenericTeamId();
 }
 
 void UAssassinsGameplayAbility::AddTagToAvatar(FGameplayTag Tag)

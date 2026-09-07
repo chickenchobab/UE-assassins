@@ -19,6 +19,8 @@ namespace AssassinsGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(Status_Untargetable_Invisible, "Status.Untargetable.Invisible");
 	UE_DEFINE_GAMEPLAY_TAG(Status_Rooted, "Status.Rooted");
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Structure, "Structure", "Parent of the destructible building tags(Structure.Nexus, Structure.Turret) declared in DefaultGameplayTags.ini");
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InitState_Spawned, "InitState.Spawned", "1: Actor/component has initially spawned and can be extended");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InitState_DataAvailable, "InitState.DataAvailable", "2: All required data has been loaded/replicated and is ready for initialization");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InitState_DataInitialized, "InitState.DataInitialized", "3: The available data has been initialized for this actor/component, but it is not ready for full gameplay");

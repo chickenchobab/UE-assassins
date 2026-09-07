@@ -136,6 +136,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability")
 	EAssassinsAbilityActivationPolicy ActivationPolicy;
 
+	// Me: Structures(the team base for instance) are only meant to be hit by basic attacks,
+	// so an ability has to opt in before IsValidEnemy accepts one as a target.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Ability")
+	bool bCanTargetStructure;
+
 private:
 
 	UPROPERTY()

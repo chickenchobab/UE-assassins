@@ -21,7 +21,7 @@ public:
 	AAssassinsProjectile();
 
     UFUNCTION(BlueprintPure, Category = "Assassins|Projectile")
-    virtual bool IsValidTarget(AActor* TargetActor, bool bShouldNotBeInstigator=true, bool bShouldBeEnemy=true) const;
+    virtual bool IsValidTarget(AActor* TargetActor, bool bShouldNotBeInstigator=true, bool bShouldBeEnemy=true, bool bCanTargetStructure=false) const;
 
     UFUNCTION(BlueprintPure)
     UParticleSystemComponent* GetProjectileParticle() const { return ParticleSystemComponent; }

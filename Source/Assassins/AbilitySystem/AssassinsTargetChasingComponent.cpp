@@ -2,6 +2,7 @@
 
 
 #include "AbilitySystem/AssassinsTargetChasingComponent.h"
+#include "Character/AssassinsCharacter.h"
 
 UAssassinsTargetChasingComponent::UAssassinsTargetChasingComponent()
 {
@@ -26,6 +27,11 @@ void UAssassinsTargetChasingComponent::TickComponent(float DeltaTime, ELevelTick
 
 void UAssassinsTargetChasingComponent::ChaseTarget(AActor* Target, float AcceptRadius)
 {
+	if (Target && !Target->IsA<AAssassinsCharacter>())
+	{
+		AcceptRadius += Target->GetSimpleCollisionRadius();
+	}
+
 	SetTargetState(Target, AcceptRadius);
 
 	ChaseTargetDelegate.ExecuteIfBound(Target, AcceptRadius);
