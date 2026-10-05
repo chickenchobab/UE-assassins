@@ -136,6 +136,18 @@ void AAssassinsPlayerController::OnRep_PlayerState()
 void AAssassinsPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
+
+	if (IsLocalPlayerController() && GEngine)
+	{
+		float PingValue = GetPlayerState<APlayerState>() ? GetPlayerState<APlayerState>()->ExactPing : 0.0f;
+
+		GEngine->AddOnScreenDebugMessage(
+			10, // 고정된 키값으로 메시지 갱신
+			0.1f,
+			FColor::Green,
+			FString::Printf(TEXT("Ping: %.1f ms"), PingValue)
+		);
+	}
 }
 
 void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
@@ -204,6 +216,40 @@ void AAssassinsPlayerController::SetAvoidanceGroup(int32 AvoidanceGroup)
 		}
 	}
 }
+
+#if !UE_BUILD_SHIPPING
+void AAssassinsPlayerController::SetAimOverride(const FVector& Location, AActor* Target)
+{
+	AimOverrideLocation = Location;
+	AimOverrideTarget = Target;
+}
+
+void AAssassinsPlayerController::ClearAimOverride()
+{
+	AimOverrideLocation.Reset();
+	AimOverrideTarget.Reset();
+}
+
+bool AAssassinsPlayerController::GetAimOverride(FHitResult& OutHitResult, AActor*& OutTarget) const
+{
+	if (!AimOverrideLocation.IsSet())
+	{
+		return false;
+	}
+
+	// As if the cursor were on the location, over the target when there is one.
+	OutHitResult = FHitResult();
+	OutHitResult.bBlockingHit = true;
+	OutHitResult.Location = AimOverrideLocation.GetValue();
+	OutHitResult.ImpactPoint = AimOverrideLocation.GetValue();
+	OutHitResult.Normal = FVector::UpVector;
+	OutHitResult.ImpactNormal = FVector::UpVector;
+	OutHitResult.HitObjectHandle = FActorInstanceHandle(AimOverrideTarget.Get());
+
+	OutTarget = AimOverrideTarget.Get();
+	return true;
+}
+#endif
 
 void AAssassinsPlayerController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {

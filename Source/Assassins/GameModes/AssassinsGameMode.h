@@ -81,6 +81,16 @@ private:
 	// Set which is set when it is ready to start game and leave lobby.
 	UPROPERTY()
 	TSet<FPrimaryAssetId> SavedChampionSelectionInfo;
+
+#if WITH_EDITOR
+	// PIE: the developer settings(UAssassinsDeveloperSettings) may give the experience and the champions, except on the
+	// frontend map, which is also the lobby.
+	bool ShouldApplyDeveloperOverrides() const;
+	void ApplyChampionOverride(AController* NewPlayer);
+
+	// The players who joined so far, which the champion overrides go by.
+	int32 NumPlayersJoinedInPIE = 0;
+#endif
 };
 
 

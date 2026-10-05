@@ -24,6 +24,11 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
 #include "System/AssassinsGameInstance.h"
+#if WITH_EDITOR
+#include "GameMapsSettings.h"
+#include "Misc/PackageName.h"
+#include "System/AssassinsDeveloperSettings.h"
+#endif
 
 
 AAssassinsGameMode::AAssassinsGameMode()
@@ -115,6 +120,18 @@ void AAssassinsGameMode::InitGame(const FString& MapName, const FString& Options
 	if (!bInLobby)
 	{
 		NumBots = UGameplayStatics::GetIntOption(OptionsString, TEXT("NumBots"), 0);
+
+#if WITH_EDITOR
+		// Played straight from the editor, nobody told the match how many bots to add.
+		if (!UGameplayStatics::HasOption(OptionsString, TEXT("NumBots")) && ShouldApplyDeveloperOverrides())
+		{
+			NumBots = GetDefault<UAssassinsDeveloperSettings>()->NumBotsOverride;
+			if (NumBots > 0)
+			{
+				UE_LOG(LogAssassins, Log, TEXT("PIE: %d bots (developer settings)."), NumBots);
+			}
+		}
+#endif
 	}
 	else
 	{
@@ -161,6 +178,11 @@ bool AAssassinsGameMode::UpdatePlayerStartSpot(AController* Player, const FStrin
 void AAssassinsGameMode::GenericPlayerInitialization(AController* NewPlayer)
 {
 	Super::GenericPlayerInitialization(NewPlayer);
+
+#if WITH_EDITOR
+	// Before the player spawns, as the lobby would have set it.
+	ApplyChampionOverride(NewPlayer);
+#endif
 
 	OnGameModePlayerInitialized.Broadcast(this, NewPlayer);
 }
@@ -367,6 +389,7 @@ void AAssassinsGameMode::HandleMatchAssignmentIfNotExpectingOne()
 	// Precedence order (highest wins)
 	//  - Matchmaking assignment (if present)
 	//  - URL Options override
+	//  - Developer settings (PIE only, not on the frontend map)
 	//  - World Settings
 	//  - TODO: Dedicated server
 	//  - Default experience
@@ -380,6 +403,14 @@ void AAssassinsGameMode::HandleMatchAssignmentIfNotExpectingOne()
 		ExperienceId = FPrimaryAssetId(FPrimaryAssetType(UAssassinsExperienceDefinition::StaticClass()->GetFName()), FName(*ExperienceFromOptions));
 		ExperienceIdSource = TEXT("OptionsString");
 	}
+
+#if WITH_EDITOR
+	if (!ExperienceId.IsValid() && ShouldApplyDeveloperOverrides())
+	{
+		ExperienceId = GetDefault<UAssassinsDeveloperSettings>()->ExperienceOverride;
+		ExperienceIdSource = TEXT("DeveloperSettings");
+	}
+#endif
 
 	// See if the world settings has a default experience
 	if (!ExperienceId.IsValid())
@@ -443,6 +474,53 @@ void AAssassinsGameMode::OnExperienceLoaded(const UAssassinsExperienceDefinition
 		}
 	}
 }
+
+#if WITH_EDITOR
+bool AAssassinsGameMode::ShouldApplyDeveloperOverrides() const
+{
+	const UWorld* World = GetWorld();
+	if ((World == nullptr) || !World->IsPlayInEditor() || bInLobby)
+	{
+		return false;
+	}
+
+	// The frontend map is also the lobby: it keeps its own experience, and nobody plays a champion there.
+	const FString FrontendPackageName = FPackageName::ObjectPathToPackageName(UGameMapsSettings::GetGameDefaultMap());
+	const FString WorldPackageName = UWorld::RemovePIEPrefix(World->GetOutermost()->GetName());
+	return WorldPackageName != FrontendPackageName;
+}
+
+void AAssassinsGameMode::ApplyChampionOverride(AController* NewPlayer)
+{
+	// Players only: bots pick their own.
+	if ((Cast<APlayerController>(NewPlayer) == nullptr) || !ShouldApplyDeveloperOverrides())
+	{
+		return;
+	}
+
+	const int32 PlayerIndex = NumPlayersJoinedInPIE++;
+
+	// A player who came through the lobby picked there.
+	AAssassinsPlayerState* AssassinsPS = NewPlayer->GetPlayerState<AAssassinsPlayerState>();
+	if ((AssassinsPS == nullptr) || (AssassinsPS->GetPawnData<UAssassinsPawnData>() != nullptr))
+	{
+		return;
+	}
+
+	const TArray<TSoftObjectPtr<UAssassinsPawnData>>& Champions = GetDefault<UAssassinsDeveloperSettings>()->ChampionOverrides;
+	if (!Champions.IsValidIndex(PlayerIndex))
+	{
+		return;
+	}
+
+	// The pawn takes it as it spawns, and FinishRestartPlayer gives its ability sets, the same as after the lobby.
+	if (const UAssassinsPawnData* PawnData = Champions[PlayerIndex].LoadSynchronous())
+	{
+		AssassinsPS->SetPawnData(PawnData, /*bShouldApplyAbilitySets*/ false);
+		UE_LOG(LogAssassins, Log, TEXT("PIE: player %d plays %s (developer settings)."), PlayerIndex, *GetNameSafe(PawnData));
+	}
+}
+#endif
 
 void AAssassinsGameMode::TryServerTravelToGameMap()
 {

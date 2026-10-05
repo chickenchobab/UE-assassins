@@ -27,7 +27,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMoveCompletedSignature, FAIRequest
 DECLARE_MULTICAST_DELEGATE_OneParam(FPlayerRestartedDelegate, ACharacter*);
 
 UCLASS()
-class AAssassinsPlayerController : public ACommonPlayerController, public IAssassinsTeamAgentInterface
+class ASSASSINS_API AAssassinsPlayerController : public ACommonPlayerController, public IAssassinsTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -94,6 +94,17 @@ public:
 
 	void SetAvoidanceGroup(int32 AvoidanceGroup);
 
+#if !UE_BUILD_SHIPPING
+	// Automation: the ability inputs of this player aim at this location and target(may be null) in place of the mouse,
+	// until cleared. Only the automation tests set it.
+	void SetAimOverride(const FVector& Location, AActor* Target);
+	void ClearAimOverride();
+
+	// Whether the automation aims for this player. If so, fills what the ability inputs would otherwise take from under
+	// the cursor(the hit) and from the hero component(the target).
+	bool GetAimOverride(FHitResult& OutHitResult, AActor*& OutTarget) const;
+#endif
+
 public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Ability")
@@ -134,4 +145,9 @@ private:
 	FMoveCompletedSignature ReceiveMoveCompleted;
 
 	bool bPlayerRestarted : 1;
+
+#if !UE_BUILD_SHIPPING
+	TOptional<FVector> AimOverrideLocation;
+	TWeakObjectPtr<AActor> AimOverrideTarget;
+#endif
 };

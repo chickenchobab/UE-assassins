@@ -46,7 +46,9 @@ public class Assassins : ModuleRules
                 "CommonUser",
                 "UIExtension",
                 "GameSubtitles",
-                "NetCore"
+                "NetCore",
+                "DeveloperSettings",
+                "EngineSettings"
             }
         );
     }

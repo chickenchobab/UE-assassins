@@ -9,9 +9,24 @@
 #include "AssassinsGameplayTags.h"
 #include "Animation/AssassinsAnimInstance.h"
 #include "Character/AssassinsHeroComponent.h"
+#include "Player/AssassinsPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_EVENT_ABILITYINPUT, "Event.AbilityInput");
+
+#if !UE_BUILD_SHIPPING
+namespace AssassinsAbilityInput
+{
+	// Where the automation aims for the player of the ability system, if it does(AAssassinsPlayerController::SetAimOverride).
+	// Read off the player's own controller, not the first one of the world: a listen server runs the abilities of the
+	// remote players too.
+	static bool GetAimOverride(const FGameplayAbilityActorInfo* ActorInfo, FHitResult& OutHitResult, AActor*& OutTarget)
+	{
+		const AAssassinsPlayerController* AssassinsPC = ActorInfo ? Cast<AAssassinsPlayerController>(ActorInfo->PlayerController.Get()) : nullptr;
+		return AssassinsPC && AssassinsPC->GetAimOverride(OutHitResult, OutTarget);
+	}
+}
+#endif
 
 UAssassinsAbilitySystemComponent::UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -154,6 +169,15 @@ void UAssassinsAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool
 	FGameplayEventData EventData;
 	EventData.ContextHandle = MakeEffectContext();
 	FHitResult GroundHit;
+#if !UE_BUILD_SHIPPING
+	// The automation aims in place of the mouse. The target comes the same way, from GetCursorTargetFromHeroComponent.
+	AActor* AimOverrideTarget = nullptr;
+	if (AssassinsAbilityInput::GetAimOverride(AbilityActorInfo.Get(), GroundHit, AimOverrideTarget))
+	{
+		EventData.ContextHandle.AddHitResult(GroundHit);
+	}
+	else
+#endif
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{
 		if (PC->GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, true, GroundHit))
@@ -216,6 +240,15 @@ AActor* UAssassinsAbilitySystemComponent::GetCursorTargetFromHeroComponent() con
 {
 	// This function is not for an ability activation time(the initial cursor position is handled to the ability spec), 
 	// but for dynamic cursor logic in runtime, like triggering another ability that requires new cursor position or interacting with some objects. 
+
+#if !UE_BUILD_SHIPPING
+	FHitResult AimOverrideHitResult;
+	AActor* AimOverrideTarget = nullptr;
+	if (AssassinsAbilityInput::GetAimOverride(AbilityActorInfo.Get(), AimOverrideHitResult, AimOverrideTarget))
+	{
+		return AimOverrideTarget;
+	}
+#endif
 
 	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 	{
