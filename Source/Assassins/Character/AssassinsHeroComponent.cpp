@@ -428,11 +428,13 @@ void UAssassinsHeroComponent::HandleCursorTargetSet(AActor* TargetActor)
 	check(CachedPlayerController);
 	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Crosshairs;
 
+	// The viewport still sends cursor events while the local player goes away, e.g. as play in editor ends.
 	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(CachedPlayerController->GetLocalPlayer());
-	check(LP);
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
-	check(Subsystem);
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP ? ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP) : nullptr;
+	if (Subsystem == nullptr)
+	{
+		return;
+	}
 
 	if (AttackInputMapping)
 	{
@@ -447,11 +449,13 @@ void UAssassinsHeroComponent::HandleCursorTargetCleared()
 	check(CachedPlayerController);
 	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Default;
 
+	// The viewport still sends cursor events while the local player goes away, e.g. as play in editor ends.
 	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(CachedPlayerController->GetLocalPlayer());
-	check(LP);
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
-	check(Subsystem);
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP ? ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP) : nullptr;
+	if (Subsystem == nullptr)
+	{
+		return;
+	}
 
 	if (AttackInputMapping)
 	{

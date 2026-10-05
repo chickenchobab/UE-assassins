@@ -118,7 +118,7 @@ void UAssassinsPlayerBotCreationComponent::LoadChampionDataAndSpawnBots()
 
 				if (!bHasSpawned)
 				{
-					const UAssassinsPawnData* RandomChampion = ChampionDataList[FMath::RandRange(0, ChampionDataList.Num())];
+					const UAssassinsPawnData* RandomChampion = ChampionDataList[FMath::RandRange(0, ChampionDataList.Num() - 1)];
 					SpawnOneBot(RandomChampion);
 				}
 				
