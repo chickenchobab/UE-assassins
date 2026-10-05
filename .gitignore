@@ -11,3 +11,6 @@ Assassins.uproject
 Assassins.sln
 .vsconfig
 *.pdb
+Docs/
+CLAUDE.md
+Migration/
