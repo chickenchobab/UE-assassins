@@ -24,6 +24,11 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
 #include "System/AssassinsGameInstance.h"
+#if WITH_EDITOR
+#include "GameMapsSettings.h"
+#include "Misc/PackageName.h"
+#include "System/AssassinsDeveloperSettings.h"
+#endif
 
 
 AAssassinsGameMode::AAssassinsGameMode()
@@ -115,6 +120,17 @@ void AAssassinsGameMode::InitGame(const FString& MapName, const FString& Options
 	if (!bInLobby)
 	{
 		NumBots = UGameplayStatics::GetIntOption(OptionsString, TEXT("NumBots"), 0);
+
+#if WITH_EDITOR
+		if (!UGameplayStatics::HasOption(OptionsString, TEXT("NumBots")) && ShouldApplyDeveloperOverrides())
+		{
+			NumBots = GetDefault<UAssassinsDeveloperSettings>()->NumBotsOverride;
+			if (NumBots > 0)
+			{
+				UE_LOG(LogAssassins, Log, TEXT("PIE: %d bots (developer settings)."), NumBots);
+			}
+		}
+#endif
 	}
 	else
 	{
@@ -161,6 +177,10 @@ bool AAssassinsGameMode::UpdatePlayerStartSpot(AController* Player, const FStrin
 void AAssassinsGameMode::GenericPlayerInitialization(AController* NewPlayer)
 {
 	Super::GenericPlayerInitialization(NewPlayer);
+
+#if WITH_EDITOR
+	ApplyChampionOverride(NewPlayer);
+#endif
 
 	OnGameModePlayerInitialized.Broadcast(this, NewPlayer);
 }
@@ -367,6 +387,7 @@ void AAssassinsGameMode::HandleMatchAssignmentIfNotExpectingOne()
 	// Precedence order (highest wins)
 	//  - Matchmaking assignment (if present)
 	//  - URL Options override
+	//  - 개발자 설정 (PIE에서만, 프런트엔드 맵 제외)
 	//  - World Settings
 	//  - TODO: Dedicated server
 	//  - Default experience
@@ -380,6 +401,14 @@ void AAssassinsGameMode::HandleMatchAssignmentIfNotExpectingOne()
 		ExperienceId = FPrimaryAssetId(FPrimaryAssetType(UAssassinsExperienceDefinition::StaticClass()->GetFName()), FName(*ExperienceFromOptions));
 		ExperienceIdSource = TEXT("OptionsString");
 	}
+
+#if WITH_EDITOR
+	if (!ExperienceId.IsValid() && ShouldApplyDeveloperOverrides())
+	{
+		ExperienceId = GetDefault<UAssassinsDeveloperSettings>()->ExperienceOverride;
+		ExperienceIdSource = TEXT("DeveloperSettings");
+	}
+#endif
 
 	// See if the world settings has a default experience
 	if (!ExperienceId.IsValid())
@@ -443,6 +472,50 @@ void AAssassinsGameMode::OnExperienceLoaded(const UAssassinsExperienceDefinition
 		}
 	}
 }
+
+#if WITH_EDITOR
+bool AAssassinsGameMode::ShouldApplyDeveloperOverrides() const
+{
+	const UWorld* World = GetWorld();
+	if ((World == nullptr) || !World->IsPlayInEditor() || bInLobby)
+	{
+		return false;
+	}
+
+	// 프런트엔드 맵은 로비이기도 해서 자기 익스피리언스를 쓰고, 거기서는 챔피언을 하지 않는다.
+	const FString FrontendPackageName = FPackageName::ObjectPathToPackageName(UGameMapsSettings::GetGameDefaultMap());
+	const FString WorldPackageName = UWorld::RemovePIEPrefix(World->GetOutermost()->GetName());
+	return WorldPackageName != FrontendPackageName;
+}
+
+void AAssassinsGameMode::ApplyChampionOverride(AController* NewPlayer)
+{
+	if ((Cast<APlayerController>(NewPlayer) == nullptr) || !ShouldApplyDeveloperOverrides())
+	{
+		return;
+	}
+
+	const int32 PlayerIndex = NumPlayersJoinedInPIE++;
+
+	AAssassinsPlayerState* AssassinsPS = NewPlayer->GetPlayerState<AAssassinsPlayerState>();
+	if ((AssassinsPS == nullptr) || (AssassinsPS->GetPawnData<UAssassinsPawnData>() != nullptr))
+	{
+		return;
+	}
+
+	const TArray<TSoftObjectPtr<UAssassinsPawnData>>& Champions = GetDefault<UAssassinsDeveloperSettings>()->ChampionOverrides;
+	if (!Champions.IsValidIndex(PlayerIndex))
+	{
+		return;
+	}
+
+	if (const UAssassinsPawnData* PawnData = Champions[PlayerIndex].LoadSynchronous())
+	{
+		AssassinsPS->SetPawnData(PawnData, false);
+		UE_LOG(LogAssassins, Log, TEXT("PIE: player %d plays %s (developer settings)."), PlayerIndex, *GetNameSafe(PawnData));
+	}
+}
+#endif
 
 void AAssassinsGameMode::TryServerTravelToGameMap()
 {

@@ -136,6 +136,18 @@ void AAssassinsPlayerController::OnRep_PlayerState()
 void AAssassinsPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
+
+	if (IsLocalPlayerController() && GEngine)
+	{
+		float PingValue = GetPlayerState<APlayerState>() ? GetPlayerState<APlayerState>()->ExactPing : 0.0f;
+
+		GEngine->AddOnScreenDebugMessage(
+			10, // 고정된 키값으로 메시지 갱신
+			0.1f,
+			FColor::Green,
+			FString::Printf(TEXT("Ping: %.1f ms"), PingValue)
+		);
+	}
 }
 
 void AAssassinsPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)

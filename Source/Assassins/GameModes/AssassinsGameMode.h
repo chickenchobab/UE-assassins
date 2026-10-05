@@ -81,6 +81,13 @@ private:
 	// Set which is set when it is ready to start game and leave lobby.
 	UPROPERTY()
 	TSet<FPrimaryAssetId> SavedChampionSelectionInfo;
+
+#if WITH_EDITOR
+	bool ShouldApplyDeveloperOverrides() const;
+	void ApplyChampionOverride(AController* NewPlayer);
+
+	int32 NumPlayersJoinedInPIE = 0;
+#endif
 };
 
 
