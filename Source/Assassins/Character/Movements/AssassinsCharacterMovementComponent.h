@@ -103,6 +103,7 @@ public:
 	virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
 	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
 	virtual void ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase, FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation = TOptional<FRotator>()) override;
+	virtual bool ClientUpdatePositionAfterServerUpdate() override;
 	virtual void DisableMovement() override;
 	//~End of UCharacterMovementComponent interface
 
@@ -121,6 +122,11 @@ public:
 	FRotator TeleportRotation;
 
 private:
+
+	bool HasUnfinishedDashRootMotion() const;
+
+	void EndDashingStatus();
+
 	FAssassinsCharacterNetworkMoveDataContainer AssassinsNetworkMoveDataContainer;
 	FAssassinsCharacterMoveResponseDataContainer AssassinsMoveResponseDataContainer;
 

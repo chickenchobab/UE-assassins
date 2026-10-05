@@ -4,6 +4,8 @@
 FRootMotionSource_MoveToDynamicConstantSpeed::FRootMotionSource_MoveToDynamicConstantSpeed()
 	: StartLocation(ForceInitToZero)
 	, TargetLocation(ForceInitToZero)
+	, Speed(0.f)
+	, AcceptRadius(0.f)
 {
 }
 
@@ -27,7 +29,8 @@ bool FRootMotionSource_MoveToDynamicConstantSpeed::Matches(const FRootMotionSour
 
 	const FRootMotionSource_MoveToDynamicConstantSpeed* OtherCast = static_cast<const FRootMotionSource_MoveToDynamicConstantSpeed*>(Other);
 
-	return Speed == OtherCast->Speed && FVector::PointsAreNear(TargetLocation, OtherCast->TargetLocation, 0.1f);
+	// 대상은 비교하지 않는다. 시간에 따라 바뀌고(액터로 가는 돌진은 그 액터를 쫓는데 쪽마다 위치가 다르다), 서버의 소스는 이 규칙으로 클라이언트의 소스와 짝지어진다.
+	return Speed == OtherCast->Speed;
 }
 
 bool FRootMotionSource_MoveToDynamicConstantSpeed::MatchesAndHasSameState(const FRootMotionSource* Other) const
@@ -51,12 +54,29 @@ void FRootMotionSource_MoveToDynamicConstantSpeed::PrepareRootMotion
 	RootMotionParams.Clear();
 
 	const FVector CurrentLocation = Character.GetActorLocation();
-	float Multiplier = (MovementTickTime > UE_SMALL_NUMBER) ? (SimulationTime / MovementTickTime) : 1.f;
+	const FVector ToTarget(TargetLocation.X - CurrentLocation.X, TargetLocation.Y - CurrentLocation.Y, 0.0);
+	const double RemainingDistance = ToTarget.Size();
+	const double StepDistance = Speed * SimulationTime;
 
-	FVector Force = (TargetLocation - CurrentLocation).GetSafeNormal2D() * Speed * Multiplier;
-	FTransform NewTransform(Force);
+	// AcceptRadius 안에 드는 이동은 대상까지 가서 소스를 끝낸다. 그래서 돌진의 끝이 이동 자체에 들어가, 이동을 시뮬레이션하는 모든 쪽
+	// (소유 클라이언트, 서버, 클라이언트의 리플레이)에서 같다. 프레임마다 한 번 보는 어빌리티 태스크라면 프레임이 가져온 이동 수만큼 늦게 끝낸다.
+	// 마지막 걸음은 대상을 넘지 않아 다음 이동에서 되돌아오지 않는다.
+	FVector Step = FVector::ZeroVector;
+	if (SimulationTime > 0.f)
+	{
+		if (RemainingDistance <= StepDistance + AcceptRadius)
+		{
+			Step = ToTarget;
+			Status.SetFlag(ERootMotionSourceStatusFlags::Finished);
+		}
+		else
+		{
+			Step = ToTarget * (StepDistance / RemainingDistance);
+		}
+	}
 
-	RootMotionParams.Set(NewTransform);
+	const FVector Force = (MovementTickTime > UE_SMALL_NUMBER) ? (Step / MovementTickTime) : FVector::ZeroVector;
+	RootMotionParams.Set(FTransform(Force));
 
 	SetTime(GetTime() + SimulationTime);
 }
@@ -71,6 +91,7 @@ bool FRootMotionSource_MoveToDynamicConstantSpeed::NetSerialize(FArchive& Ar, UP
 	Ar << StartLocation;
 	Ar << TargetLocation;
 	Ar << Speed;
+	Ar << AcceptRadius;
 
 	bOutSuccess = true;
 	return true;

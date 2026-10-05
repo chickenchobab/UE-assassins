@@ -32,15 +32,34 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void EnableAndSetLifeSpan(float NewLifeSpan);
 
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void SetVelocity(const FVector& NewVelocity);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void FinishInitProjectile();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void InitHomingProjectile(AActor* ProjectileTarget, const FGameplayEffectSpecHandle& DamageContextHandle, double HomingAcceleration);
+
+    void LaunchStraight(const FVector& Velocity, float Range, const FGameplayEffectSpecHandle& Damage);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void HandleTargetOverlap(AActor* TargetActor, const FVector& ImpactLocation);
+
+public:
+
+    UPROPERTY(BlueprintReadWrite, Category = "Assassins|Projectile")
+    FGameplayEffectSpecHandle DamageSpecHandle;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Assassins|Projectile")
+    FGameplayEffectSpecHandle DamageSpecHandle_FirstHit;
+
 protected:
 	
     //~AActor interface
 	virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
     //~End of AActor interface
-
-    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
-    void SetVelocity(const FVector& NewVelocity);
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration);

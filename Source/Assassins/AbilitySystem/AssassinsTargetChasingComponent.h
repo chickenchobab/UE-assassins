@@ -58,4 +58,6 @@ public:
 private:
 
 	bool bKeepChase;
+
+	bool bKeptChaseLastTick;
 };

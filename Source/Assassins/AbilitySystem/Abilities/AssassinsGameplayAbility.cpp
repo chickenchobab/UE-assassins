@@ -3,6 +3,7 @@
 
 #include "AbilitySystem/Abilities/AssassinsGameplayAbility.h"
 #include "AbilitySystem/AssassinsAbilitySystemComponent.h"
+#include "AbilitySystem/AssassinsProjectile.h"
 #include "AbilitySystem/AssassinsTargetChasingComponent.h"
 #include "Character/AssassinsCharacter.h"
 #include "Character/AssassinsHeroComponent.h"
@@ -13,6 +14,8 @@
 #include "Teams/AssassinsTeamSubsystem.h"
 #include "Animation/AssassinsAnimInstance.h"
 #include "AssassinsGameplayTags.h"
+#include "CollisionQueryParams.h"
+#include "Engine/World.h"
 #include "NativeGameplayTags.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_DEATH, "Status.Death");
@@ -169,9 +172,66 @@ FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyGameplayEffectSpecTo
     check(ASC);
 
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
-    check(TargetASC);
+    if ((TargetASC == nullptr) || !SpecHandle.IsValid())
+    {
+        return FActiveGameplayEffectHandle();
+    }
 
     return ASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC, ASC->ScopedPredictionKey);
+}
+
+FActiveGameplayEffectHandle UAssassinsGameplayAbility::ApplyEffectToTarget(TSubclassOf<UGameplayEffect> EffectClass, AActor* TargetActor)
+{
+    return ApplyGameplayEffectSpecToTargetActor(MakeEffectSpecHandle(EffectClass), TargetActor);
+}
+
+AAssassinsProjectile* UAssassinsGameplayAbility::SpawnAbilityProjectile(TSubclassOf<AAssassinsProjectile> ProjectileClass, const FTransform& SpawnTransform, AActor* ProjectileOwner) const
+{
+    AActor* AvatarActor = GetAvatarActorFromActorInfo();
+    UWorld* World = GetWorld();
+    if ((AvatarActor == nullptr) || (World == nullptr) || !ProjectileClass)
+    {
+        return nullptr;
+    }
+
+    FActorSpawnParameters SpawnParameters;
+    SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    SpawnParameters.Owner = ProjectileOwner ? ProjectileOwner : AvatarActor;
+    SpawnParameters.Instigator = Cast<APawn>(AvatarActor);
+
+    return World->SpawnActor<AAssassinsProjectile>(ProjectileClass, SpawnTransform, SpawnParameters);
+}
+
+TArray<FHitResult> UAssassinsGameplayAbility::SweepForEnemies(const FVector& Center, double Radius, double TopZ, const FCollisionObjectQueryParams& ObjectQueryParams, const AActor* SourceActor) const
+{
+    TArray<FHitResult> EnemyHits;
+
+    UWorld* World = GetWorld();
+    if ((World == nullptr) || !ObjectQueryParams.IsValid())
+    {
+        return EnemyHits;
+    }
+
+    const FVector Start(Center.X, Center.Y, 0.0);
+    const FVector End(Center.X, Center.Y, TopZ);
+
+    FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(AbilitySweepForEnemies), false, GetAvatarActorFromActorInfo());
+    QueryParams.AddIgnoredActor(SourceActor);
+
+    TArray<FHitResult> Hits;
+    World->SweepMultiByObjectType(Hits, Start, End, FQuat::Identity, ObjectQueryParams, FCollisionShape::MakeSphere(static_cast<float>(Radius)), QueryParams);
+
+    TSet<const AActor*> FoundActors;
+    for (const FHitResult& Hit : Hits)
+    {
+        AActor* HitActor = Hit.GetActor();
+        if (!FoundActors.Contains(HitActor) && IsValidEnemy(HitActor))
+        {
+            FoundActors.Add(HitActor);
+            EnemyHits.Add(Hit);
+        }
+    }
+    return EnemyHits;
 }
 
 float UAssassinsGameplayAbility::EvaluateCurveTableRowByAbilityLevel(UCurveTable* CurveTable, FName RowName, const FString& ContextString) const
@@ -273,18 +333,21 @@ void UAssassinsGameplayAbility::SetAvatarLocationAndRotation(const FVector& Goal
     }
 }
 
+EAbilityGenericReplicatedEvent::Type UAssassinsGameplayAbility::ToGenericReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent)
+{
+    return static_cast<EAbilityGenericReplicatedEvent::Type>(
+        static_cast<uint8>(EAbilityGenericReplicatedEvent::GameCustom1) + static_cast<uint8>(CustomEvent));
+}
+
 void UAssassinsGameplayAbility::ServerSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent)
 {
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
     check(ASC);
 
-    // TODO scoped window
+    // 이벤트마다 예측 키를 따로 두어, 서버가 그 키의 예측 창 안에서 처리하게 한다.
+    FScopedPredictionWindow ScopedPrediction(ASC, IsPredictingClient());
 
-    EAbilityGenericReplicatedEvent::Type EventType = static_cast<EAbilityGenericReplicatedEvent::Type>(
-        static_cast<uint8>(EAbilityGenericReplicatedEvent::GameCustom1) + static_cast<uint8>(CustomEvent)
-        );
-
-    ASC->ServerSetReplicatedEvent(EventType, GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo().GetActivationPredictionKey(), ASC->ScopedPredictionKey);
+    ASC->ServerSetReplicatedEvent(ToGenericReplicatedEvent(CustomEvent), GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo().GetActivationPredictionKey(), ASC->ScopedPredictionKey);
 }
 
 void UAssassinsGameplayAbility::ClientSetReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent)
@@ -292,36 +355,54 @@ void UAssassinsGameplayAbility::ClientSetReplicatedEvent(EAbilityCustomReplicate
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
     check(ASC);
 
-    EAbilityGenericReplicatedEvent::Type EventType = static_cast<EAbilityGenericReplicatedEvent::Type>(
-        static_cast<uint8>(EAbilityGenericReplicatedEvent::GameCustom1) + static_cast<uint8>(CustomEvent)
-        );
-
-    ASC->ClientSetReplicatedEvent(EventType, GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo().GetActivationPredictionKey());
+    ASC->ClientSetReplicatedEvent(ToGenericReplicatedEvent(CustomEvent), GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo().GetActivationPredictionKey());
 }
 
-void UAssassinsGameplayAbility::CallOrAddReplicatedDelegate(EAbilityCustomReplicatedEvent CustomEvent, FAbilityReplicatedDelegate ReplicatedDelegate, bool bClearTargetData)
+void UAssassinsGameplayAbility::CallOrAddReplicatedDelegate(EAbilityCustomReplicatedEvent CustomEvent, FAbilityReplicatedDelegate ReplicatedDelegate, bool bUnbindCalledDelegate)
 {
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
     check(ASC);
 
-    EAbilityGenericReplicatedEvent::Type EventType = static_cast<EAbilityGenericReplicatedEvent::Type>(
-        static_cast<uint8>(EAbilityGenericReplicatedEvent::GameCustom1) + static_cast<uint8>(CustomEvent)
-        );
+    const EAbilityGenericReplicatedEvent::Type EventType = ToGenericReplicatedEvent(CustomEvent);
+    const FGameplayAbilitySpecHandle SpecHandle = GetCurrentAbilitySpecHandle();
+    const FPredictionKey ActivationKey = GetCurrentActivationInfo().GetActivationPredictionKey();
 
-    ASC->CallOrAddReplicatedDelegate(
-        EventType,
-        GetCurrentAbilitySpecHandle(), 
-        GetCurrentActivationInfo().GetActivationPredictionKey(), 
-        FSimpleMulticastDelegate::FDelegate::CreateLambda([this, ReplicatedDelegate, bClearTargetData]() {
-            if (bClearTargetData)
+    // 이 이벤트만 소비하고 이 델리게이트만 푼다. 활성화가 받은 다른 이벤트와 신호(예: 다음 싱크 포인트가 기다리는 것)는 그대로 둔다.
+    TSharedRef<FDelegateHandle> DelegateHandle = MakeShared<FDelegateHandle>();
+    FSimpleMulticastDelegate::FDelegate EventDelegate = FSimpleMulticastDelegate::FDelegate::CreateWeakLambda(this,
+        [this, ReplicatedDelegate, bUnbindCalledDelegate, EventType, SpecHandle, ActivationKey, DelegateHandle]()
+        {
+            if (bUnbindCalledDelegate)
             {
-                if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+                if (UAbilitySystemComponent* OwnerASC = GetAbilitySystemComponentFromActorInfo())
                 {
-                    ASC->ClearAbilityReplicatedDataCache(GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo());
+                    OwnerASC->AbilityReplicatedEventDelegate(EventType, SpecHandle, ActivationKey).Remove(*DelegateHandle);
+                    OwnerASC->ConsumeGenericReplicatedEvent(EventType, SpecHandle, ActivationKey);
                 }
             }
 
-            ReplicatedDelegate.ExecuteIfBound(); 
-        })
-    );
+            ReplicatedDelegate.ExecuteIfBound();
+        });
+    *DelegateHandle = EventDelegate.GetHandle();
+
+    ASC->CallOrAddReplicatedDelegate(EventType, SpecHandle, ActivationKey, EventDelegate);
+}
+
+void UAssassinsGameplayAbility::SendPredictedEventToServer(EAbilityCustomReplicatedEvent CustomEvent, TFunctionRef<void()> LocalAction)
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+    if (ASC == nullptr)
+    {
+        return;
+    }
+
+    FScopedPredictionWindow ScopedPrediction(ASC, IsPredictingClient());
+
+    // LocalAction이 어빌리티를 끝내도 서버가 받도록 먼저 보낸다.
+    if (IsPredictingClient())
+    {
+        ASC->ServerSetReplicatedEvent(ToGenericReplicatedEvent(CustomEvent), GetCurrentAbilitySpecHandle(), GetCurrentActivationInfo().GetActivationPredictionKey(), ASC->ScopedPredictionKey);
+    }
+
+    LocalAction();
 }

@@ -20,6 +20,9 @@ struct FRootMotionSource_MoveToDynamicConstantSpeed : public FRootMotionSource
 	UPROPERTY()
 	float Speed;
 
+	UPROPERTY()
+	float AcceptRadius;
+
 	ASSASSINS_API void SetTargetLocation(FVector NewTargetLocation);
 
 	//~FRootMotionSource interface
