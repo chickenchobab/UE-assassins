@@ -11,5 +11,7 @@ public class AssassinsEditorTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V6;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		ExtraModuleNames.Add("Assassins");
+		ExtraModuleNames.Add("AssassinsEditor");
+		ExtraModuleNames.Add("AssassinsTests");
 	}
 }
