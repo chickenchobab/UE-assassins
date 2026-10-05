@@ -9,6 +9,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AssassinsGameplayTags.h"
+#include "AssassinsLogCategories.h"
 
 AAssassinsProjectile::AAssassinsProjectile()
 {
@@ -43,7 +44,12 @@ AAssassinsProjectile::AAssassinsProjectile()
 bool AAssassinsProjectile::IsValidTarget(AActor* TargetActor, bool bShouldNotBeInstigator, bool bShouldBeEnemy, bool bCanTargetStructure) const
 {
     AAssassinsCharacter* InstigatorCharacter = Cast<AAssassinsCharacter>(GetInstigator());
-    check(InstigatorCharacter);
+    if (InstigatorCharacter == nullptr)
+    {
+        // Spawned without its champion as the instigator, it can't tell friend from foe.
+        UE_LOG(LogAssassins, Error, TEXT("%s has no character instigator: spawn it with the champion as its instigator."), *GetNameSafe(this));
+        return false;
+    }
 
     const IAssassinsTeamAgentInterface* TargetTeamAgent = Cast<IAssassinsTeamAgentInterface>(TargetActor);
     if (TargetTeamAgent == nullptr)
@@ -137,6 +143,14 @@ void AAssassinsProjectile::SetVelocity(const FVector& NewVelocity)
     }
 }
 
+void AAssassinsProjectile::LaunchStraight(const FVector& Velocity, float Range, const FGameplayEffectSpecHandle& Damage)
+{
+    DamageSpecHandle = Damage;
+    SetVelocity(Velocity);
+    EnableAndSetDistanceRange(Range);
+    FinishInitProjectile();
+}
+
 void AAssassinsProjectile::EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration)
 {
     if (ProjectileMovement)
@@ -177,7 +191,11 @@ void AAssassinsProjectile::HandleProjectileBeginOverlap(UPrimitiveComponent* Ove
 void AAssassinsProjectile::ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor)
 {
     AAssassinsCharacter* InstigatorCharacter = Cast<AAssassinsCharacter>(GetInstigator());
-    check(InstigatorCharacter);
+    if (InstigatorCharacter == nullptr)
+    {
+        UE_LOG(LogAssassins, Error, TEXT("%s has no character instigator: spawn it with the champion as its instigator."), *GetNameSafe(this));
+        return;
+    }
 
     UAbilitySystemComponent* SourceASC = InstigatorCharacter->GetAbilitySystemComponent();
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);

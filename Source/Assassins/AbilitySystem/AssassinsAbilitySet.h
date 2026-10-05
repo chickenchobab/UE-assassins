@@ -10,6 +10,7 @@ class UAssassinsGameplayAbility;
 class UGameplayEffect;
 class UAttributeSet;
 class UAssassinsAbilitySystemComponent;
+class UAssassinsChampionSkillState;
 struct FGameplayAbilitySpecHandle;
 struct FActiveGameplayEffectHandle;
 
@@ -102,7 +103,7 @@ protected:
 * Non-mutable data asset used to grant gameplay abilities and gameplay effects.
 */
 UCLASS()
-class UAssassinsAbilitySet : public UPrimaryDataAsset
+class ASSASSINS_API UAssassinsAbilitySet : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 
@@ -111,8 +112,12 @@ public:
 	// The returned handles can be used later to take away anything that was granted.
 	void GiveToAbilitySystem(UAssassinsAbilitySystemComponent* InASC, FAssassinsAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject = nullptr) const;
 
+	TSubclassOf<UAssassinsChampionSkillState> GetSkillStateClass() const { return SkillStateClass; }
+
+	const TArray<FAssassinsAbilitySet_GameplayAbility>& GetGrantedGameplayAbilities() const { return GrantedGameplayAbilities; }
+
 protected:
-	
+
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FAssassinsAbilitySet_GameplayAbility> GrantedGameplayAbilities;
 
@@ -121,4 +126,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FAssassinsAbilitySet_AttributeSet> GrantedAttributeSets;
+
+	// What the abilities of this set share on the champion(e.g. Zed's shadows). Not granted with the rest: the champion
+	// makes it from its pawn data on every machine(see AAssassinsChampion::GetSkillState).
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UAssassinsChampionSkillState> SkillStateClass;
 };

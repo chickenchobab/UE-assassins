@@ -32,15 +32,44 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void EnableAndSetLifeSpan(float NewLifeSpan);
 
+    // Public for the abilities that launch the projectile, as the blueprints could already call it.
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void SetVelocity(const FVector& NewVelocity);
+
+    // Called by the ability once the projectile is set up, so that it starts handling what it overlaps.
+    // Implemented by B_Projectile_Base.
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void FinishInitProjectile();
+
+    // Makes the projectile chase the target. Implemented by B_ProjectileWithTarget.
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void InitHomingProjectile(AActor* ProjectileTarget, const FGameplayEffectSpecHandle& DamageContextHandle, double HomingAcceleration);
+
+    // Sends the projectile straight on at Velocity, for Range at most, with the damage it applies to what it hits, and has
+    // it start handling what it overlaps(FinishInitProjectile). Whatever else it needs, e.g. a handler of its end, is set
+    // before: it may hit something right away.
+    void LaunchStraight(const FVector& Velocity, float Range, const FGameplayEffectSpecHandle& Damage);
+
+    // What the projectile does when it reaches a target. Implemented by B_Projectile_Base and the projectiles overriding it.
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void HandleTargetOverlap(AActor* TargetActor, const FVector& ImpactLocation);
+
+public:
+
+    // Damage to apply on hit, made by the ability which spawned the projectile.
+    UPROPERTY(BlueprintReadWrite, Category = "Assassins|Projectile")
+    FGameplayEffectSpecHandle DamageSpecHandle;
+
+    // Damage to apply on the first hit only(Zed Ability1).
+    UPROPERTY(BlueprintReadWrite, Category = "Assassins|Projectile")
+    FGameplayEffectSpecHandle DamageSpecHandle_FirstHit;
+
 protected:
 	
     //~AActor interface
 	virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
     //~End of AActor interface
-
-    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
-    void SetVelocity(const FVector& NewVelocity);
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration);

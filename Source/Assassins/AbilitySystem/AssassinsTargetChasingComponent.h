@@ -58,4 +58,7 @@ public:
 private:
 
 	bool bKeepChase;
+
+	// bKeepChase as the last tick had it, for the one more chase once it is set to false.
+	bool bKeptChaseLastTick;
 };

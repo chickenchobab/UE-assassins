@@ -5,6 +5,8 @@
 #include "UObject/Interface.h"
 #include "AssassinsProjectileHandler.generated.h"
 
+class AAssassinsProjectile;
+
 UINTERFACE(MinimalAPI)
 class UAssassinsProjectileHandler : public UInterface
 {
@@ -21,12 +23,16 @@ class ASSASSINS_API IAssassinsProjectileHandler
 
 public:
 
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+	// Native events: a native ability implements them here, the blueprints keep overriding them as events.
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Assassins|Projectile")
 	void SetProjectileClass();
+	virtual void SetProjectileClass_Implementation() {}
 
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Assassins|Projectile")
 	void SetProjectileSpawnTransform(AActor* SourceActor, FTransform& SpawnTransform);
+	virtual void SetProjectileSpawnTransform_Implementation(AActor* SourceActor, FTransform& SpawnTransform) {}
 
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Assassins|Projectile")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Assassins|Projectile")
 	void HandleProjectile(AAssassinsProjectile* SpawnedProjectile);
+	virtual void HandleProjectile_Implementation(AAssassinsProjectile* SpawnedProjectile) {}
 };

@@ -29,10 +29,12 @@ void UAbilityTask_ApplyRootMotionDash::OnDestroy(bool AbilityIsEnding)
 	if (!bIsFinished && ShouldBroadcastAbilityTaskDelegates())
 	{
 		OnCancelled.Broadcast();
+		UE_LOG(LogTemp, Display, TEXT("Dash has been cancelled"));
 	}
 
 	ResetMovementMode();
 
+	// Mostly gone already: the movement takes it off on the move that ends the dash. Not when the dash was cut short.
 	if (AbilitySystemComponent.IsValid())
 	{
 		AbilitySystemComponent->SetLooseGameplayTagCount(TAG_DASHING, 0);
@@ -69,10 +71,19 @@ void UAbilityTask_ApplyRootMotionDash::AbortMoveAndDash()
 
 	for (auto It = AbilitySystemComponent->GetKnownTaskIterator(); It; ++It)
 	{
-		auto KnownTask = It->Get();
-		if (KnownTask != this && KnownTask->IsA<UAbilityTask_ApplyRootMotionDash>())
+		UAbilityTask_ApplyRootMotionDash* OtherDash = Cast<UAbilityTask_ApplyRootMotionDash>(It->Get());
+		if ((OtherDash == nullptr) || (OtherDash == this))
 		{
-			KnownTask->EndTask();
+			continue;
+		}
+
+		// A dash that reached its target ends as finished, as it would on its next tick: the move that ends a dash lets
+		// the next one start before that tick(UAssassinsCharacterMovementComponent::EndDashingStatus). Only a dash still
+		// on its way is cut short.
+		OtherDash->CheckDashFinish();
+		if (!OtherDash->bIsFinished)
+		{
+			OtherDash->EndTask();
 		}
 	}
 }
@@ -95,26 +106,26 @@ void UAbilityTask_ApplyRootMotionDash::ResetMovementMode()
 
 void UAbilityTask_ApplyRootMotionDash::CheckDashFinish()
 {
-	AActor* MyActor = GetAvatarActor();
-
-	const float AcceptRadiusSqr = AcceptRadius * AcceptRadius;
-	const bool bReachedDestination = FVector::DistSquared2D(TargetLocation, MyActor->GetActorLocation()) <= AcceptRadiusSqr;
-
-	if (bReachedDestination)
+	// The root motion source ends the dash, on the move that reaches the target(FRootMotionSource_MoveToDynamicConstantSpeed),
+	// and the movement removes it on the next. Only the ability hears it here: where the dash ends and when the movement
+	// leaves the dash mode are up to the moves, the same on the owning client and the server however their frames go.
+	const TSharedPtr<FRootMotionSource> RootMotionSource = MovementComponent.IsValid() ? MovementComponent->GetRootMotionSourceByID(RootMotionSourceID) : nullptr;
+	if (RootMotionSource.IsValid() && !RootMotionSource->Status.HasFlag(ERootMotionSourceStatusFlags::Finished))
 	{
-		// Task has finished
-		bIsFinished = true;
-		MyActor->SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, MyActor->GetActorLocation().Z));
+		return;
+	}
 
-		if (!bIsSimulating)
+	// Task has finished
+	bIsFinished = true;
+
+	if (!bIsSimulating)
+	{
+		GetAvatarActor()->ForceNetUpdate();
+		if (ShouldBroadcastAbilityTaskDelegates())
 		{
-			MyActor->ForceNetUpdate();
-			if (ShouldBroadcastAbilityTaskDelegates())
-			{
-				OnFinished.Broadcast();
-			}
-			EndTask();
+			OnFinished.Broadcast();
 		}
+		EndTask();
 	}
 }
 
@@ -192,6 +203,7 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 			MoveToForce->TargetLocation = TargetLocation;
 			MoveToForce->StartLocation = StartLocation;
 			MoveToForce->Speed = DashSpeed;
+			MoveToForce->AcceptRadius = AcceptRadius;
 			MoveToForce->FinishVelocityParams.Mode = FinishVelocityMode;
 			MoveToForce->FinishVelocityParams.SetVelocity = FinishSetVelocity;
 			MoveToForce->FinishVelocityParams.ClampVelocity = FinishClampVelocity;
@@ -342,6 +354,7 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 			MoveToActorForce->TargetLocation = TargetLocation;
 			MoveToActorForce->StartLocation = StartLocation;
 			MoveToActorForce->Speed = DashSpeed;
+			MoveToActorForce->AcceptRadius = AcceptRadius;
 			MoveToActorForce->FinishVelocityParams.Mode = FinishVelocityMode;
 			MoveToActorForce->FinishVelocityParams.SetVelocity = FinishSetVelocity;
 			MoveToActorForce->FinishVelocityParams.ClampVelocity = FinishClampVelocity;
@@ -371,16 +384,11 @@ void UAbilityTask_DashToActor::SetRootMotionTargetLocation(FVector NewTargetLoca
 	if (MovementComponent.IsValid())
 	{
 		TSharedPtr<FRootMotionSource> RMS = MovementComponent->GetRootMotionSourceByID(RootMotionSourceID);
-		if (RMS.IsValid())
+		// The source this task applied(SharedInitAndApply). The moves go on toward where the target is now, and the move
+		// that gets there ends the dash.
+		if (RMS.IsValid() && (RMS->GetScriptStruct() == FRootMotionSource_MoveToDynamicConstantSpeed::StaticStruct()))
 		{
-			if (RMS->GetScriptStruct() == FRootMotionSource_MoveToDynamicForce::StaticStruct())
-			{
-				FRootMotionSource_MoveToDynamicForce* MoveToActorForce = static_cast<FRootMotionSource_MoveToDynamicForce*>(RMS.Get());
-				if (MoveToActorForce)
-				{
-					MoveToActorForce->SetTargetLocation(TargetLocation);
-				}
-			}
+			static_cast<FRootMotionSource_MoveToDynamicConstantSpeed*>(RMS.Get())->SetTargetLocation(NewTargetLocation);
 		}
 	}
 }

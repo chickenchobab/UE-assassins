@@ -10,6 +10,7 @@ UAssassinsTargetChasingComponent::UAssassinsTargetChasingComponent()
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 
 	bKeepChase = false;
+	bKeptChaseLastTick = false;
 	CachedTarget = nullptr;
 	CachedAcceptRadius = 0.0f;
 }
@@ -18,8 +19,14 @@ void UAssassinsTargetChasingComponent::TickComponent(float DeltaTime, ELevelTick
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// If bKeepChase was just set to false, allow movement for one additional tick.
-	if (bKeepChase && CachedTarget.IsValid())
+	// If bKeepChase was just set to false, allow movement for one additional tick. The chase is what tells the ability its
+	// avatar arrived(HandleChaseCompleted): an avatar already at the target arrives again only when a chase starts, so
+	// without this one its ability would never hear of the arrival it waits for(an attack that reached its new target
+	// while the last attack's cooldown was still on).
+	const bool bChase = bKeepChase || bKeptChaseLastTick;
+	bKeptChaseLastTick = bKeepChase;
+
+	if (bChase && CachedTarget.IsValid())
 	{
 		ChaseTargetDelegate.ExecuteIfBound(CachedTarget.Get(), CachedAcceptRadius);
 	}
@@ -52,6 +59,7 @@ void UAssassinsTargetChasingComponent::SetTargetState(AActor* Target, float Acce
 void UAssassinsTargetChasingComponent::ResetTargetState()
 {
 	bKeepChase = false;
+	bKeptChaseLastTick = false;
 
 	HandleChaseCompleted.Clear();
 

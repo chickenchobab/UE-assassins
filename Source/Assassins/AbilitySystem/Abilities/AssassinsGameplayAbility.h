@@ -3,12 +3,17 @@
 #pragma once
 
 #include "Abilities/GameplayAbility.h"
+#include "Engine/DataAsset.h"
+#include "Engine/HitResult.h"
 #include "AssassinsGameplayAbility.generated.h"
 
 class UAssassinsAbilitySystemComponent;
 class AAssassinsPlayerController;
 class AAssassinsCharacter;
+class AAssassinsProjectile;
 class UAssassinsAnimInstance;
+class UAnimMontage;
+struct FCollisionObjectQueryParams;
 
 DECLARE_DYNAMIC_DELEGATE(FAbilityReplicatedDelegate);
 DECLARE_DYNAMIC_DELEGATE(FInPredictionWindowDelegate);
@@ -43,7 +48,28 @@ enum class EAssassinsAbilityActivationPolicy : uint8
 };
 
 /**
- * 
+ * UAssassinsMontageWithTiming
+ *
+ * A montage paired with the moment its effect happens, e.g. the hit of an attack.
+ * The MontageData_* assets are instances of it, through the DA_MontageWithTiming blueprint.
+ */
+UCLASS(BlueprintType)
+class ASSASSINS_API UAssassinsMontageWithTiming : public UPrimaryDataAsset
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Assassins|Ability")
+	TObjectPtr<UAnimMontage> Montage;
+
+	// Double, to match the blueprint variable it replaces.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Assassins|Ability")
+	double Timing = 0.0;
+};
+
+/**
+ *
  */
 UCLASS(Abstract, HideCategories = Input, Meta = (ShourtTooltip = "The base gameplay ability class used by this project."))
 class ASSASSINS_API UAssassinsGameplayAbility : public UGameplayAbility
@@ -83,6 +109,9 @@ public:
 
 	void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
 
+	// The engine event a custom one stands for: GameCustom1 and on.
+	static EAbilityGenericReplicatedEvent::Type ToGenericReplicatedEvent(EAbilityCustomReplicatedEvent CustomEvent);
+
 protected:
 
     //~UGameplayAbility interface
@@ -96,6 +125,19 @@ protected:
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
     FActiveGameplayEffectHandle ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor);
+
+	// A spec of the effect, applied to the target. Nothing when the target has no ability system, e.g. once it is gone.
+	FActiveGameplayEffectHandle ApplyEffectToTarget(TSubclassOf<UGameplayEffect> EffectClass, AActor* TargetActor);
+
+	// Spawns a projectile of the ability. It belongs to ProjectileOwner(the avatar unless given, e.g. Zed's shadow that
+	// throws it), and the avatar is its instigator: what it hits knows who threw it(AAssassinsProjectile::IsValidTarget).
+	// Null when there is no avatar or no class.
+	AAssassinsProjectile* SpawnAbilityProjectile(TSubclassOf<AAssassinsProjectile> ProjectileClass, const FTransform& SpawnTransform, AActor* ProjectileOwner = nullptr) const;
+
+	// The enemies(IsValidEnemy) a sphere of Radius finds as it rises from the ground below Center up to TopZ, with the first
+	// hit on each: every enemy is there once, whichever of its components the sweep finds. The avatar and SourceActor are
+	// left out.
+	TArray<FHitResult> SweepForEnemies(const FVector& Center, double Radius, double TopZ, const FCollisionObjectQueryParams& ObjectQueryParams, const AActor* SourceActor = nullptr) const;
 
 	UFUNCTION(BlueprintPure, Category = "Assassins|Ability", meta = (DataTablePin = "CurveTable"))
 	float EvaluateCurveTableRowByAbilityLevel(UCurveTable* CurveTable, FName RowName, const FString& ContextString) const;
@@ -129,6 +171,11 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability|RPC")
 	void CallOrAddReplicatedDelegate(EAbilityCustomReplicatedEvent CustomEvent, FAbilityReplicatedDelegate ReplicatedDelegate, bool bUnbindCalledDelegate = true);
+
+	// For what the owning client starts and the server follows. LocalAction runs inside a new prediction window,
+	// and the server's handler of the event(UAbilityTask_WaitReplicatedEvent) runs inside a window of the same key,
+	// so what both sides apply is matched up. Unlike WaitNetSync, every purpose gets its own event.
+	void SendPredictedEventToServer(EAbilityCustomReplicatedEvent CustomEvent, TFunctionRef<void()> LocalAction);
 
 protected:
 	

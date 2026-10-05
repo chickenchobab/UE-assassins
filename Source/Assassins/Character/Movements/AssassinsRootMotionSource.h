@@ -20,6 +20,11 @@ struct FRootMotionSource_MoveToDynamicConstantSpeed : public FRootMotionSource
 	UPROPERTY()
 	float Speed;
 
+	// How close to the target counts as there: the move that gets this close goes all the way to the target, and the
+	// source ends with it.
+	UPROPERTY()
+	float AcceptRadius;
+
 	ASSASSINS_API void SetTargetLocation(FVector NewTargetLocation);
 
 	//~FRootMotionSource interface

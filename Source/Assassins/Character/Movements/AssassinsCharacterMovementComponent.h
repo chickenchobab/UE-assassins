@@ -103,6 +103,7 @@ public:
 	virtual void ServerMove_PerformMovement(const FCharacterNetworkMoveData& MoveData) override;
 	virtual void ClientHandleMoveResponse(const FCharacterMoveResponseDataContainer& MoveResponse) override;
 	virtual void ClientAdjustPosition_Implementation(float TimeStamp, FVector NewLoc, FVector NewVel, UPrimitiveComponent* NewBase, FName NewBaseBoneName, bool bHasBase, bool bBaseRelativePosition, uint8 ServerMovementMode, TOptional<FRotator> OptionalRotation = TOptional<FRotator>()) override;
+	virtual bool ClientUpdatePositionAfterServerUpdate() override;
 	virtual void DisableMovement() override;
 	//~End of UCharacterMovementComponent interface
 
@@ -121,6 +122,14 @@ public:
 	FRotator TeleportRotation;
 
 private:
+
+	// Whether a dash root motion is still to move the character: one that has not reached its target yet.
+	bool HasUnfinishedDashRootMotion() const;
+
+	// The dash is over for the abilities it held back(Status.Dashing), on the move that ends it. Not while replaying
+	// moves for a correction: the dash going on then may be another than the one of the move replayed.
+	void EndDashingStatus();
+
 	FAssassinsCharacterNetworkMoveDataContainer AssassinsNetworkMoveDataContainer;
 	FAssassinsCharacterMoveResponseDataContainer AssassinsMoveResponseDataContainer;
 
