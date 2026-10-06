@@ -363,22 +363,6 @@ TSubclassOf<UGameplayEffect> UGA_Attack::GetAttackEffectClass() const
 	return AttackEffectClass;
 }
 
-double UGA_Attack::GetMontagePlayRate(UAnimMontage* Montage) const
-{
-	if (!IsValid(Montage))
-	{
-		return 1.0;
-	}
-
-	const float RemainingCooldown = UAbilitySystemBlueprintLibrary::GetActiveGameplayEffectRemainingDuration(const_cast<UGA_Attack*>(this), AttackCooldownActiveHandle);
-	if (RemainingCooldown <= 0.0f)
-	{
-		return 1.0;
-	}
-
-	return Montage->GetPlayLength() / RemainingCooldown;
-}
-
 void UGA_Attack::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	// Being cancelled means the avatar was told to do something else, so it stops attacking altogether.

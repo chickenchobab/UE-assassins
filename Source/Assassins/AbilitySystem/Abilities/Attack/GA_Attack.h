@@ -7,7 +7,6 @@
 #include "GameplayEffectTypes.h"
 #include "GA_Attack.generated.h"
 
-class UAnimMontage;
 class UGameplayEffect;
 
 /**
@@ -53,10 +52,6 @@ protected:
 	// The effect the attack applies to what it hits.
 	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
 	virtual TSubclassOf<UGameplayEffect> GetAttackEffectClass() const;
-
-	// Rate a montage has to play at to fit in the attack cooldown that is left.
-	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
-	double GetMontagePlayRate(UAnimMontage* Montage) const;
 
 	// Asks for an attack on TargetActor: the ability that keeps attacking answers the event, where the avatar is controlled.
 	void SendActivateAttackEvent(AActor* TargetActor);

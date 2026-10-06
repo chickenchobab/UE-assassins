@@ -104,9 +104,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
 	AActor* GetCurrentCursorTarget() const;
 
-	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
-	bool IsInputTriggered() const;
-
 	void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
 
 	// The engine event a custom one stands for: GameCustom1 and on.
@@ -152,14 +149,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void RemoveTagFromAvatar(FGameplayTag Tag);
 
-	UFUNCTION(BlueprintPure, Category = "Assassins|Ability", meta = (DisplayName = "GetAssetTags"))
-	const FGameplayTagContainer& K2_GetAssetTags() const;
-
 	// Me: Dynamically makes the ability cancellable by the other abilities, inputs or status.
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void AddCancelledByTag(FGameplayTag Tag);
-	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
-	void RemoveCancelledByTag(FGameplayTag Tag);
 
 	UFUNCTION(BlueprintCallable, Category = "Assassins|Ability")
 	void SetAvatarLocationAndRotation(const FVector& GoalLocation, const FRotator& GoalRotation);

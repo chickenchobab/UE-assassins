@@ -126,11 +126,6 @@ AActor* UAssassinsGameplayAbility::GetCurrentCursorTarget() const
     return nullptr;
 }
 
-bool UAssassinsGameplayAbility::IsInputTriggered() const
-{
-    return GetAssassinsAbilitySystemComponentFromActorInfo()->IsCurrentEventAbilityInput();
-}
-
 void UAssassinsGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const
 {
     // Try activate the ability on spawn.
@@ -302,25 +297,9 @@ void UAssassinsGameplayAbility::RemoveTagFromAvatar(FGameplayTag Tag)
     }
 }
 
-const FGameplayTagContainer& UAssassinsGameplayAbility::K2_GetAssetTags() const
-{
-    // Used to identify the inheritance hierarchy between abilities.
-    return GetAssetTags();
-}
-
 void UAssassinsGameplayAbility::AddCancelledByTag(FGameplayTag Tag)
 {
     CancelledByTags.AddTag(Tag);
-}
-
-void UAssassinsGameplayAbility::RemoveCancelledByTag(FGameplayTag Tag)
-{
-    if (!CancelledByTags.HasTag(Tag))
-    {
-        return;
-    }
-
-    CancelledByTags.RemoveTag(Tag);
 }
 
 void UAssassinsGameplayAbility::SetAvatarLocationAndRotation(const FVector& GoalLocation, const FRotator& GoalRotation)

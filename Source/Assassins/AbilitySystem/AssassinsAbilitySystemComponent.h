@@ -28,7 +28,6 @@ public:
 	//~UAbilitySystemComponent interface
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 	virtual void ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) override;
-	virtual int32 HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload) override;
 	//~End of UAbilitySystemComponent interface
 
 	void AbilityInputTagPressed(FGameplayTag& InputTag);
@@ -36,8 +35,6 @@ public:
 
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
-
-	bool IsCurrentEventAbilityInput() const;
 
 	AActor* GetCursorTargetFromHeroComponent() const;
 
@@ -78,9 +75,4 @@ protected:
 
 	// Handles to abilities that have their input held.
 	TArray<FGameplayAbilitySpecHandle> InputHeldSpecHandles;
-
-private:
-
-	UPROPERTY(Transient)
-	FGameplayTag CurrentEventTag;
 };
