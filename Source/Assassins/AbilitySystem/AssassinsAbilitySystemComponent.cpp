@@ -16,7 +16,6 @@ UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_EVENT_ABILITYINPUT, "Event.AbilityInput");
 UAssassinsAbilitySystemComponent::UAssassinsAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	CurrentEventTag = TAG_EVENT_ABILITYINPUT;
 }
 
 void UAssassinsAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -46,20 +45,6 @@ void UAssassinsAbilitySystemComponent::ApplyAbilityBlockAndCancelTags(const FGam
 	{
 		CancelAbilitiesWithCancelledByTag(&AbilityTags, RequestingAbility);
 	}
-}
-
-int32 UAssassinsAbilitySystemComponent::HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload)
-{
-	const FGameplayTag Tag = CurrentEventTag;
-	CurrentEventTag = EventTag;
-
-	// CurrentEventTag is used by the activated ability to know whether
-	// it is triggered by input or not
-	int32 ReturnValue = Super::HandleGameplayEvent(EventTag, Payload);
-
-	CurrentEventTag = Tag;
-
-	return ReturnValue;
 }
 
 void UAssassinsAbilitySystemComponent::AbilityInputTagPressed(FGameplayTag& InputTag)
@@ -205,11 +190,6 @@ void UAssassinsAbilitySystemComponent::ClearAbilityInput()
 	InputPressedSpecHandles.Reset();
 	InputReleasedSpecHandles.Reset();
 	InputHeldSpecHandles.Reset();
-}
-
-bool UAssassinsAbilitySystemComponent::IsCurrentEventAbilityInput() const
-{
-	return CurrentEventTag == TAG_EVENT_ABILITYINPUT;
 }
 
 AActor* UAssassinsAbilitySystemComponent::GetCursorTargetFromHeroComponent() const

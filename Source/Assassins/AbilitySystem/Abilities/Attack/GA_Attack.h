@@ -5,7 +5,6 @@
 #include "GameplayEffectTypes.h"
 #include "GA_Attack.generated.h"
 
-class UAnimMontage;
 class UGameplayEffect;
 
 UCLASS(Abstract)
@@ -37,9 +36,6 @@ protected:
 
 	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
 	virtual TSubclassOf<UGameplayEffect> GetAttackEffectClass() const;
-
-	UFUNCTION(BlueprintPure, Category = "Assassins|Ability")
-	double GetMontagePlayRate(UAnimMontage* Montage) const;
 
 	void SendActivateAttackEvent(AActor* TargetActor);
 
