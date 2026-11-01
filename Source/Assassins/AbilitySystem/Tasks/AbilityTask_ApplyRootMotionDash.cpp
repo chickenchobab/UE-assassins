@@ -29,6 +29,7 @@ void UAbilityTask_ApplyRootMotionDash::OnDestroy(bool AbilityIsEnding)
 	if (!bIsFinished && ShouldBroadcastAbilityTaskDelegates())
 	{
 		OnCancelled.Broadcast();
+		UE_LOG(LogTemp, Display, TEXT("Dash has been cancelled"));
 	}
 
 	ResetMovementMode();
@@ -69,10 +70,18 @@ void UAbilityTask_ApplyRootMotionDash::AbortMoveAndDash()
 
 	for (auto It = AbilitySystemComponent->GetKnownTaskIterator(); It; ++It)
 	{
-		auto KnownTask = It->Get();
-		if (KnownTask != this && KnownTask->IsA<UAbilityTask_ApplyRootMotionDash>())
+		UAbilityTask_ApplyRootMotionDash* OtherDash = Cast<UAbilityTask_ApplyRootMotionDash>(It->Get());
+		if ((OtherDash == nullptr) || (OtherDash == this))
 		{
-			KnownTask->EndTask();
+			continue;
+		}
+
+		// 대상에 닿은 돌진은 다음 틱처럼 완료로 끝낸다. 돌진을 끝내는 이동이 그 틱 전에 다음 돌진을 시작하게 하기 때문이다
+		// (UAssassinsCharacterMovementComponent::EndDashingStatus). 아직 가는 중인 돌진만 끊는다.
+		OtherDash->CheckDashFinish();
+		if (!OtherDash->bIsFinished)
+		{
+			OtherDash->EndTask();
 		}
 	}
 }
@@ -95,26 +104,25 @@ void UAbilityTask_ApplyRootMotionDash::ResetMovementMode()
 
 void UAbilityTask_ApplyRootMotionDash::CheckDashFinish()
 {
-	AActor* MyActor = GetAvatarActor();
-
-	const float AcceptRadiusSqr = AcceptRadius * AcceptRadius;
-	const bool bReachedDestination = FVector::DistSquared2D(TargetLocation, MyActor->GetActorLocation()) <= AcceptRadiusSqr;
-
-	if (bReachedDestination)
+	// 루트 모션 소스가 대상에 닿는 이동에서 돌진을 끝내고(FRootMotionSource_MoveToDynamicConstantSpeed), 무브먼트가 다음 이동에서 지운다.
+	// 여기서는 어빌리티만 듣는다. 돌진이 끝나는 곳과 돌진 모드를 떠나는 때는 이동이 정해서, 프레임과 상관없이 소유 클라이언트와 서버가 같다.
+	const TSharedPtr<FRootMotionSource> RootMotionSource = MovementComponent.IsValid() ? MovementComponent->GetRootMotionSourceByID(RootMotionSourceID) : nullptr;
+	if (RootMotionSource.IsValid() && !RootMotionSource->Status.HasFlag(ERootMotionSourceStatusFlags::Finished))
 	{
-		// Task has finished
-		bIsFinished = true;
-		MyActor->SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, MyActor->GetActorLocation().Z));
+		return;
+	}
 
-		if (!bIsSimulating)
+	// Task has finished
+	bIsFinished = true;
+
+	if (!bIsSimulating)
+	{
+		GetAvatarActor()->ForceNetUpdate();
+		if (ShouldBroadcastAbilityTaskDelegates())
 		{
-			MyActor->ForceNetUpdate();
-			if (ShouldBroadcastAbilityTaskDelegates())
-			{
-				OnFinished.Broadcast();
-			}
-			EndTask();
+			OnFinished.Broadcast();
 		}
+		EndTask();
 	}
 }
 
@@ -192,6 +200,7 @@ void UAbilityTask_DashTo::SharedInitAndApply()
 			MoveToForce->TargetLocation = TargetLocation;
 			MoveToForce->StartLocation = StartLocation;
 			MoveToForce->Speed = DashSpeed;
+			MoveToForce->AcceptRadius = AcceptRadius;
 			MoveToForce->FinishVelocityParams.Mode = FinishVelocityMode;
 			MoveToForce->FinishVelocityParams.SetVelocity = FinishSetVelocity;
 			MoveToForce->FinishVelocityParams.ClampVelocity = FinishClampVelocity;
@@ -342,6 +351,7 @@ void UAbilityTask_DashToActor::SharedInitAndApply()
 			MoveToActorForce->TargetLocation = TargetLocation;
 			MoveToActorForce->StartLocation = StartLocation;
 			MoveToActorForce->Speed = DashSpeed;
+			MoveToActorForce->AcceptRadius = AcceptRadius;
 			MoveToActorForce->FinishVelocityParams.Mode = FinishVelocityMode;
 			MoveToActorForce->FinishVelocityParams.SetVelocity = FinishSetVelocity;
 			MoveToActorForce->FinishVelocityParams.ClampVelocity = FinishClampVelocity;
@@ -371,16 +381,10 @@ void UAbilityTask_DashToActor::SetRootMotionTargetLocation(FVector NewTargetLoca
 	if (MovementComponent.IsValid())
 	{
 		TSharedPtr<FRootMotionSource> RMS = MovementComponent->GetRootMotionSourceByID(RootMotionSourceID);
-		if (RMS.IsValid())
+		// 이 태스크가 적용한 소스다(SharedInitAndApply). 이동은 대상의 지금 위치로 이어지고, 거기 닿는 이동이 돌진을 끝낸다.
+		if (RMS.IsValid() && (RMS->GetScriptStruct() == FRootMotionSource_MoveToDynamicConstantSpeed::StaticStruct()))
 		{
-			if (RMS->GetScriptStruct() == FRootMotionSource_MoveToDynamicForce::StaticStruct())
-			{
-				FRootMotionSource_MoveToDynamicForce* MoveToActorForce = static_cast<FRootMotionSource_MoveToDynamicForce*>(RMS.Get());
-				if (MoveToActorForce)
-				{
-					MoveToActorForce->SetTargetLocation(TargetLocation);
-				}
-			}
+			static_cast<FRootMotionSource_MoveToDynamicConstantSpeed*>(RMS.Get())->SetTargetLocation(NewTargetLocation);
 		}
 	}
 }

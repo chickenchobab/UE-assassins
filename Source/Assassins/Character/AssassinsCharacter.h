@@ -12,13 +12,12 @@
 class UAssassinsPawnExtensionComponent;
 class UAssassinsHealthComponent;
 class UAssassinsAbilitySystemComponent;
-class UAssassinsCameraComponent;
 struct FGameplayEffectSpec;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FStatusChangeDelegate);
 
 UCLASS(Blueprintable)
-class AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayTagAssetInterface, public IAssassinsTeamAgentInterface
+class ASSASSINS_API AAssassinsCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayTagAssetInterface, public IAssassinsTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -49,13 +48,20 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Assassins|Character|Status")
 	bool HasGameplayTag(FGameplayTag Tag);
 
+	void GrantAggroTag(FGameplayTag AggroTag);
+
 	//~IAssassinsTeamAgentInterface interface
 	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	//~End of IAssassinsTeamAgentInterface interface
 
-	/** Returns TopDownCameraComponent subobject **/
-	FORCEINLINE class UAssassinsCameraComponent* GetAssassinsCameraComponent() const { return CameraComponent; }
+	const TArray<TObjectPtr<UAnimMontage>>& GetDeathMontages() const { return DeathMontages; }
+
+	void FinishDashMovement();
+
+	void FreezeRotation();
+
+	void ResetRotationRate();
 
 public:
 
@@ -102,8 +108,9 @@ protected:
 	// Functions bound to the status tag count changes
 	////////////////////////////////////////////////////
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Assassins|Character|Status", DisplayName = "Handle Generic Gameplay Tag Event")
+	UFUNCTION(BlueprintNativeEvent, Category = "Assassins|Character|Status", DisplayName = "Handle Generic Gameplay Tag Event")
 	void HandleGenericGameplayTagEvent(const FGameplayTag Tag, int32 NewCount);
+	virtual void HandleGenericGameplayTagEvent_Implementation(const FGameplayTag Tag, int32 NewCount);
 
 	UFUNCTION()
 	void OnChannelingTagChanged(const FGameplayTag Tag, int32 NewCount);
@@ -123,7 +130,8 @@ protected:
 
 	void DestroyDueToDeath();
 
-	void ResolvePenetrationAfterDash();
+	void WatchPawnOverlapsAfterDash();
+	void StopWatchingPawnOverlapsAfterDash();
 
 	UFUNCTION()
 	void OnEndPawnOverlapAfterDash(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
@@ -143,10 +151,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Assassins|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAssassinsHealthComponent> HealthComponent;
-	
-	/** Top down camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UAssassinsCameraComponent* CameraComponent;
 
 	UPROPERTY(ReplicatedUsing = OnRep_MyTeamID)
 	FGenericTeamId MyTeamID;
@@ -154,9 +158,14 @@ private:
 	UPROPERTY()
 	TSet<AActor*> ActorsOverlappedAfterDash;
 
+	FTimerHandle AggroTagTimerHandle;
+
 private:
 
 	UFUNCTION()
 	void OnRep_MyTeamID(FGenericTeamId OldTeamID);
+
+	void HandleAggroTagExpired();
+	void ClearAggroTags();
 };
 

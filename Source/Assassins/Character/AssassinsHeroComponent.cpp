@@ -428,11 +428,13 @@ void UAssassinsHeroComponent::HandleCursorTargetSet(AActor* TargetActor)
 	check(CachedPlayerController);
 	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Crosshairs;
 
+	// 로컬 플레이어가 사라지는 중에도(예: PIE 종료) 뷰포트가 커서 이벤트를 보낸다.
 	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(CachedPlayerController->GetLocalPlayer());
-	check(LP);
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
-	check(Subsystem);
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP ? ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP) : nullptr;
+	if (Subsystem == nullptr)
+	{
+		return;
+	}
 
 	if (AttackInputMapping)
 	{
@@ -447,11 +449,13 @@ void UAssassinsHeroComponent::HandleCursorTargetCleared()
 	check(CachedPlayerController);
 	CachedPlayerController->DefaultMouseCursor = EMouseCursor::Default;
 
+	// 로컬 플레이어가 사라지는 중에도(예: PIE 종료) 뷰포트가 커서 이벤트를 보낸다.
 	const UAssassinsLocalPlayer* LP = Cast<UAssassinsLocalPlayer>(CachedPlayerController->GetLocalPlayer());
-	check(LP);
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
-	check(Subsystem);
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP ? ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP) : nullptr;
+	if (Subsystem == nullptr)
+	{
+		return;
+	}
 
 	if (AttackInputMapping)
 	{

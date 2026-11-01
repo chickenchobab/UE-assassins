@@ -8,7 +8,6 @@
 #include "Character/AssassinsPawnExtensionComponent.h"
 #include "Character/AssassinsHealthComponent.h"
 #include "Character/Movements/AssassinsCharacterMovementComponent.h"
-#include "Camera/AssassinsCameraComponent.h"
 #include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -20,6 +19,7 @@
 #include "Player/AssassinsPlayerController.h"
 #include "Engine/OverlapResult.h"
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 
 namespace CharacterStatus
 {
@@ -28,6 +28,11 @@ namespace CharacterStatus
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_INVISIBLE, "Status.Untargetable.Invisible");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_DASHING, "Status.Dashing");
 	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_ROOTED, "Status.Rooted");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_TARGET_MINION, "Status.Target.Minion");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_AGGRO_CHAMPION_ATTACK, "Status.Aggro.ChampionAttack");
+	UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_STATUS_AGGRO_MINION_ATTACK, "Status.Aggro.MinionAttack");
+
+	static constexpr float AggroTagDuration = 3.0f;
 };
 
 AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitializer)
@@ -55,7 +60,7 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Rotate character to moving direction
-	GetCharacterMovement()->RotationRate = FRotator(-1.f, -1.f, -1.f);
+	ResetRotationRate();
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
 	GetCharacterMovement()->bUseRVOAvoidance = true;
@@ -67,14 +72,9 @@ AAssassinsCharacter::AAssassinsCharacter(const FObjectInitializer& ObjectInitial
 
 	GetCharacterMovement()->GetNavMovementProperties()->bUseAccelerationForPaths = false;
 
-	// Create a camera...
-	CameraComponent = CreateDefaultSubobject<UAssassinsCameraComponent>(TEXT("CameraComponent"));
-
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
-
-	SetNetUpdateFrequency(200.0f);
 }
 
 UAssassinsAbilitySystemComponent* AAssassinsCharacter::GetAssassinsAbilitySystemComponent() const
@@ -168,6 +168,31 @@ void AAssassinsCharacter::RemoveGameplayTag(FGameplayTag Tag)
 bool AAssassinsCharacter::HasGameplayTag(FGameplayTag Tag)
 {
 	return HasMatchingGameplayTag(Tag);
+}
+
+void AAssassinsCharacter::GrantAggroTag(FGameplayTag AggroTag)
+{
+	SetGameplayTag(AggroTag);
+
+	// 태그 수가 이미 1이면 태그 이벤트가 오지 않으므로, 맞을 때마다 여기서 만료 타이머를 다시 시작한다.
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(AggroTagTimerHandle, this, &ThisClass::HandleAggroTagExpired, CharacterStatus::AggroTagDuration, false);
+	}
+}
+
+void AAssassinsCharacter::HandleAggroTagExpired()
+{
+	if (!HasGameplayTag(CharacterStatus::TAG_STATUS_TARGET_MINION))
+	{
+		ClearAggroTags();
+	}
+}
+
+void AAssassinsCharacter::ClearAggroTags()
+{
+	ClearGameplayTag(CharacterStatus::TAG_STATUS_AGGRO_CHAMPION_ATTACK);
+	ClearGameplayTag(CharacterStatus::TAG_STATUS_AGGRO_MINION_ATTACK);
 }
 
 void AAssassinsCharacter::SetGenericTeamId(const FGenericTeamId& NewTeamID)
@@ -282,6 +307,15 @@ void AAssassinsCharacter::OnAbilitySystemUninitialized()
 	HealthComponent->UninitializeFromAbilitySystem();
 }
 
+void AAssassinsCharacter::HandleGenericGameplayTagEvent_Implementation(const FGameplayTag Tag, int32 NewCount)
+{
+	if (HasAuthority() && (Tag == CharacterStatus::TAG_STATUS_TARGET_MINION) && (NewCount == 0))
+	{
+		GetWorldTimerManager().ClearTimer(AggroTagTimerHandle);
+		ClearAggroTags();
+	}
+}
+
 void AAssassinsCharacter::InitializeGameplayTags()
 {
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
@@ -332,14 +366,13 @@ void AAssassinsCharacter::DestroyDueToDeath()
 	SetActorHiddenInGame(true);
 }
 
-void AAssassinsCharacter::ResolvePenetrationAfterDash()
+void AAssassinsCharacter::FinishDashMovement()
 {
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
 	check(Capsule);
 
 	Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 
-	TArray<FOverlapResult> Overlaps;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 	QueryParams.bTraceComplex = false;
@@ -347,69 +380,87 @@ void AAssassinsCharacter::ResolvePenetrationAfterDash()
 	ResponseParams.CollisionResponse.SetAllChannels(ECR_Ignore);
 	ResponseParams.CollisionResponse.SetResponse(ECC_WorldStatic, ECR_Block);
 
-	// Find one world static actor overlapping(the map is not designed to have multiple ones)
-	GetWorld()->OverlapMultiByChannel(Overlaps, Capsule->GetComponentLocation(), Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
-	if (!Overlaps.IsEmpty())
+	if (!GetWorld()->OverlapBlockingTestByChannel(Capsule->GetComponentLocation(), Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams))
 	{
-		FHitResult Hit;
-		GetWorld()->SweepSingleByChannel(Hit, GetActorLocation(), GetActorLocation() - Capsule->GetScaledCapsuleRadius() * GetActorForwardVector() /*The character should be popped forward here*/, Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
+		return;
+	}
 
-		if (Hit.bStartPenetrating && Hit.GetActor() == Overlaps.Top().GetActor())
+	// 안에서 시작한 스윕은 방향이나 무엇 안에 있든 가장 짧은 탈출 방향을 알려 준다.
+	FHitResult Hit;
+	GetWorld()->SweepSingleByChannel(Hit, GetActorLocation(), GetActorLocation() - Capsule->GetScaledCapsuleRadius() * GetActorForwardVector(), Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
+	if (!Hit.bStartPenetrating)
+	{
+		return;
+	}
+
+	UMovementComponent* Movement = GetMovementComponent();
+	const FVector RequestedAdjustment = Movement->GetPenetrationAdjustment(Hit);
+	if (!Movement->ResolvePenetration(RequestedAdjustment, Hit, Capsule->GetComponentQuat()))
+	{
+		// Teleport if the penetration has not been resolved.
+		FVector TeleportLocation = GetActorLocation();
+		if (GetWorld()->FindTeleportSpot(this, TeleportLocation, GetActorRotation()))
 		{
-			const FVector RequestedAdjustment = GetMovementComponent()->GetPenetrationAdjustment(Hit);
-			bool bAdjusted = GetMovementComponent()->ResolvePenetration(RequestedAdjustment, Hit, Capsule->GetComponentQuat());
-			// Teleport if the penetration has not been resolved.
-			if (!bAdjusted)
-			{
-				FVector TeleportLocation = GetActorLocation();
-				if (GetWorld()->FindTeleportSpot(this, TeleportLocation, GetActorRotation()))
-				{
-					SetActorLocation(TeleportLocation);
-				}
-			}
+			SetActorLocation(TeleportLocation);
+		}
+	}
+}
+
+void AAssassinsCharacter::WatchPawnOverlapsAfterDash()
+{
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	check(Capsule);
+
+	StopWatchingPawnOverlapsAfterDash();
+
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = false;
+	FCollisionResponseParams ResponseParams;
+	ResponseParams.CollisionResponse.SetAllChannels(ECR_Ignore);
+	ResponseParams.CollisionResponse.SetResponse(ECC_Pawn, ECR_Overlap);
+	GetWorld()->OverlapMultiByChannel(Overlaps, Capsule->GetComponentLocation(), Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
+
+	for (const FOverlapResult& Result : Overlaps)
+	{
+		if (AActor* OverlappedActor = Result.GetActor())
+		{
+			ActorsOverlappedAfterDash.Add(OverlappedActor);
+			UE_LOG(LogTemp, Display, TEXT("Found overlapping pawn : [%s]"), *OverlappedActor->GetName());
 		}
 	}
 
-	Overlaps.Empty();
-	ResponseParams.CollisionResponse.SetResponse(ECC_WorldStatic, ECR_Ignore);
-	ResponseParams.CollisionResponse.SetResponse(ECC_Pawn, ECR_Overlap);
-	GetWorld()->OverlapMultiByChannel(Overlaps, Capsule->GetComponentLocation(), Capsule->GetComponentQuat(), ECC_Pawn, Capsule->GetCollisionShape(), QueryParams, ResponseParams);
-	
-	if (Overlaps.IsEmpty())
+	if (ActorsOverlappedAfterDash.IsEmpty())
 	{
-		Capsule->OnComponentEndOverlap.RemoveDynamic(this, &ThisClass::OnEndPawnOverlapAfterDash);
-
-		if (GetCharacterMovement())
-		{
-			GetCharacterMovement()->bUseRVOAvoidance = true;
-		}
-
+		GetCharacterMovement()->bUseRVOAvoidance = true;
 		return;
 	}
 
 	Capsule->OnComponentEndOverlap.AddUniqueDynamic(this, &ThisClass::OnEndPawnOverlapAfterDash);
-	for (const FOverlapResult& Result : Overlaps)
+}
+
+void AAssassinsCharacter::StopWatchingPawnOverlapsAfterDash()
+{
+	ActorsOverlappedAfterDash.Reset();
+
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
 	{
-		ActorsOverlappedAfterDash.Add(Result.GetActor());
-		UE_LOG(LogTemp, Display, TEXT("Found overlapping pawn : [%s]"), *Result.GetActor()->GetName());
+		Capsule->OnComponentEndOverlap.RemoveDynamic(this, &ThisClass::OnEndPawnOverlapAfterDash);
 	}
 }
 
 void AAssassinsCharacter::OnEndPawnOverlapAfterDash(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (!ActorsOverlappedAfterDash.Contains(OtherActor))
+	if (ActorsOverlappedAfterDash.Remove(OtherActor) == 0)
 	{
 		return;
 	}
 
-	ActorsOverlappedAfterDash.Remove(OtherActor);
-
 	if (ActorsOverlappedAfterDash.IsEmpty())
 	{
-		if (GetCharacterMovement())
-		{
-			GetCharacterMovement()->bUseRVOAvoidance = true;
-		}
+		StopWatchingPawnOverlapsAfterDash();
+		GetCharacterMovement()->bUseRVOAvoidance = true;
 		UE_LOG(LogTemp, Display, TEXT("Every actor overlap after dash has been resolved."));
 	}
 }
@@ -417,6 +468,17 @@ void AAssassinsCharacter::OnEndPawnOverlapAfterDash(UPrimitiveComponent* Overlap
 void AAssassinsCharacter::HandleMoveSpeedChanged(float OldValue, float NewValue)
 {
 	GetCharacterMovement()->MaxWalkSpeed = NewValue;
+}
+
+void AAssassinsCharacter::FreezeRotation()
+{
+	GetCharacterMovement()->RotationRate = FRotator::ZeroRotator;
+}
+
+void AAssassinsCharacter::ResetRotationRate()
+{
+	// 음수면 무브먼트가 즉시 회전시킨다(UCharacterMovementComponent::GetDeltaRotation).
+	GetCharacterMovement()->RotationRate = FRotator(-1.0, -1.0, -1.0);
 }
 
 void AAssassinsCharacter::OnChannelingTagChanged(const FGameplayTag Tag, int32 NewCount)
@@ -431,8 +493,7 @@ void AAssassinsCharacter::OnChannelingTagChanged(const FGameplayTag Tag, int32 N
 	}
 	else
 	{
-		// Rotation rate might have been changed by the ability.
-		GetCharacterMovement()->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
+		ResetRotationRate();
 
 		if (AAssassinsPlayerController* AssassinsPC = Cast<AAssassinsPlayerController>(GetController()))
 		{
@@ -492,13 +553,17 @@ void AAssassinsCharacter::OnDashingTagChanged(const FGameplayTag Tag, int32 NewC
 		AssassinsCharacterMovement->bIsDashing = 1;
 		AssassinsCharacterMovement->bUseRVOAvoidance = false;
 		Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
+
+		// 이전 돌진이 남긴 폰은 더 세지 않는다. 그 겹침이 끝날 때 이번 돌진 중 회피가 다시 켜지면 안 된다.
+		StopWatchingPawnOverlapsAfterDash();
 	}
 	else
 	{
 		AssassinsCharacterMovement->bIsDashing = 0;
-		AssassinsCharacterMovement->RotationRate = FRotator(-1.0f, -1.0f, -1.0f);
+		ResetRotationRate();
 
-		ResolvePenetrationAfterDash();
+		FinishDashMovement();
+		WatchPawnOverlapsAfterDash();
 	}
 }
 

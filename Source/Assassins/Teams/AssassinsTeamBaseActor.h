@@ -15,6 +15,7 @@ class UAssassinsHealthComponent;
 class UAssassinsHealthSet;
 class USkeletalMeshComponent;
 class USphereComponent;
+class UAnimMontage;
 
 /**
  * Actor indicating the base(nexus) of a team. Minion waves are spawned here
@@ -62,6 +63,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Teams)
 	int32 TeamId;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Base")
+	TObjectPtr<UAnimMontage> DeadMontage;
 
 protected:
 
