@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "AbilitySystem/AssassinsInterframeHitCheckSubsystem.h"
 #include "GameFramework/Actor.h"
 #include "NiagaraComponent.h"
 #include "GameplayEffectTypes.h"
@@ -32,15 +33,40 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void EnableAndSetLifeSpan(float NewLifeSpan);
 
+    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
+    void SetVelocity(const FVector& NewVelocity);
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void FinishInitProjectile();
+    virtual void FinishInitProjectile_Implementation();
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void InitHomingProjectile(AActor* ProjectileTarget, const FGameplayEffectSpecHandle& DamageContextHandle, double HomingAcceleration);
+    virtual void InitHomingProjectile_Implementation(AActor* ProjectileTarget, const FGameplayEffectSpecHandle& DamageContextHandle, double HomingAcceleration) {}
+
+    void LaunchStraight(const FVector& Velocity, float Range, const FGameplayEffectSpecHandle& Damage);
+
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Assassins|Projectile")
+    void HandleTargetOverlap(AActor* TargetActor, const FVector& ImpactLocation);
+    virtual void HandleTargetOverlap_Implementation(AActor* TargetActor, const FVector& ImpactLocation) {}
+
+    virtual bool CanHitCheckTarget(AActor* TargetActor) const;
+
+public:
+
+    UPROPERTY(BlueprintReadWrite, Category = "Assassins|Projectile")
+    FGameplayEffectSpecHandle DamageSpecHandle;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Assassins|Projectile")
+    FGameplayEffectSpecHandle DamageSpecHandle_FirstHit;
+
 protected:
 	
     //~AActor interface
 	virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void Tick(float DeltaTime) override;
     //~End of AActor interface
-
-    UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
-    void SetVelocity(const FVector& NewVelocity);
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void EnableHoming(USceneComponent* TargetComponent, float HomingAcceleration);
@@ -49,8 +75,6 @@ protected:
 
     UFUNCTION()
     void HandleProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-    UFUNCTION(BlueprintImplementableEvent, Category = "Assassins|Projectile", DisplayName = "HandleProjectileBeginOverlap")
-    void K2_HandleProjectileBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
     UFUNCTION(BlueprintCallable, Category = "Assassins|Projectile")
     void ApplyGameplayEffectSpecToTargetActor(const FGameplayEffectSpecHandle& SpecHandle, AActor* TargetActor);
@@ -87,12 +111,47 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Projectile", Meta = (EditCondition = "bUseLifeSpan", AllowPrivateAccess = "true"))
     float ProjectileLifeSpan;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Assassins|Projectile")
+    double ActivationDelay = 0.0;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Assassins|Projectile")
+    bool ShouldBeDestroyed = false;
+
+    UPROPERTY()
+    bool IsInitialized = false;
+
 private:
+
+    void ActivateProjectile();
+
+    void StartHandlingHits();
+
+    void HandleHit(AActor* TargetActor, const FVector& ImpactLocation);
+
+    FAssassinsInterframeHitShape GetHitShape() const;
+
+    void CheckFlightHits(float DeltaTime);
+    void HandleCheckedHit(AActor* TargetActor);
+
+    void EndFlight();
+
+    FTimerHandle ActivationTimerHandle;
+
+    bool bActivated = false;
+    bool bHandlingHits = false;
+
+    bool bChecksCharactersOnRecords = false;
+    int32 HitCheckHandle = 0;
+    double LastCheckedTime = 0.0;
+    FVector LastCheckedLocation = FVector::ZeroVector;
+
+    bool bFlightOver = false;
+    double FlightOverTime = 0.0;
 
     float StartTime;
 
     FVector StartLocation;
 
     UPROPERTY()
-    TArray<TWeakObjectPtr<AActor>> ActorsToIgnore;
+    TArray<TWeakObjectPtr<AActor>> HandledActors;
 };
