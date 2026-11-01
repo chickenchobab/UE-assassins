@@ -46,7 +46,8 @@ public class Assassins : ModuleRules
                 "CommonUser",
                 "UIExtension",
                 "GameSubtitles",
-                "NetCore"
+                "NetCore",
+                "AnimGraphRuntime"
             }
         );
     }
